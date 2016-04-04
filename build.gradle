@@ -1,0 +1,28 @@
+task wrapper (type:Wrapper) {
+    gradleVersion = '2.5'
+    distributionUrl = 'https://services.gradle.org/distributions/gradle-2.5-all.zip'
+}
+
+buildscript {
+    repositories {
+        jcenter()
+
+        maven { url 'http://repo.spring.io/plugins-release' }
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.5.0'
+        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
