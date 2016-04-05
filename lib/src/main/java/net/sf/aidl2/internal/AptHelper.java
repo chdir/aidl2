@@ -114,11 +114,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
         // avoid redundant casts at least when no bounds are involved
         switch (t2Kind) {
             case DECLARED:
-                if (t.getKind() == TypeKind.DECLARED) {
-                    if (getQualifiedName((DeclaredType) t) != null && isRaw(t) &&
-                            getQualifiedName((DeclaredType) t2) != null && isRaw(t2)) {
-                        return emitCasts(t, t2, input);
-                    }
+            case ARRAY:
+                if (t.getKind() == t2.getKind() && isRaw(t) && isRaw(t2)) {
+                    return emitCasts(t, t2, input);
                 }
             default:
                 if (t2Kind.isPrimitive()) {
