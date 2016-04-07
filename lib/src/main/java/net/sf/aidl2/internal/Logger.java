@@ -26,14 +26,28 @@ import javax.tools.StandardLocation;
 
 class Logger implements Closeable {
     private static final String TAG = "AIDL2 has aborted compilation\n";
+    private static final String TAG2 = "AIDL2 says\n";
 
     private final Messager messager;
     private final Config cfg;
+
+    private boolean abortedAlready;
+
+    private String makeTag(Diagnostic.Kind diagnostic) {
+        if (diagnostic == Diagnostic.Kind.ERROR && !abortedAlready) {
+            abortedAlready = true;
+            return TAG;
+        } else {
+            return TAG2;
+        }
+    }
 
     private Logger(AidlProcessor.Environment pe) {
         this.messager = pe.getMessager();
         cfg = pe.getConfig();
     }
+
+
 
     public static String messageFor(Throwable t) {
         if (t instanceof OutOfMemoryError) {
@@ -77,29 +91,29 @@ class Logger implements Closeable {
 
     public void log(FaultyAnnotationValue... issues) {
         for (FaultyAnnotationValue issue : issues) {
-            messager.printMessage(issue.getKind(), TAG + issue.getMessage(), issue.getElement(), issue.getAnnotation(), issue.getValue());
+            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement(), issue.getAnnotation(), issue.getValue());
         }
     }
 
     public void log(net.sf.aidl2.internal.exceptions.FaultyAnnotation... issues) {
         for (net.sf.aidl2.internal.exceptions.FaultyAnnotation issue : issues) {
-            messager.printMessage(issue.getKind(), TAG + issue.getMessage(), issue.getElement(), issue.getAnnotation());
+            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement(), issue.getAnnotation());
         }
     }
 
     public void log(net.sf.aidl2.internal.exceptions.FaultyElement... issues) {
         for (net.sf.aidl2.internal.exceptions.FaultyElement issue : issues) {
-            messager.printMessage(issue.getKind(), TAG + issue.getMessage(), issue.getElement());
+            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement());
         }
     }
 
     public void log(String note) {
-        messager.printMessage(Diagnostic.Kind.NOTE, TAG + note);
+        messager.printMessage(Diagnostic.Kind.NOTE, TAG2 + note);
     }
 
     public void log(Throwable... errors) {
         for (Throwable issue : errors) {
-            messager.printMessage(Diagnostic.Kind.ERROR, TAG + issue.getMessage());
+            messager.printMessage(Diagnostic.Kind.ERROR, TAG2 + issue.getMessage());
 
             if (cfg.isVerbose()) {
                 issue.printStackTrace();

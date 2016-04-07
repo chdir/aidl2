@@ -28,6 +28,9 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 
+import static net.sf.aidl2.internal.util.Util.getQualifiedName;
+import static net.sf.aidl2.internal.util.Util.literal;
+
 public final class Reader extends AptHelper {
     private static final CodeBlock EMPTY = CodeBlock.builder().build();
 
@@ -122,7 +125,7 @@ public final class Reader extends AptHelper {
             init.addStatement("$N = $L", tmp, emitCasts(inner.returnType, capturedType, inner.read(init)));
             init.endControlFlow();
 
-            return net.sf.aidl2.internal.util.Util.literal(tmp);
+            return literal(tmp);
         }, capturedType);
     }
 
@@ -140,7 +143,7 @@ public final class Reader extends AptHelper {
             case ARRAY:
                 return getArrayStrategy((ArrayType) type);
             case DECLARED:
-                final CharSequence name = net.sf.aidl2.internal.util.Util.getQualifiedName((DeclaredType) type);
+                final CharSequence name = getQualifiedName((DeclaredType) type);
                 if (name != null) {
                     switch (name.toString()) {
                         case "java.lang.Boolean":
@@ -159,7 +162,7 @@ public final class Reader extends AptHelper {
                             }
                             break;
                         case "java.lang.Void":
-                            return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("null"), types.getNullType());
+                            return Strategy.create($ -> literal("null"), types.getNullType());
                     }
                 }
             default:
@@ -236,7 +239,7 @@ public final class Reader extends AptHelper {
                     block.addStatement("$T.shut($N)", AidlUtil.class, ois);
                     block.endControlFlow();
 
-                    return net.sf.aidl2.internal.util.Util.literal(xtrnlzbl);
+                    return literal(xtrnlzbl);
                 }, capturedType);
             };
         }
@@ -300,35 +303,35 @@ public final class Reader extends AptHelper {
     @SuppressWarnings("ThrowFromFinallyBlock")
     private Strategy getBuiltinStrategy(TypeMirror type, Nullability nullable) throws CodegenException {
         if (types.isAssignable(type, sizeF)) {
-            Strategy strategy = Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$L.readSizeF()", parcelName), sizeF);
+            Strategy strategy = Strategy.create($ -> literal("$L.readSizeF()", parcelName), sizeF);
 
             return nullable.shouldCheckForNull(type) ? getNullableStrategy(type, strategy) : strategy;
         } else if (types.isAssignable(type, sizeType)) {
-            Strategy strategy = Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$L.readSize()", parcelName), sizeType);
+            Strategy strategy = Strategy.create($ -> literal("$L.readSize()", parcelName), sizeType);
 
             return nullable.shouldCheckForNull(type) ? getNullableStrategy(type, strategy) : strategy;
         }
         // supported via native methods, always nullable
         else if (types.isAssignable(type, string)) {
-            return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$L.readString()", parcelName), string);
+            return Strategy.create($ -> literal("$L.readString()", parcelName), string);
         } else if (types.isAssignable(type, iBinder)) {
-            return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$L.readStrongBinder()", parcelName), iBinder);
+            return Strategy.create($ -> literal("$L.readStrongBinder()", parcelName), iBinder);
         }
         // supported via non-standard method, always nullable
         else if (types.isAssignable(type, charSequence)) {
-            return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($L)", textUtils, parcelName), charSequence);
+            return Strategy.create($ -> literal("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($L)", textUtils, parcelName), charSequence);
         }
         // containers, so naturally nullable
         else if (types.isAssignable(type, sparseBoolArray)) {
-            return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$L.readSparseBooleanArray()", parcelName), sparseBoolArray);
+            return Strategy.create($ -> literal("$L.readSparseBooleanArray()", parcelName), sparseBoolArray);
         } else if (types.isAssignable(type, bundle)) {
-            return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$L.readBundle(getClass().getClassLoader())", parcelName), bundle);
+            return Strategy.create($ -> literal("$L.readBundle(getClass().getClassLoader())", parcelName), bundle);
         } else if (types.isAssignable(type, persistable)) {
-            return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$L.readPersistableBundle(getClass().getClassLoader())", parcelName), persistable);
+            return Strategy.create($ -> literal("$L.readPersistableBundle(getClass().getClassLoader())", parcelName), persistable);
         } else {
             if (isEffectivelyObject(type)) {
                 if (allowUnchecked) {
-                    return Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$N.readValue(getClass().getClassLoader())", parcelName), theObject);
+                    return Strategy.create($ -> literal("$N.readValue(getClass().getClassLoader())", parcelName), theObject);
                 }
 
                 String errMsg =
@@ -374,7 +377,7 @@ public final class Reader extends AptHelper {
             }
         }
 
-        final Strategy strategy = Strategy.create($ -> net.sf.aidl2.internal.util.Util.literal("$T.CREATOR.createFromParcel($N)", rawType, parcelName), instantiated);
+        final Strategy strategy = Strategy.create($ -> literal("$T.CREATOR.createFromParcel($N)", rawType, parcelName), instantiated);
 
         return nullable ? getNullableStrategy(type, strategy) : strategy;
     }
@@ -400,10 +403,10 @@ public final class Reader extends AptHelper {
                 init.nextControlFlow("else");
                 init.addStatement("$N = new $L", array, Blocks.arrayInit(resultType, length));
             } else {
-                init.addStatement("final $T[] $N = new $L", resultType, array, Blocks.arrayInit(resultType, net.sf.aidl2.internal.util.Util.literal("$N.readInt()", parcelName)));
+                init.addStatement("final $T[] $N = new $L", resultType, array, Blocks.arrayInit(resultType, literal("$N.readInt()", parcelName)));
             }
 
-            final boolean nullable1 = net.sf.aidl2.internal.util.Util.isNullable(actualComponent, true);
+            final boolean nullable1 = Util.isNullable(actualComponent, true);
 
             init.beginControlFlow("for (int $N = 0; $N < $N.length; $N++)", i, i, array, i);
             init.addStatement("$N[$N] = $L", array, i, emitCasts(returnedType, resultType, readingStrategy.read(init)));
@@ -413,7 +416,7 @@ public final class Reader extends AptHelper {
                 init.endControlFlow();
             }
 
-            return net.sf.aidl2.internal.util.Util.literal("$N", array);
+            return literal("$N", array);
         }, types.getArrayType(resultType));
     }
 
@@ -441,7 +444,7 @@ public final class Reader extends AptHelper {
     private Strategy getUnknownParcelableStrategy() {
         if (UNKNOWN_PARCELABLE_STRATEGY == null) {
             UNKNOWN_PARCELABLE_STRATEGY = Strategy.create(new ReadingStrategy() {
-                private final CodeBlock block = net.sf.aidl2.internal.util.Util.literal("$L.readParcelable(getClass().getClassLoader())", parcelName);
+                private final CodeBlock block = literal("$L.readParcelable(getClass().getClassLoader())", parcelName);
 
                 @Override
                 public CodeBlock read(CodeBlock.Builder unused) {
@@ -460,19 +463,19 @@ public final class Reader extends AptHelper {
 
             switch (componentKind) {
                 case BYTE:
-                    return net.sf.aidl2.internal.util.Util.literal("$N.createByteArray()", parcelName);
+                    return literal("$N.createByteArray()", parcelName);
                 case INT:
-                    return net.sf.aidl2.internal.util.Util.literal("$N.createIntArray()", parcelName);
+                    return literal("$N.createIntArray()", parcelName);
                 case BOOLEAN:
-                    return net.sf.aidl2.internal.util.Util.literal("$N.createBooleanArray()", parcelName);
+                    return literal("$N.createBooleanArray()", parcelName);
                 case CHAR:
-                    return net.sf.aidl2.internal.util.Util.literal("$N.createCharArray()", parcelName);
+                    return literal("$N.createCharArray()", parcelName);
                 case LONG:
-                    return net.sf.aidl2.internal.util.Util.literal("$N.createLongArray()", parcelName);
+                    return literal("$N.createLongArray()", parcelName);
                 case DOUBLE:
-                    return net.sf.aidl2.internal.util.Util.literal("$N.createDoubleArray()", parcelName);
+                    return literal("$N.createDoubleArray()", parcelName);
                 case FLOAT:
-                    return net.sf.aidl2.internal.util.Util.literal("$N.createFloatArray()", parcelName);
+                    return literal("$N.createFloatArray()", parcelName);
                 default:
                     return readSerializable();
             }
@@ -480,23 +483,23 @@ public final class Reader extends AptHelper {
     }
 
     private CodeBlock readSerializable() {
-        return Util.literal("$T.readSafeSerializable($N)", ClassName.get(AidlUtil.class), parcelName);
+        return literal("$T.readSafeSerializable($N)", ClassName.get(AidlUtil.class), parcelName);
     }
 
     private CodeBlock readPrimitive(PrimitiveType type) {
         switch (type.getKind()) {
             case LONG:
-                return net.sf.aidl2.internal.util.Util.literal("$N.readLong()", parcelName);
+                return literal("$N.readLong()", parcelName);
             case DOUBLE:
-                return net.sf.aidl2.internal.util.Util.literal("$N.readDouble()", parcelName);
+                return literal("$N.readDouble()", parcelName);
             case FLOAT:
-                return net.sf.aidl2.internal.util.Util.literal("$N.readFloat()", parcelName);
+                return literal("$N.readFloat()", parcelName);
             case BOOLEAN:
-                return net.sf.aidl2.internal.util.Util.literal("$N.readInt() == 1", parcelName);
+                return literal("$N.readInt() == 1", parcelName);
             case INT:
-                return net.sf.aidl2.internal.util.Util.literal("$N.readInt()", parcelName);
+                return literal("$N.readInt()", parcelName);
             default:
-                return net.sf.aidl2.internal.util.Util.literal("($T) $N.readInt()", type, parcelName);
+                return literal("($T) $N.readInt()", type, parcelName);
         }
     }
 

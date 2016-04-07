@@ -13,6 +13,8 @@ import com.squareup.javapoet.TypeSpec;
 
 import net.sf.aidl2.internal.codegen.TypedExpression;
 import net.sf.aidl2.internal.exceptions.CodegenException;
+import net.sf.aidl2.internal.exceptions.ElementException;
+import net.sf.aidl2.internal.util.Util;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -112,7 +114,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
         if (!model.methods.isEmpty()) {
             final State aidlReader = new State(getBaseEnvironment(), baseAllocator)
-                    .allowUnchecked(model.unchecked);
+                    .allowUnchecked((model.suppressed & Util.SUPPRESS_UNCHECKED) != 0);
 
             final MethodSpec.Builder onTransactSpec = onTransact.toBuilder();
 
@@ -145,7 +147,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
                 final State methodReader = aidlReader.clone();
 
-                if (method.unchecked) {
+                if ((method.warningsSuppressedOnMethod & Util.SUPPRESS_UNCHECKED) != 0) {
                     methodReader.allowUnchecked(true);
                 }
 
@@ -170,7 +172,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                     final State paramMarshaller = methodReader.clone()
                             .setParameter(param);
 
-                    if (param.unchecked) {
+                    if ((param.suppressed & Util.SUPPRESS_UNCHECKED) != 0) {
                         paramMarshaller.allowUnchecked(true);
                     }
 
@@ -178,7 +180,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                         try {
                             methodArgs.add(readInParameter(paramsRead, paramMarshaller, parcel.name));
                         } catch (CodegenException cde) {
-                            throw new net.sf.aidl2.internal.exceptions.ElementException(cde, net.sf.aidl2.internal.util.Util.arg(method.element.element, param.name));
+                            throw new ElementException(cde, net.sf.aidl2.internal.util.Util.arg(method.element.element, param.name));
                         }
                     }
 
@@ -192,18 +194,18 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                                         writeOutParameter(paramsWrite, paramMarshaller, returnParcel.name);
                                     }
                                 } catch (CodegenException cde) {
-                                    throw new net.sf.aidl2.internal.exceptions.ElementException(cde, method.element.element);
+                                    throw new ElementException(cde, method.element.element);
                                 }
                             } else {
                                 try {
                                     TypeMirror requiredReturn = writeOutParameter(paramsWrite, paramMarshaller, returnParcel.name);
 
-                                    final CodeBlock callCode = net.sf.aidl2.internal.util.Util.literal("this.delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
+                                    final CodeBlock callCode = Util.literal("this.delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
 
                                     delegateCall.addStatement("$T returnValue = $L",
                                             requiredReturn, forceCasts(param.type, requiredReturn, callCode));
                                 } catch (CodegenException cde) {
-                                    throw new net.sf.aidl2.internal.exceptions.ElementException(cde, method.element.element);
+                                    throw new ElementException(cde, method.element.element);
                                 }
                             }
                         }
@@ -266,7 +268,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
             result.add(emitCasts(param.type, parameters[i].type, param.code));
         }
 
-        return net.sf.aidl2.internal.util.Util.literal(String.join(", ", Collections.nCopies(params.size(), "$L")), result.toArray());
+        return Util.literal(String.join(", ", Collections.nCopies(params.size(), "$L")), result.toArray());
     }
 
     private TypedExpression readInParameter(CodeBlock.Builder code, State reader, String name) throws CodegenException {
@@ -278,13 +280,13 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         final CodeBlock initializationBlock = initializationCode.build();
 
         if (initializationBlock.isEmpty()) {
-            TypeMirror resultType = types.erasure(reader.type);
+            TypeMirror resultType = gaugeConcreteParent(reader.type, assignmentCode.type);
 
             code.addStatement("final $T $N = $L", resultType, reader.name,
                     emitCasts(assignmentCode.type, resultType, assignmentCode.code));
             code.add("\n");
 
-            return new TypedExpression(net.sf.aidl2.internal.util.Util.literal(reader.name.toString()), resultType);
+            return new TypedExpression(Util.literal(reader.name.toString()), resultType);
         } else {
             code.add("$L", initializationBlock);
             code.add("\n");

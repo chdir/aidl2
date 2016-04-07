@@ -1,12 +1,13 @@
 package net.sf.aidl2.internal;
 
 import net.sf.aidl2.Out;
+import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.util.Util;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeMirror;
 
 public final class AidlParamModel {
@@ -16,7 +17,7 @@ public final class AidlParamModel {
     @NotNull
     final TypeMirror type;
 
-    final boolean unchecked;
+    final int suppressed;
 
     final boolean nullable;
 
@@ -26,16 +27,16 @@ public final class AidlParamModel {
 
     final boolean varargParameter;
 
-    AidlParamModel(@Nullable CharSequence name,
+    private AidlParamModel(@Nullable CharSequence name,
                    @NotNull TypeMirror type,
-                   boolean unchecked,
+                   int suppressed,
                    boolean nullable,
                    boolean inParameter,
                    boolean outParameter,
                    boolean varargParameter) {
         this.name = name;
         this.type = type;
-        this.unchecked = unchecked;
+        this.suppressed = suppressed;
         this.nullable = nullable;
         this.inParameter = inParameter;
         this.outParameter = outParameter;
@@ -46,23 +47,50 @@ public final class AidlParamModel {
         return name == null;
     }
 
-    public static AidlParamModel create(TypeMirror paramType, VariableElement paramEl, boolean assumeNullable, boolean assumeUnchecked) {
-        final SuppressWarnings paramSw = paramEl.getAnnotation(SuppressWarnings.class);
+    public static AidlParamModel create(TypeInvocation<?, ?> paramInstance, boolean assumeNullable, int suppressedOnMethod) {
+        final boolean isInParameter;
+        final boolean hasInOut;
+        final int suppressedOnParam;
+        final boolean nullableParam;
 
-        final boolean suppressUncheckedOnParam = assumeUnchecked || Util.isSuppressed("unchecked", paramSw);
+        final CharSequence name;
 
-        final boolean nullable = Util.isNullable(paramEl, assumeNullable);
+        final ElementKind kind = paramInstance.element.getKind();
 
+        switch (kind) {
+            case PARAMETER:
+                // method parameter
+                isInParameter = true;
+
+                hasInOut = paramInstance.element.getAnnotation(Out.class) != null;
+
+                name = paramInstance.element.getSimpleName();
+
+                suppressedOnParam = suppressedOnMethod | Util.getSuppressed(paramInstance.element);
+
+                nullableParam = Util.isNullable(paramInstance.element, assumeNullable);
+                break;
+            case METHOD:
+                // return value
+                name = null;
+                isInParameter = false;
+                hasInOut = true;
+                suppressedOnParam = suppressedOnMethod;
+                nullableParam = assumeNullable;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported type of parameter!");
+        }
+
+        // why was this needed again?
         final boolean varArgParam = false;
 
-        final boolean hasInOut = paramEl.getAnnotation(Out.class) != null;
-
         return new AidlParamModel(
-                paramEl.getSimpleName(),
-                paramType,
-                suppressUncheckedOnParam,
-                nullable,
-                true,
+                name,
+                paramInstance.type,
+                suppressedOnParam,
+                nullableParam,
+                isInParameter,
                 hasInOut,
                 varArgParam);
     }

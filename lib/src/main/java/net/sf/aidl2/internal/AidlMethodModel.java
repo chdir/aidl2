@@ -1,49 +1,54 @@
 package net.sf.aidl2.internal;
 
 import net.sf.aidl2.OneWay;
-import net.sf.aidl2.internal.codegen.MethodInstantiation;
+import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.util.Util;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 
 public final class AidlMethodModel {
     @NotNull
     final AidlParamModel[] parameters;
 
-    final boolean unchecked;
+    final int warningsSuppressedOnMethod;
 
     final boolean oneWay;
 
     @NotNull
-    final MethodInstantiation element;
+    final TypeInvocation<ExecutableElement, ExecutableType> element;
 
     @NotNull
     final String[] suppressed;
 
     private AidlMethodModel(
-            @NotNull MethodInstantiation element,
+            @NotNull TypeInvocation<ExecutableElement, ExecutableType> element,
             @NotNull AidlParamModel[] parameters,
-            final boolean unchecked,
+            final int unchecked,
             final boolean oneWay,
             @NotNull final String... suppressed) {
         this.element = element;
         this.parameters = parameters;
         this.oneWay = oneWay;
         this.suppressed = suppressed;
-        this.unchecked = unchecked;
+        this.warningsSuppressedOnMethod = unchecked;
     }
 
-    public static AidlMethodModel create(MethodInstantiation methodEl, boolean nullableOnType, boolean uncheckedOnType) {
+    public static AidlMethodModel create(
+            TypeInvocation<ExecutableElement, ExecutableType> methodEl,
+            boolean nullableOnType,
+            int suppressedOnType) {
         final boolean isOneWay = methodEl.element.getAnnotation(OneWay.class) != null;
 
         final SuppressWarnings methodSw = methodEl.element.getAnnotation(SuppressWarnings.class);
 
-        final boolean suppressUncheckedOnMethod = uncheckedOnType || methodSw != null && Util.isSuppressed("unchecked", methodSw);
+        final int suppressedOnMethod = suppressedOnType | Util.getSuppressed(methodSw);
 
         final String[] methodTransplanted = methodSw != null ? methodSw.value() : new String[0];
 
@@ -55,8 +60,7 @@ public final class AidlMethodModel {
 
         final boolean nullable = Util.isNullable(methodEl.element, nullableOnType);
 
-        parameterModels[params.size()] = new AidlParamModel(null,
-                returnType, suppressUncheckedOnMethod, nullable, false, true, false);
+        parameterModels[params.size()] = AidlParamModel.create(new TypeInvocation<>(methodEl.element, returnType), nullable, suppressedOnMethod);
 
         final List<? extends TypeMirror> paramTypes = methodEl.type.getParameterTypes();
 
@@ -64,13 +68,13 @@ public final class AidlMethodModel {
             final VariableElement paramEl = params.get(i);
             final TypeMirror paramType = paramTypes.get(i);
 
-            parameterModels[i] = AidlParamModel.create(paramType, paramEl, nullable, suppressUncheckedOnMethod);
+            parameterModels[i] = AidlParamModel.create(new TypeInvocation<>(paramEl, paramType), nullable, suppressedOnMethod);
         }
 
         return new AidlMethodModel(
-                new MethodInstantiation(methodEl.element, methodEl.type),
+                new TypeInvocation<>(methodEl.element, methodEl.type),
                 parameterModels,
-                suppressUncheckedOnMethod,
+                suppressedOnMethod,
                 isOneWay,
                 methodTransplanted);
     }

@@ -1,0 +1,14 @@
+subprojects {
+  apply plugin: "groovy"
+
+  dependencies {
+    compile localGroovy()
+    compile gradleApi()
+  }
+
+  rootProject.dependencies {
+    runtime project(path)
+  }
+
+  test.enabled = false
+}

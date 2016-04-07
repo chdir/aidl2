@@ -2,6 +2,7 @@ package net.sf.aidl2.internal.util;
 
 import com.squareup.javapoet.CodeBlock;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
@@ -25,21 +26,32 @@ import javax.lang.model.util.SimpleElementVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
 
 public class Util {
+    public static final int SUPPRESS_UNCHECKED = 0b00000000000000000000000000000001;
+    public static final int SUPPRESS_AIDL = 0b00000000000000000000000000000011;
+    public static final int SUPPRESS_ALL = 0b11111111111111111111111111111111;
 
-    public static boolean isSuppressed(String warning, SuppressWarnings annotation) {
+    public static int getSuppressed(@NotNull Element element) {
+        return getSuppressed(element.getAnnotation(SuppressWarnings.class));
+    }
+
+    public static int getSuppressed(@Nullable SuppressWarnings annotation) {
         if (annotation == null) {
-            return false;
+            return 0;
         }
 
         final String[] values = annotation.value();
 
         for (String value : values) {
-            if ("all".equals(value) || "aidl2".equals(value) || warning.equals(value)) {
-                return true;
+            if ("all".equals(value)) {
+                return SUPPRESS_ALL;
+            } else if ("aidl2".equals(value)) {
+                return SUPPRESS_AIDL;
+            } else if ("unchecked".equals(value)) {
+                return SUPPRESS_UNCHECKED;
             }
         }
 
-        return false;
+        return 0;
     }
 
     public static boolean isNullable(Element element, boolean defaultNullable) {

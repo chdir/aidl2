@@ -9,7 +9,8 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeVariableName;
 
 import net.sf.aidl2.AidlUtil;
-import net.sf.aidl2.internal.codegen.MethodInstantiation;
+import net.sf.aidl2.internal.codegen.TypeInvocation;
+import net.sf.aidl2.internal.util.JavaVersion;
 import net.sf.aidl2.internal.util.Util;
 
 import java.util.ArrayList;
@@ -42,7 +43,6 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.TypeKindVisitor6;
 import javax.lang.model.util.Types;
 
-import static net.sf.aidl2.internal.util.Util.getQualifiedName;
 import static net.sf.aidl2.internal.util.Util.isTypeOf;
 import static net.sf.aidl2.internal.util.Util.literal;
 
@@ -62,8 +62,8 @@ public abstract class AptHelper implements ProcessingEnvironment {
     protected final DeclaredType theIInterface;
     protected final DeclaredType theCreator;
 
-    protected final MethodInstantiation onTransact;
-    protected final MethodInstantiation asBinder;
+    protected final TypeInvocation<ExecutableElement, ExecutableType> onTransact;
+    protected final TypeInvocation<ExecutableElement, ExecutableType> asBinder;
 
     public AptHelper(net.sf.aidl2.internal.AidlProcessor.Environment environment) {
         this.environment = environment;
@@ -85,7 +85,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         asBinder = lookupMethod(theIInterface, "asBinder");
     }
 
-    public boolean isSubsignature(MethodInstantiation m1, MethodInstantiation m2) {
+    public boolean isSubsignature(TypeInvocation<?, ExecutableType> m1, TypeInvocation<?, ExecutableType> m2) {
         return m1.element.getSimpleName().equals(m2.element.getSimpleName())
                 && types.isSubsignature(m1.type, m2.type);
     }
@@ -152,6 +152,23 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 return literal("($T.unsafeCast($L))", ClassName.get(AidlUtil.class), input);
             }
         }
+    }
+
+    private final TypeVisitor<DeclaredType, TypeMirror> BOUND_REFINER = new SharedParentRefiner();
+
+    public TypeMirror gaugeConcreteParent(TypeMirror mirror, TypeMirror returnedType) {
+        final TypeKind targetKind = mirror.getKind();
+
+        switch (targetKind) {
+            case ARRAY:
+                return types.erasure(mirror);
+            default:
+                if (targetKind.isPrimitive()) {
+                    return mirror;
+                }
+        }
+
+        return captureAll(BOUND_REFINER.visit(mirror, returnedType));
     }
 
     public MethodSpec.Builder override(ExecutableElement method, DeclaredType enclosing) {
@@ -232,7 +249,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return types.isSameType(types.erasure(type), theObject);
     }
 
-    public MethodInstantiation lookupMethod(DeclaredType type, CharSequence methodName, Object... argv) {
+    public TypeInvocation<ExecutableElement, ExecutableType> lookupMethod(DeclaredType type, CharSequence methodName, Object... argv) {
         methodSearch:
         for (ExecutableElement method : ElementFilter.methodsIn(type.asElement().getEnclosedElements())) {
             final Collection<? extends Modifier> modifiers = method.getModifiers();
@@ -275,7 +292,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
             final ExecutableType methodType = (ExecutableType) types.asMemberOf(type, method);
 
-            return new MethodInstantiation(method, methodType);
+            return new TypeInvocation<>(method, methodType);
         }
 
         throw new IllegalArgumentException("Failed to find instance method \"" + methodName + "\" in " + type);
@@ -301,9 +318,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return elements.getTypeElement(s);
     }
 
-    private class DeclaredTypeRefiner extends TypeKindVisitor6<DeclaredType, DeclaredType> {
+    private class DeclaredTypeRefiner extends TypeKindVisitor6<DeclaredType, TypeMirror> {
         @Override
-        public DeclaredType visitDeclared(DeclaredType type, DeclaredType desirableParent) {
+        public DeclaredType visitDeclared(DeclaredType type, TypeMirror desirableParent) {
             if (types.isSubtype(type, desirableParent)) {
                 final Element element = types.asElement(type);
 
@@ -322,7 +339,12 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
 
         @Override
-        protected DeclaredType defaultAction(TypeMirror type, DeclaredType desirableParent) {
+        public DeclaredType visitUnknown(TypeMirror typeMirror, TypeMirror typeMirror2) {
+            return defaultAction(typeMirror, typeMirror2);
+        }
+
+        @Override
+        protected DeclaredType defaultAction(TypeMirror type, TypeMirror desirableParent) {
             if (types.isSameType(type, theObject)) {
                 return null;
             }
@@ -330,10 +352,50 @@ public abstract class AptHelper implements ProcessingEnvironment {
             final List<? extends TypeMirror> superTypes = types.directSupertypes(type);
 
             for (TypeMirror parent : superTypes) {
-                if (types.isSameType(types.erasure(type), types.erasure(parent))) {
-                    continue;
+                final DeclaredType discovered = visit(parent, desirableParent);
+
+                if (discovered != null) {
+                    return discovered;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    private final class SharedParentRefiner extends DeclaredTypeRefiner {
+        @Override
+        public DeclaredType visitDeclared(DeclaredType type, TypeMirror desirableParent) {
+            if (types.isSameType(type, theObject)) {
+                return null;
+            }
+
+            if (types.isAssignable(desirableParent, type)) {
+                final Element element = types.asElement(type);
+
+                if (element != null) {
+                    final ElementKind elKind = element.getKind();
+
+                    if (elKind.isClass() || elKind.isInterface()) {
+                        return type;
+                    }
                 }
 
+                return defaultAction(type, desirableParent);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected DeclaredType defaultAction(TypeMirror type, TypeMirror desirableParent) {
+            if (types.isSameType(type, theObject)) {
+                return null;
+            }
+
+            final List<? extends TypeMirror> superTypes = types.directSupertypes(type);
+
+            for (TypeMirror parent : superTypes) {
                 final DeclaredType discovered = visit(parent, desirableParent);
 
                 if (discovered != null) {
@@ -347,7 +409,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
     private final class ConcreteTypeRefiner extends DeclaredTypeRefiner {
         @Override
-        public DeclaredType visitDeclared(DeclaredType type, DeclaredType desirableParent) {
+        public DeclaredType visitDeclared(DeclaredType type, TypeMirror desirableParent) {
             if (types.isSubtype(type, desirableParent)) {
                 final Element element = types.asElement(type);
 
@@ -362,9 +424,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
     }
 
-    private final TypeVisitor<DeclaredType, DeclaredType> CONCRETE_REFINER = new ConcreteTypeRefiner();
+    private final TypeVisitor<DeclaredType, TypeMirror> CONCRETE_REFINER = new ConcreteTypeRefiner();
 
-    private final TypeVisitor<DeclaredType, DeclaredType> DECLARED_REFINER = new DeclaredTypeRefiner();
+    private final TypeVisitor<DeclaredType, TypeMirror> DECLARED_REFINER = new DeclaredTypeRefiner();
 
     protected DeclaredType findConcreteParent(TypeMirror type, DeclaredType asType) {
         return CONCRETE_REFINER.visit(type, asType);
@@ -386,7 +448,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
     public CodeBlock emitDefaultConstructorCall(TypeMirror capturedType) {
         final TypeMirror erased = types.erasure(capturedType);
 
-        if (net.sf.aidl2.internal.util.JavaVersion.atLeast(net.sf.aidl2.internal.util.JavaVersion.JAVA_1_7)) {
+        if (JavaVersion.atLeast(JavaVersion.JAVA_1_7)) {
             if (Util.isProperClass(capturedType)) {
                 Collection<? extends TypeMirror> args = ((DeclaredType) capturedType).getTypeArguments();
 
@@ -415,7 +477,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         final DeclaredType horror = captureInner(type, new ArrayList<>());
 
-        if (types.isAssignable(horror, type)) {
+        if (types.isAssignable(type, horror)) {
             return horror;
         } else {
             return types.erasure(type);

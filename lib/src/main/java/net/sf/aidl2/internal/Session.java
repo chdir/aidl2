@@ -1,8 +1,10 @@
 package net.sf.aidl2.internal;
 
 import net.sf.aidl2.AIDL;
+import net.sf.aidl2.internal.codegen.TypeInvocation;
+import net.sf.aidl2.internal.exceptions.AnnotationException;
 import net.sf.aidl2.internal.exceptions.AnnotationValueException;
-import net.sf.aidl2.internal.exceptions.QuietException;
+import net.sf.aidl2.internal.exceptions.ElementException;
 import net.sf.aidl2.internal.util.Util;
 
 import java.io.Closeable;
@@ -24,7 +26,6 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.util.ElementFilter;
 
 import static javax.tools.Diagnostic.Kind.NOTE;
-import static javax.tools.Diagnostic.Kind.WARNING;
 
 final class Session extends AptHelper implements Closeable {
     private Set<Name> pendingElements = new HashSet<>();
@@ -34,7 +35,7 @@ final class Session extends AptHelper implements Closeable {
     }
 
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment)
-            throws net.sf.aidl2.internal.exceptions.ElementException, net.sf.aidl2.internal.exceptions.AnnotationException, AnnotationValueException, IOException {
+            throws ElementException, AnnotationException, AnnotationValueException, IOException {
         if (set.isEmpty()) {
             getBaseEnvironment().getMessager().printMessage(NOTE, "Called with empty root element set");
         }
@@ -79,12 +80,12 @@ final class Session extends AptHelper implements Closeable {
 
             Element erroneousElement;
             if ((erroneousElement = typeValidator.validate(iInterface)) == null) {
-                final List<net.sf.aidl2.internal.codegen.MethodInstantiation> methods = gatherAidl2Methods(interfaceType);
+                final List<TypeInvocation<ExecutableElement, ExecutableType>> methods = gatherAidl2Methods(interfaceType);
 
-                final net.sf.aidl2.internal.AidlMethodValidator methodValidator =
-                        new net.sf.aidl2.internal.AidlMethodValidator(getBaseEnvironment(), (DeclaredType) iInterface.asType());
+                final AidlMethodValidator methodValidator =
+                        new AidlMethodValidator(getBaseEnvironment(), (DeclaredType) iInterface.asType());
 
-                for (net.sf.aidl2.internal.codegen.MethodInstantiation methodEl : methods) {
+                for (TypeInvocation<ExecutableElement, ExecutableType> methodEl : methods) {
                     methodValidator.validate(methodEl);
                 }
 
@@ -92,7 +93,7 @@ final class Session extends AptHelper implements Closeable {
 
                 pendingElements.remove(qualified);
             } else if (roundEnvironment.processingOver()) {
-                throw new net.sf.aidl2.internal.exceptions.ElementException(
+                throw new ElementException(
                         "Looks like there are compiler errors in the @AIDL-annotated interface, please fix that.", erroneousElement);
             } else {
                 pendingElements.add(qualified);
@@ -101,29 +102,30 @@ final class Session extends AptHelper implements Closeable {
             }
         }
 
-        new net.sf.aidl2.internal.StubGenerator(getBaseEnvironment(), producedModels).make(getFiler());
+        new StubGenerator(getBaseEnvironment(), producedModels).make(getFiler());
 
         new ProxyGenerator(getBaseEnvironment(), producedModels).make(getFiler());
 
         return true;
     }
 
-    private List<net.sf.aidl2.internal.codegen.MethodInstantiation> gatherAidl2Methods(DeclaredType element) {
+    private List<TypeInvocation<ExecutableElement, ExecutableType>> gatherAidl2Methods(DeclaredType element) {
         final Collection<? extends ExecutableElement> allMethods =
                 ElementFilter.methodsIn(elements.getAllMembers((TypeElement) element.asElement()));
 
-        final List<net.sf.aidl2.internal.codegen.MethodInstantiation> aidl2Methods = new ArrayList<>(allMethods.size());
+        final List<TypeInvocation<ExecutableElement, ExecutableType>> aidl2Methods = new ArrayList<>(allMethods.size());
 
         for (ExecutableElement method : allMethods) {
             if (!Util.isAIDL2method(method)) continue;
 
             final ExecutableType methodType = (ExecutableType) types.asMemberOf(element, method);
 
-            final net.sf.aidl2.internal.codegen.MethodInstantiation methodInstantiation = new net.sf.aidl2.internal.codegen.MethodInstantiation(method, methodType);
+            final TypeInvocation<ExecutableElement, ExecutableType> typeInvocation =
+                    new TypeInvocation<>(method, methodType);
 
-            if (isSubsignature(methodInstantiation, asBinder)) continue;
+            if (isSubsignature(typeInvocation, asBinder)) continue;
 
-            aidl2Methods.add(methodInstantiation);
+            aidl2Methods.add(typeInvocation);
         }
 
         return aidl2Methods;

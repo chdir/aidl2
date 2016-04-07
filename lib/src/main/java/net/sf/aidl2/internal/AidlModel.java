@@ -4,7 +4,8 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 
 import net.sf.aidl2.AIDL;
-import net.sf.aidl2.internal.codegen.MethodInstantiation;
+import net.sf.aidl2.internal.codegen.TypeInvocation;
+import net.sf.aidl2.internal.util.Util;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -13,7 +14,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ExecutableType;
 
 public final class AidlModel {
     @NotNull
@@ -33,7 +36,7 @@ public final class AidlModel {
 
     final boolean defaultNullable;
 
-    final boolean unchecked;
+    final int suppressed;
 
     final boolean insecure;
 
@@ -45,7 +48,7 @@ public final class AidlModel {
                      @NotNull CharSequence descriptor,
                      @NotNull TypeName interfaceName,
                      @NotNull List<AidlMethodModel> methods,
-                     boolean unchecked,
+                     int suppressed,
                      boolean insecure,
                      boolean defaultNullable,
                      @NotNull final Annotation... migrated) {
@@ -57,17 +60,17 @@ public final class AidlModel {
         this.methods = methods;
         this.defaultNullable = defaultNullable;
         this.migrated = migrated;
-        this.unchecked = unchecked;
+        this.suppressed = suppressed;
     }
 
-    public static AidlModel create(TypeElement aidlInterface, Collection<MethodInstantiation> allMethods) {
+    public static AidlModel create(TypeElement aidlInterface, Collection<TypeInvocation<ExecutableElement, ExecutableType>> allMethods) {
         final AIDL aidl = aidlInterface.getAnnotation(AIDL.class);
 
         final SuppressWarnings typeSw = aidlInterface.getAnnotation(SuppressWarnings.class);
 
         final boolean nullableOnType = aidl.defaultNullable();
 
-        final boolean suppressUncheckedOnType = typeSw != null && net.sf.aidl2.internal.util.Util.isSuppressed("unchecked", typeSw);
+        final int warningsSuppressedOnType = Util.getSuppressed(typeSw);
 
         final Annotation[] typeTransplanted = typeSw != null ? new Annotation[] { typeSw } : new Annotation[0];
 
@@ -75,8 +78,8 @@ public final class AidlModel {
 
         final TypeName ifaceName = ClassName.get(aidlInterface);
 
-        for (MethodInstantiation methodEl : allMethods) {
-            methods.add(AidlMethodModel.create(methodEl, nullableOnType, suppressUncheckedOnType));
+        for (TypeInvocation<ExecutableElement, ExecutableType> methodEl : allMethods) {
+            methods.add(AidlMethodModel.create(methodEl, nullableOnType, warningsSuppressedOnType));
         }
 
         CharSequence descriptor = aidl.value();
@@ -95,7 +98,7 @@ public final class AidlModel {
                 descriptor,
                 ifaceName,
                 methods,
-                suppressUncheckedOnType,
+                warningsSuppressedOnType,
                 aidl.insecure(),
                 aidl.defaultNullable(),
                 typeTransplanted);

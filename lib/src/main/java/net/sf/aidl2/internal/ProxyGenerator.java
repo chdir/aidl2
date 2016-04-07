@@ -39,13 +39,13 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
 
     private final ClassName iBinder = ClassName.bestGuess("android.os.IBinder");
 
-    private final List<net.sf.aidl2.internal.AidlModel> models;
+    private final List<AidlModel> models;
 
     private final NameAllocator baseAllocator = new NameAllocator();
 
     private final TypeMirror theParcel;
 
-    public ProxyGenerator(net.sf.aidl2.internal.AidlProcessor.Environment environment, List<net.sf.aidl2.internal.AidlModel> models) {
+    public ProxyGenerator(AidlProcessor.Environment environment, List<AidlModel> models) {
         super(environment);
 
         this.models = models;
@@ -54,7 +54,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
     }
 
     public void make(Filer filer) throws net.sf.aidl2.internal.exceptions.ElementException, IOException {
-        for (net.sf.aidl2.internal.AidlModel model : models) {
+        for (AidlModel model : models) {
             writeModel(model, filer);
         }
     }
@@ -100,17 +100,25 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 .build());
 
         if (!model.methods.isEmpty()) {
-            final net.sf.aidl2.internal.State aidlWriter = new net.sf.aidl2.internal.State(getBaseEnvironment(), baseAllocator)
-                    .allowUnchecked(model.unchecked);
+            final State aidlWriter = new State(getBaseEnvironment(), baseAllocator)
+                    .allowUnchecked((model.suppressed & Util.SUPPRESS_UNCHECKED) != 0);
 
-            for (net.sf.aidl2.internal.AidlMethodModel method : model.methods) {
-                final net.sf.aidl2.internal.State methodWriter = aidlWriter.clone();
+            for (AidlMethodModel method : model.methods) {
+                final State methodWriter = aidlWriter.clone();
 
-                if (method.unchecked) {
+                if ((method.warningsSuppressedOnMethod & Util.SUPPRESS_UNCHECKED) != 0) {
                     methodWriter.allowUnchecked(true);
                 }
 
                 final MethodSpec.Builder methodSpec = override(method.element.element, ifType);
+
+                for (AidlParamModel param : method.parameters) {
+                    if (param.name != null) {
+                        methodWriter.allocator.newName(param.name.toString(), param);
+                    } else {
+                        methodWriter.allocator.newName("returnValue", param);
+                    }
+                }
 
                 final String data = methodWriter.allocator.newName("data");
                 final String reply = methodWriter.allocator.newName("reply");
@@ -147,18 +155,10 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 }
 
                 for (AidlParamModel param : method.parameters) {
-                    if (param.name != null) {
-                        methodWriter.allocator.newName(param.name.toString(), param);
-                    } else {
-                        methodWriter.allocator.newName("returnValue", param);
-                    }
-                }
-
-                for (AidlParamModel param : method.parameters) {
-                    final net.sf.aidl2.internal.State paramMarshaller = methodWriter.clone()
+                    final State paramMarshaller = methodWriter.clone()
                             .setParameter(param);
 
-                    if (param.unchecked) {
+                    if ((param.suppressed & Util.SUPPRESS_UNCHECKED) != 0) {
                         paramMarshaller.allowUnchecked(true);
                     }
 

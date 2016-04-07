@@ -3,6 +3,8 @@ package net.sf.aidl2.internal;
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.internal.exceptions.AnnotationException;
 import net.sf.aidl2.internal.exceptions.AnnotationValueException;
+import net.sf.aidl2.internal.util.SuperficialValidation;
+import net.sf.aidl2.internal.util.Util;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -21,13 +23,13 @@ public final class AidlValidator extends AptHelper {
     }
 
     Element validate(TypeElement element) throws AnnotationException, AnnotationValueException {
-        final Element errorElement = new net.sf.aidl2.internal.util.SuperficialValidation(getBaseEnvironment()).validateElement(element);
+        final Element errorElement = new SuperficialValidation(getBaseEnvironment()).validateElement(element);
 
         if (errorElement != null) {
             return errorElement;
         }
 
-        final AnnotationMirror aidlAnnotation = net.sf.aidl2.internal.util.Util.getAnnotation(element, AIDL.class);
+        final AnnotationMirror aidlAnnotation = Util.getAnnotation(element, AIDL.class);
 
         if (aidlAnnotation == null) {
             throw new IllegalStateException("Failed to get annotation mirror from @AIDL-annotated element");

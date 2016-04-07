@@ -1,12 +1,13 @@
 import org.gradle.internal.jvm.Jvm
 
 apply plugin: 'java'
+apply plugin: 'jacoco'
 apply plugin: 'propdeps'
 apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'com.github.kt3k.coveralls'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-
 
 task copyTestResources(type: Copy) {
     from sourceSets.test.resources
@@ -14,6 +15,20 @@ task copyTestResources(type: Copy) {
 }
 
 processResources.dependsOn copyTestResources
+
+retrolambda {
+    exclude 'Test', 'TestReport', 'test', 'testCompile'
+    javaVersion JavaVersion.VERSION_1_7
+    jdk System.getenv("JAVA_HOME")
+    oldJdk System.getenv("JAVA7_HOME")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+}
 
 dependencies {
     compile 'com.squareup:javapoet:1.5.1'

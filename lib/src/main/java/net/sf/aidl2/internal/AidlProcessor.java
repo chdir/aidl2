@@ -3,6 +3,7 @@ package net.sf.aidl2.internal;
 import com.google.auto.service.AutoService;
 
 import net.sf.aidl2.OneWay;
+import net.sf.aidl2.internal.exceptions.QuietException;
 import net.sf.aidl2.internal.exceptions.ReadableException;
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.internal.exceptions.AnnotationValueException;
@@ -69,7 +70,7 @@ public final class AidlProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         if (roundEnvironment.errorRaised()) {
             // neither other processors, nor compiler itself must depend on our output - bail early
-            env.getLogger().log(new net.sf.aidl2.internal.exceptions.QuietException("Called with pending errors — bailing out."));
+            env.getLogger().log(new QuietException("Called with pending errors — bailing out."));
 
             cleanup();
         } else {
