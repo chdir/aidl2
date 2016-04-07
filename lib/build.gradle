@@ -32,13 +32,10 @@ jacocoTestReport {
 
 dependencies {
     compile 'com.squareup:javapoet:1.5.1'
-
-    provided 'com.google.android:android:4.1.1.4'
-
-    provided 'com.google.auto.service:auto-service:1.0-rc2'
-
-    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'org.jetbrains:annotations:13.0'
+
+    compileOnly 'com.google.android:android:4.1.1.4'
+    compileOnly 'com.google.auto.service:auto-service:1.0-rc2'
 
     testCompile 'junit:junit:4.12'
     testCompile 'com.google.testing.compile:compile-testing:0.9'

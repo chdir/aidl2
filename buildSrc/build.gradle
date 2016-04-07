@@ -1,5 +1,15 @@
+repositories {
+  jcenter()
+  mavenCentral()
+}
+
 subprojects {
   apply plugin: "groovy"
+
+  repositories {
+    jcenter()
+    mavenCentral()
+  }
 
   dependencies {
     compile localGroovy()
@@ -8,6 +18,16 @@ subprojects {
 
   rootProject.dependencies {
     runtime project(path)
+  }
+
+  configurations.all {
+    resolutionStrategy {
+      failOnVersionConflict()
+
+      force 'org.apache.httpcomponents:httpclient:4.2.1'
+      force 'org.apache.httpcomponents:httpcore:4.1'
+      force 'com.jcraft:jsch:0.1.50'
+    }
   }
 
   test.enabled = false
