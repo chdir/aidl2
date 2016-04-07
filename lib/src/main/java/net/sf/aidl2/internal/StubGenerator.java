@@ -217,6 +217,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
                 if (!method.oneWay) {
                     onTransactSpec.addStatement("$N.writeNoException()", returnParcel);
+                    onTransactSpec.addCode("\n");
 
                     onTransactSpec.addCode(paramsWrite.build());
                 }

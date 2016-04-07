@@ -338,7 +338,7 @@ public final class Writer extends AptHelper {
 
         final TypeMirror requestedType = delegate.requiredType;
 
-        return Strategy.createNullSafe((block, name) -> {
+        return Strategy.create((block, name) -> {
             final String element = allocator.newName(name + "Element");
 
             block.beginControlFlow("for ($T $N : $L)", resultType, element, name);
