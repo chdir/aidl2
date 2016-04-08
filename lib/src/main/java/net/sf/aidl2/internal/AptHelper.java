@@ -168,7 +168,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 }
         }
 
-        return captureAll(BOUND_REFINER.visit(mirror, returnedType));
+        final TypeMirror foundParent = BOUND_REFINER.visit(mirror, returnedType);
+
+        return foundParent == null ? theObject : captureAll(foundParent);
     }
 
     public MethodSpec.Builder override(ExecutableElement method, DeclaredType enclosing) {

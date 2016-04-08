@@ -42,4 +42,19 @@ public class ErrorTests {
                 .and()
                 .withErrorContaining("bailing out");
     }
+
+    @Test
+    public void failsWhenRawobjectNoUnchecked() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("RawObjectNotSuppressedFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(2)
+                .withErrorContaining("unchecked")
+                .in(testSource)
+                .onLine(8)
+                .and()
+                .withErrorContaining("bailing out");
+    }
 }
