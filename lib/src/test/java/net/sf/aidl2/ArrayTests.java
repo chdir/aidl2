@@ -77,4 +77,19 @@ public class ArrayTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void sizeArrayReturnValue() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("SizeArrayTest.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("SizeArrayTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("SizeArrayTest$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
 }
