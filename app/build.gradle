@@ -8,10 +8,11 @@ android {
 
     defaultConfig {
         applicationId "net.sf.fakenames.gprocessor"
-        minSdkVersion 19
+        minSdkVersion 18
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -36,4 +37,9 @@ dependencies {
     testCompile 'junit:junit:4.12'
 
     compile project(':lib')
+
+    androidTestCompile 'junit:junit:4.12'
+    androidTestCompile 'com.android.support.test:runner:0.4.1'
+    androidTestCompile 'com.android.support.test:rules:0.4.1'
+    androidTestCompile 'com.google.truth:truth:0.28'
 }
