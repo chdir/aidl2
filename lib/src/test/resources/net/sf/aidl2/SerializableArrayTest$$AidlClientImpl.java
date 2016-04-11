@@ -4,9 +4,9 @@ package net.sf.aidl2;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
+import java.io.File;
 import java.lang.Deprecated;
 import java.lang.Override;
-import java.lang.Void;
 
 /**
  * Perform IPC calls according to the interface contract.
@@ -16,10 +16,10 @@ import java.lang.Void;
  * @deprecated — do not use this class directly in your Java code (see above)
  */
 @Deprecated
-public final class VoidTest2$$AidlClientImpl implements VoidTest2 {
+public final class SerializableArrayTest$$AidlClientImpl implements SerializableArrayTest {
     private final IBinder delegate;
 
-    public VoidTest2$$AidlClientImpl(IBinder delegate) {
+    public SerializableArrayTest$$AidlClientImpl(IBinder delegate) {
         this.delegate = delegate;
     }
 
@@ -29,13 +29,15 @@ public final class VoidTest2$$AidlClientImpl implements VoidTest2 {
     }
 
     @Override
-    public void methodWithVoidParameter(Void ignored) throws RemoteException {
+    public void methodWithSerializableArrayParameter(File[] files) throws RemoteException {
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
         try {
-            data.writeInterfaceToken(VoidTest2$$AidlServerImpl.DESCRIPTOR);
+            data.writeInterfaceToken(SerializableArrayTest$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(VoidTest2$$AidlServerImpl.TRANSACT_methodWithVoidParameter, data, reply, 0);
+            data.writeSerializable(files);
+
+            this.delegate.transact(SerializableArrayTest$$AidlServerImpl.TRANSACT_methodWithSerializableArrayParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

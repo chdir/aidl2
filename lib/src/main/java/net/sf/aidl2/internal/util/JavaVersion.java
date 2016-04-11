@@ -15,7 +15,7 @@ public enum JavaVersion {
         final String lastValidName = SourceVersion.latest().name();
 
         for (KnownJavaVersion knownVersion : KnownJavaVersion.values()) {
-            if (knownVersion.name().equals(lastValidName)) {
+            if (knownVersion.name.equals(lastValidName)) {
                 return knownVersion.value;
             }
         }
@@ -33,6 +33,10 @@ public enum JavaVersion {
 
     public static boolean atLeast(final JavaVersion requiredVersion) {
         return JAVA_LATEST_SUPPORTED.value >= requiredVersion.value;
+    }
+
+    public static boolean greaterThen(final JavaVersion requiredVersion) {
+        return JAVA_LATEST_SUPPORTED.value > requiredVersion.value;
     }
 
     @Override

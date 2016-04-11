@@ -95,14 +95,14 @@ class Logger implements Closeable {
         }
     }
 
-    public void log(net.sf.aidl2.internal.exceptions.FaultyAnnotation... issues) {
-        for (net.sf.aidl2.internal.exceptions.FaultyAnnotation issue : issues) {
+    public void log(FaultyAnnotation... issues) {
+        for (FaultyAnnotation issue : issues) {
             messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement(), issue.getAnnotation());
         }
     }
 
-    public void log(net.sf.aidl2.internal.exceptions.FaultyElement... issues) {
-        for (net.sf.aidl2.internal.exceptions.FaultyElement issue : issues) {
+    public void log(FaultyElement... issues) {
+        for (FaultyElement issue : issues) {
             messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement());
         }
     }

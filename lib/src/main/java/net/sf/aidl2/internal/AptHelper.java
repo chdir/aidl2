@@ -65,7 +65,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
     protected final TypeInvocation<ExecutableElement, ExecutableType> onTransact;
     protected final TypeInvocation<ExecutableElement, ExecutableType> asBinder;
 
-    public AptHelper(net.sf.aidl2.internal.AidlProcessor.Environment environment) {
+    public AptHelper(AidlProcessor.Environment environment) {
         this.environment = environment;
 
         this.elements = environment.getElementUtils();
@@ -546,8 +546,12 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return types.getDeclaredType((TypeElement) type.asElement(), argumentCaptures);
     }
 
-    public net.sf.aidl2.internal.AidlProcessor.Environment getBaseEnvironment() {
+    public AidlProcessor.Environment getBaseEnvironment() {
         return environment;
+    }
+
+    public ProcessingEnvironment getSystemEnvironment() {
+        return environment.getBaseEnvironment();
     }
 
     @Override

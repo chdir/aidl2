@@ -17,8 +17,10 @@ import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
@@ -120,6 +122,10 @@ public final class Reader extends AptHelper {
     }
 
     private Strategy getNullableStrategy(TypeMirror type, Strategy inner) {
+        if (inner == VOID_STRATEGY) {
+            return inner;
+        }
+
         // strip generics to prevent them from messing up creation code
         final TypeMirror capturedType = captureAll(type);
 
@@ -151,27 +157,10 @@ public final class Reader extends AptHelper {
             case ARRAY:
                 return getArrayStrategy((ArrayType) type);
             case DECLARED:
-                final CharSequence name = getQualifiedName((DeclaredType) type);
-                if (name != null) {
-                    switch (name.toString()) {
-                        case "java.lang.Boolean":
-                        case "java.lang.Byte":
-                        case "java.lang.Short":
-                        case "java.lang.Integer":
-                        case "java.lang.Long":
-                        case "java.lang.Character":
-                        case "java.lang.Float":
-                        case "java.lang.Double":
-                            // Handle Integer, Long, Character etc. before falling back to Serializable path
-                            final PrimitiveType primitiveVariety = types.unboxedType(type);
+                final Strategy wrapperTypeStrategy = getWrapperTypeStrategy((DeclaredType) type);
 
-                            if (primitiveVariety != null) {
-                                return Strategy.create($ -> readPrimitive(primitiveVariety), primitiveVariety);
-                            }
-                            break;
-                        case "java.lang.Void":
-                            return Strategy.createNullSafe($ -> literal("null"), types.getNullType());
-                    }
+                if (wrapperTypeStrategy != null) {
+                    return wrapperTypeStrategy;
                 }
             default:
                 final Strategy specialStrategy = getBuiltinStrategy(type);
@@ -206,9 +195,49 @@ public final class Reader extends AptHelper {
                     }
                 }
 
+                // check for varargs, that resolve to wrapper types...
+                final TypeMirror captured = types.erasure(type);
+
+                if (captured.getKind() == TypeKind.DECLARED) {
+                    final Strategy typeArgWrapperTypeStr = getWrapperTypeStrategy((DeclaredType) captured);
+
+                    if (typeArgWrapperTypeStr != null) {
+                        return typeArgWrapperTypeStr;
+                    }
+                }
+
                 if (types.isAssignable(type, serializable)) {
                     return getSerializableStrategy(type);
                 }
+        }
+
+        return null;
+    }
+
+    private final Strategy VOID_STRATEGY = Strategy.createNullSafe($ -> literal("null"), types.getNullType());
+
+    private Strategy getWrapperTypeStrategy(DeclaredType type) {
+        final CharSequence name = getQualifiedName(type);
+        if (name != null) {
+            switch (name.toString()) {
+                case "java.lang.Boolean":
+                case "java.lang.Byte":
+                case "java.lang.Short":
+                case "java.lang.Integer":
+                case "java.lang.Long":
+                case "java.lang.Character":
+                case "java.lang.Float":
+                case "java.lang.Double":
+                    // Handle Integer, Long, Character etc. before falling back to Serializable path
+                    final PrimitiveType primitiveVariety = types.unboxedType(type);
+
+                    if (primitiveVariety != null) {
+                        return Strategy.create($ -> readPrimitive(primitiveVariety), primitiveVariety);
+                    }
+                    break;
+                case "java.lang.Void":
+                    return VOID_STRATEGY;
+            }
         }
 
         return null;
@@ -289,11 +318,11 @@ public final class Reader extends AptHelper {
                 final Strategy specialStrategy = getStrategy(component);
 
                 if (specialStrategy != null) {
-                    return getSpecialArrayStrategy(specialStrategy, component);
-                }
-
-                if (types.isAssignable(component, serializable)) {
-                    return getSerializableStrategy(arrayType);
+                    if (specialStrategy == SERIALIZABLE_STRATEGY) {
+                        return getSerializableStrategy(arrayType);
+                    } else {
+                        return getSpecialArrayStrategy(specialStrategy, component);
+                    }
                 }
         }
 
@@ -356,10 +385,16 @@ public final class Reader extends AptHelper {
     }
 
     private @Nullable Strategy getParcelableStrategy(DeclaredType type) throws CodegenException {
+        final Set<Modifier> modifiers = type.asElement().getModifiers();
+
+        if (!modifiers.contains(Modifier.FINAL)) {
+            return null;
+        }
+
         final VariableElement creator = lookupStaticField(type, "CREATOR", theCreator);
 
         if (creator == null) {
-            return null;
+            throw new CodegenException("Parcelable type does not have CREATOR field");
         }
 
         final TypeMirror rawType = types.erasure(type);
@@ -367,13 +402,13 @@ public final class Reader extends AptHelper {
         final DeclaredType concreteCreatorType = findDeclaredParent(creator.asType(), theCreator);
 
         if (concreteCreatorType == null) {
-            return null;
+            throw new CodegenException("The type of Parcelable CREATOR can not be determined");
         }
 
         TypeMirror instantiated = type;
 
-        // make special exception for Creator<? super Parcelable>, otherwise let the lack trigger
-        // error to notify user of improper CREATOR declaration
+        // make special exception for Creator<? super Parcelable>, otherwise let the lack of cast
+        // trigger an error to notify user of improper CREATOR declaration
         final List<? extends TypeMirror> creatorOutput = concreteCreatorType.getTypeArguments();
         if (creatorOutput.isEmpty() || !types.isAssignable(creatorOutput.get(0), type)) {
             if (types.isAssignable(concreteCreatorType, genericCreator)) {
@@ -386,6 +421,10 @@ public final class Reader extends AptHelper {
 
     // Container, so nullable by design
     private Strategy getSpecialArrayStrategy(Strategy readingStrategy, TypeMirror actualComponent) {
+        if (readingStrategy == VOID_STRATEGY) {
+            return VOID_STRATEGY;
+        }
+
         // arrays don't support generics — the only thing, that matters, is a raw runtime type
         final TypeMirror resultType = types.erasure(actualComponent);
 

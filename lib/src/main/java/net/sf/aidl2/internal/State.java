@@ -15,7 +15,7 @@ class State implements Cloneable {
     TypeMirror type;
     CharSequence name;
 
-    public State(net.sf.aidl2.internal.AidlProcessor.Environment environment, NameAllocator allocator) {
+    public State(AidlProcessor.Environment environment, NameAllocator allocator) {
         this.environment = environment;
         this.allocator = allocator;
     }
@@ -56,11 +56,11 @@ class State implements Cloneable {
         }
     }
 
-    public net.sf.aidl2.internal.Reader buildReader(String name) {
-        return new net.sf.aidl2.internal.Reader(environment, this, name);
+    public Reader buildReader(String name) {
+        return new Reader(environment, this, name);
     }
 
-    public net.sf.aidl2.internal.Writer buildWriter(String name) {
-        return new net.sf.aidl2.internal.Writer(environment, this, name);
+    public Writer buildWriter(String name) {
+        return new Writer(environment, this, name);
     }
 }

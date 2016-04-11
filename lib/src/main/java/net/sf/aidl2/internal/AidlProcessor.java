@@ -3,6 +3,11 @@ package net.sf.aidl2.internal;
 import com.google.auto.service.AutoService;
 
 import net.sf.aidl2.OneWay;
+import net.sf.aidl2.internal.exceptions.AnnotationException;
+import net.sf.aidl2.internal.exceptions.ElementException;
+import net.sf.aidl2.internal.exceptions.FaultyAnnotation;
+import net.sf.aidl2.internal.exceptions.FaultyAnnotationValue;
+import net.sf.aidl2.internal.exceptions.FaultyElement;
 import net.sf.aidl2.internal.exceptions.QuietException;
 import net.sf.aidl2.internal.exceptions.ReadableException;
 import net.sf.aidl2.AIDL;
@@ -81,11 +86,11 @@ public final class AidlProcessor extends AbstractProcessor {
             } catch (IOException ioe) {
                 env.getLogger().log(new ReadableException("IO error during processing: " + Logger.messageFor(ioe), ioe));
             } catch (AnnotationValueException e) {
-                env.getLogger().log((net.sf.aidl2.internal.exceptions.FaultyAnnotationValue) e);
-            } catch (net.sf.aidl2.internal.exceptions.AnnotationException e) {
-                env.getLogger().log((net.sf.aidl2.internal.exceptions.FaultyAnnotation) e);
-            } catch (net.sf.aidl2.internal.exceptions.ElementException e) {
-                env.getLogger().log((net.sf.aidl2.internal.exceptions.FaultyElement) e);
+                env.getLogger().log((FaultyAnnotationValue) e);
+            } catch (AnnotationException e) {
+                env.getLogger().log((FaultyAnnotation) e);
+            } catch (ElementException e) {
+                env.getLogger().log((FaultyElement) e);
             } finally {
                 if (roundEnvironment.processingOver()) {
                     cleanup();
@@ -141,6 +146,10 @@ public final class AidlProcessor extends AbstractProcessor {
             }
 
             return logger;
+        }
+
+        public ProcessingEnvironment getBaseEnvironment() {
+            return environment;
         }
 
         public Config getConfig() {

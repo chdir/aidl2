@@ -16,7 +16,7 @@ import javax.lang.model.type.DeclaredType;
 public final class AidlValidator extends AptHelper {
     private final DeclaredType iInterface;
 
-    public AidlValidator(net.sf.aidl2.internal.AidlProcessor.Environment environment) {
+    public AidlValidator(AidlProcessor.Environment environment) {
         super(environment);
 
         iInterface = lookup("android.os.IInterface");

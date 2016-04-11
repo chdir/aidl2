@@ -49,4 +49,19 @@ public class VoidTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void voidVarargs() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("VoidTest3.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("VoidTest3$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("VoidTest3$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
 }

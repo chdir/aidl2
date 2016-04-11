@@ -41,5 +41,6 @@ dependencies {
     testCompile 'com.google.testing.compile:compile-testing:0.9'
     testCompile 'com.google.truth:truth:0.28'
     testCompile 'org.robolectric:android-all:6.0.0_r1-robolectric-0'
-    testCompile files(Jvm.current().getToolsJar())
+
+    provided files(Jvm.current().getToolsJar())
 }

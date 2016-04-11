@@ -57,4 +57,39 @@ public class ErrorTests {
                 .and()
                 .withErrorContaining("bailing out");
     }
+
+    @Test
+    public void failsWhenTypeNotSupported() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("UnknownTypeFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(2)
+                .withErrorContaining("Runnable")
+                .in(testSource)
+                .onLine(8)
+                .and()
+                .withErrorContaining("bailing out");
+    }
+
+    @Test
+    public void failsWhenReturnTypeDoesNotExist() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("MissingTypeFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorContaining("compilation errors");
+    }
+
+    @Test
+    public void failsWhenParameterTypeDoesNotExist() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("MissingTypeFailure2.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorContaining("compilation errors");
+    }
 }

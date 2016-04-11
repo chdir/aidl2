@@ -223,7 +223,7 @@ public final class SuperficialValidation extends AptHelper {
             new SimpleAnnotationValueVisitor6<Boolean, TypeMirror>() {
                 @Override
                 protected Boolean defaultAction(Object o, TypeMirror expectedType) {
-                    return true;
+                    return Util.isTypeOf(o.getClass(), expectedType);
                 }
 
                 @Override
@@ -244,7 +244,7 @@ public final class SuperficialValidation extends AptHelper {
 
                 @Override
                 public Boolean visitEnumConstant(VariableElement enumConstant, TypeMirror expectedType) {
-                    return true;
+                    return types.isSubtype(enumConstant.asType(), expectedType);
                 }
 
                 @Override

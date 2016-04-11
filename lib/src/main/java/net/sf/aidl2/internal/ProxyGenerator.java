@@ -12,6 +12,7 @@ import com.squareup.javapoet.TypeVariableName;
 
 import net.sf.aidl2.internal.codegen.TypedExpression;
 import net.sf.aidl2.internal.exceptions.CodegenException;
+import net.sf.aidl2.internal.exceptions.ElementException;
 import net.sf.aidl2.internal.util.Util;
 
 import java.io.IOException;
@@ -53,13 +54,13 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
         theParcel = lookup("android.os.Parcel");
     }
 
-    public void make(Filer filer) throws net.sf.aidl2.internal.exceptions.ElementException, IOException {
+    public void make(Filer filer) throws ElementException, IOException {
         for (AidlModel model : models) {
             writeModel(model, filer);
         }
     }
 
-    private void writeModel(net.sf.aidl2.internal.AidlModel model, Filer filer) throws IOException, net.sf.aidl2.internal.exceptions.ElementException {
+    private void writeModel(AidlModel model, Filer filer) throws IOException, ElementException {
         final String name = model.clientImplName.toString();
 
         final TypeName interfaceType = model.interfaceName;
@@ -167,7 +168,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                             try {
                                 readReturnValue(returnReading, paramMarshaller, reply);
                             } catch (CodegenException cde) {
-                                throw new net.sf.aidl2.internal.exceptions.ElementException(cde, method.element.element);
+                                throw new ElementException(cde, method.element.element);
                             }
                         }
                     }
@@ -176,7 +177,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                         try {
                             writeInParam(paramWriting, paramMarshaller, data);
                         } catch (CodegenException cge) {
-                            throw new net.sf.aidl2.internal.exceptions.ElementException(cge, Util.arg(method.element.element, param.name));
+                            throw new ElementException(cge, Util.arg(method.element.element, param.name));
                         }
                     }
                 }
@@ -215,13 +216,20 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 .writeTo(filer);
     }
 
-    private void writeInParam(CodeBlock.Builder code, net.sf.aidl2.internal.State writer, String parcel) throws CodegenException {
-        writer.buildWriter(parcel).write(code, writer.type);
+    private void writeInParam(CodeBlock.Builder code, State writer, String parcel) throws CodegenException {
+        final CodeBlock.Builder initializationCode = CodeBlock.builder();
 
-        code.add("\n");
+        writer.buildWriter(parcel).write(initializationCode, writer.type);
+
+        final CodeBlock initializationBlock = initializationCode.build();
+
+        if (!initializationBlock.isEmpty()) {
+            code.add(initializationBlock);
+            code.add("\n");
+        }
     }
 
-    private void readReturnValue(CodeBlock.Builder code, net.sf.aidl2.internal.State reader, String name) throws CodegenException {
+    private void readReturnValue(CodeBlock.Builder code, State reader, String name) throws CodegenException {
         final TypedExpression assignmentCode = reader.buildReader(name)
                 .read(code, reader.type);
 

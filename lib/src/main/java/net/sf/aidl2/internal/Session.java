@@ -30,7 +30,7 @@ import static javax.tools.Diagnostic.Kind.NOTE;
 final class Session extends AptHelper implements Closeable {
     private Set<Name> pendingElements = new HashSet<>();
 
-    public Session(net.sf.aidl2.internal.AidlProcessor.Environment environment) {
+    public Session(AidlProcessor.Environment environment) {
         super(environment);
     }
 
@@ -94,7 +94,7 @@ final class Session extends AptHelper implements Closeable {
                 pendingElements.remove(qualified);
             } else if (roundEnvironment.processingOver()) {
                 throw new ElementException(
-                        "Looks like there are compiler errors in the @AIDL-annotated interface, please fix that.", erroneousElement);
+                        "Looks like there are compilation errors in the @AIDL-annotated interface, please fix that.", erroneousElement);
             } else {
                 pendingElements.add(qualified);
 

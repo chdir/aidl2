@@ -16,10 +16,10 @@ import java.lang.Void;
  * @deprecated — do not use this class directly in your Java code (see above)
  */
 @Deprecated
-public final class VoidTest2$$AidlClientImpl implements VoidTest2 {
+public final class VoidTest3$$AidlClientImpl implements VoidTest3 {
     private final IBinder delegate;
 
-    public VoidTest2$$AidlClientImpl(IBinder delegate) {
+    public VoidTest3$$AidlClientImpl(IBinder delegate) {
         this.delegate = delegate;
     }
 
@@ -29,13 +29,13 @@ public final class VoidTest2$$AidlClientImpl implements VoidTest2 {
     }
 
     @Override
-    public void methodWithVoidParameter(Void ignored) throws RemoteException {
+    public void methodWithBiCharArrayReturn(Void... voidVararg) throws RemoteException {
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
         try {
-            data.writeInterfaceToken(VoidTest2$$AidlServerImpl.DESCRIPTOR);
+            data.writeInterfaceToken(VoidTest3$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(VoidTest2$$AidlServerImpl.TRANSACT_methodWithVoidParameter, data, reply, 0);
+            this.delegate.transact(VoidTest3$$AidlServerImpl.TRANSACT_methodWithBiCharArrayReturn, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

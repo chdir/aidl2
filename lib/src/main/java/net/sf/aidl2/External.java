@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  * clients, not controlled by yourself.
  */
 @Documented
-@Target({ElementType.PARAMETER, ElementType.METHOD})
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.SOURCE)
 public @interface External {
 }

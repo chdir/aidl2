@@ -7,11 +7,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates, that annotated AIDL2 abstrMethod parameter has to be serialized and passed back to caller
+ * Indicates, that annotated AIDL2 method parameter has to be serialized and passed back to caller
  * before returning from IPC call. Applicable to reference types only.
  *
  * Note, that this annotation achieves same behavior as "inout" qualifier of
- * Android Interface Definition Language. In AIDL2 all abstrMethod parameters are ALWAYS serialized
+ * Android Interface Definition Language. In AIDL2 all method parameters are ALWAYS serialized
  * when passed to IPC. Pure "out" parameters are not supported.
  */
 @Documented

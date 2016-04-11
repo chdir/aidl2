@@ -92,4 +92,50 @@ public class ArrayTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void charBiArrayReturnValue() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("CharArrayTest.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("CharArrayTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("CharArrayTest$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
+    public void booleanTriArrayParameter() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("BooleanArrayTest.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("BooleanArrayTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("BooleanArrayTest$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutError()
+                .withWarningCount(2)
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
+    public void serializableArrayParameter() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("SerializableArrayTest.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("SerializableArrayTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("SerializableArrayTest$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
 }

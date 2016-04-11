@@ -77,7 +77,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         baseAllocator.newName("returnValue");
     }
 
-    public void make(Filer filer) throws net.sf.aidl2.internal.exceptions.ElementException, IOException {
+    public void make(Filer filer) throws ElementException, IOException {
         for (AidlModel model : models) {
             writeModel(model, filer);
         }
@@ -180,7 +180,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                         try {
                             methodArgs.add(readInParameter(paramsRead, paramMarshaller, parcel.name));
                         } catch (CodegenException cde) {
-                            throw new ElementException(cde, net.sf.aidl2.internal.util.Util.arg(method.element.element, param.name));
+                            throw new ElementException(cde, Util.arg(method.element.element, param.name));
                         }
                     }
 

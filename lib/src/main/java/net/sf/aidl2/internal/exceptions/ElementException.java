@@ -6,7 +6,7 @@ import javax.tools.Diagnostic;
 /**
  * An exception, associated with specific source code element.
  */
-public final class ElementException extends net.sf.aidl2.internal.exceptions.ReadableException implements FaultyElement {
+public final class ElementException extends ReadableException implements FaultyElement {
     private Element element;
 
     public ElementException(String message, Element element) {
@@ -15,7 +15,7 @@ public final class ElementException extends net.sf.aidl2.internal.exceptions.Rea
         this.element = element;
     }
 
-    public ElementException(net.sf.aidl2.internal.exceptions.ReadableException e, Element element) {
+    public ElementException(ReadableException e, Element element) {
         super(e);
 
         this.element = element;

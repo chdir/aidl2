@@ -62,4 +62,14 @@ public class MiscTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void compileComplex() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AllTogether.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutError();
+    }
 }

@@ -122,28 +122,10 @@ public final class Writer extends AptHelper {
             case ARRAY:
                 return getArrayStrategy((ArrayType) type);
             case DECLARED:
-                final CharSequence name = Util.getQualifiedName((DeclaredType) type);
-                if (name != null) {
-                    switch (name.toString()) {
-                        case "java.lang.Boolean":
-                        case "java.lang.Byte":
-                        case "java.lang.Short":
-                        case "java.lang.Integer":
-                        case "java.lang.Long":
-                        case "java.lang.Character":
-                        case "java.lang.Float":
-                        case "java.lang.Double":
-                            // Handle Integer, Long, Character etc. before falling back to Serializable path
-                            final PrimitiveType primitiveVariety = types.unboxedType(type);
+                final Strategy wrapperTypeStrategy = getWrapperTypeStrategy((DeclaredType) type);
 
-                            if (primitiveVariety != null) {
-                                return Strategy.create((b, n) -> writePrimitive(b, n, primitiveVariety), type);
-                            }
-                            break;
-                        case "java.lang.Void":
-                            return Strategy.createNullSafe(($, $$) -> {
-                            }, theObject);
-                    }
+                if (wrapperTypeStrategy != null) {
+                    return wrapperTypeStrategy;
                 }
             default:
                 final Strategy specialStrategy = getBuiltinStrategy(type);
@@ -166,6 +148,17 @@ public final class Writer extends AptHelper {
                     return getExternalizableStrategy(type);
                 }
 
+                // check for varargs, that resolve to wrapper types...
+                final TypeMirror captured = types.erasure(type);
+
+                if (captured.getKind() == TypeKind.DECLARED) {
+                    final Strategy typeArgWrapperTypeStr = getWrapperTypeStrategy((DeclaredType) captured);
+
+                    if (typeArgWrapperTypeStr != null) {
+                        return typeArgWrapperTypeStr;
+                    }
+                }
+
                 if (types.isAssignable(type, serializable)) {
                     return getSerializableStrategy();
                 }
@@ -174,8 +167,44 @@ public final class Writer extends AptHelper {
         return null;
     }
 
+    private final Strategy VOID_STRATEGY = Strategy.createNullSafe(($, $$) -> {}, theObject);
+
+    private Strategy getWrapperTypeStrategy(DeclaredType type) {
+        final CharSequence name = Util.getQualifiedName(type);
+        if (name != null) {
+            switch (name.toString()) {
+                case "java.lang.Boolean":
+                case "java.lang.Byte":
+                case "java.lang.Short":
+                case "java.lang.Integer":
+                case "java.lang.Long":
+                case "java.lang.Character":
+                case "java.lang.Float":
+                case "java.lang.Double":
+                    // Handle Integer, Long, Character etc. before falling back to Serializable path
+                    final PrimitiveType primitiveVariety = types.unboxedType(type);
+
+                    if (primitiveVariety != null) {
+                        return Strategy.create((b, n) -> writePrimitive(b, n, primitiveVariety), type);
+                    }
+                    break;
+                case "java.lang.Void":
+                    return VOID_STRATEGY;
+            }
+        }
+
+        return null;
+    }
+
+    // Always nullable by design
+    private Strategy SERIALIZABLE_STRATEGY;
+
     private Strategy getSerializableStrategy() {
-        return Strategy.createNullSafe(this::writeSerializable, serializable);
+        if (SERIALIZABLE_STRATEGY == null) {
+            SERIALIZABLE_STRATEGY = Strategy.createNullSafe(Writer.this::writeSerializable, serializable);
+        }
+
+        return SERIALIZABLE_STRATEGY;
     }
 
     private Strategy getExternalizableStrategy(TypeMirror type) {
@@ -278,6 +307,10 @@ public final class Writer extends AptHelper {
     }
 
     private Strategy getNullableStrategy(Strategy strategy) {
+        if (strategy == VOID_STRATEGY) {
+            return strategy;
+        }
+
         return Strategy.createNullSafe((block, name) -> {
             block.beginControlFlow("if ($L == null)", name);
             block.addStatement("$N.writeByte((byte) -1)", parcelName);
@@ -312,11 +345,11 @@ public final class Writer extends AptHelper {
                 final Strategy specialStrategy = getStrategy(component);
 
                 if (specialStrategy != null) {
-                    return getSpecialArrayStrategy(specialStrategy, component);
-                }
-
-                if (types.isAssignable(component, serializable)) {
-                    return getSerializableStrategy();
+                    if (specialStrategy == SERIALIZABLE_STRATEGY) {
+                        return getSerializableStrategy();
+                    } else {
+                        return getSpecialArrayStrategy(specialStrategy, component);
+                    }
                 }
         }
 
@@ -333,6 +366,10 @@ public final class Writer extends AptHelper {
     }
 
     private Strategy getSpecialArrayStrategy(Strategy delegate, TypeMirror component) {
+        if (delegate == VOID_STRATEGY) {
+            return VOID_STRATEGY;
+        }
+
         // arrays don't support generics — the only thing, that matters, is a raw runtime type
         final TypeMirror resultType = types.erasure(component);
 

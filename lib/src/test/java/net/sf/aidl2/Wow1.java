@@ -1,4 +1,4 @@
-package net.sf.fakenames.aidl2;
+package net.sf.aidl2;
 
 import android.os.Parcel;
 import android.os.Parcelable;
