@@ -30,7 +30,9 @@ during validation step and results in runtime exception during compilation with 
 
 Example:
 
-    @AIDL(SomeNonExistingType.DESCRIPTOR)
+```java
+@AIDL(SomeNonExistingType.DESCRIPTOR)
+```
 
 This is due to limitations of Javac, which converts erroneous "types" to strings
 before passing them to AnnotationValueVisitor.
@@ -38,8 +40,10 @@ before passing them to AnnotationValueVisitor.
 * Generated implementations of interfaces, containing intersection types, may fail to
 compile with source versions before Java 8.
 
-    // this will fail to compile with JDK 7
-    <T extends Parcelable & Runnable> void methodWithIntersectionArgument(T param);
+```java
+// this will fail to compile with JDK 7
+<T extends Parcelable & Runnable> void methodWithIntersectionArgument(T param);
+```
 
 This is because implementing those requires support for either advanced type inference
 or casts to intersection, both of which weren't available until Java 8.
