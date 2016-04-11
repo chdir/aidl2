@@ -1,9 +1,7 @@
 package net.sf.aidl2.internal;
 
 import net.sf.aidl2.AIDL;
-import net.sf.aidl2.External;
 import net.sf.aidl2.OneWay;
-import net.sf.aidl2.Out;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.exceptions.AnnotationException;
 import net.sf.aidl2.internal.exceptions.ElementException;
@@ -51,44 +49,6 @@ final class AidlMethodValidator extends AptHelper {
 
         if (thrown.size() != 1 || !types.isSameType(remoteException, thrown.get(0))) {
             throw new ElementException("@AIDL methods must declare single thrown exception — android.os.RemoteException", method.element);
-        }
-
-        final List<? extends VariableElement> params = method.element.getParameters();
-        final List<? extends TypeMirror> paramTypes = method.type.getParameterTypes();
-
-        for (int i = 0; i < params.size(); i++) {
-            final VariableElement param = params.get(i);
-            final TypeMirror paramType = paramTypes.get(i);
-
-            final Iterable<? extends AnnotationMirror> mirrors = param.getAnnotationMirrors();
-
-            final AnnotationMirror externalAnnotation = Util.getAnnotation(mirrors, External.class);
-
-            if (externalAnnotation != null) {
-                if (paramType.getKind().isPrimitive()) {
-                    throw new AnnotationException("@External-annotated parameter must be of reference type", param, externalAnnotation);
-                }
-
-                if (!annotation.insecure()) {
-                    throw new AnnotationException("@External-annotated parameter found, but 'insecure' parameter in @AIDL is not set to true", param, externalAnnotation);
-                }
-            }
-
-            final AnnotationMirror outAnnotation = Util.getAnnotation(mirrors, Out.class);
-
-            if (outAnnotation != null) {
-                if (asyncAnnotation != null) {
-                    throw new AnnotationException("@OneWay methods can not have @Out parameters", param, outAnnotation);
-                }
-
-                if (paramType.getKind().isPrimitive()) {
-                    throw new AnnotationException("@Out-annotated parameter must be of reference type, not " + paramType, param, outAnnotation);
-                }
-
-                if (isKnownImmutable(paramType)) {
-                    throw new AnnotationException("@Out-annotated parameter is meant to be mutable, not " + paramType, param, outAnnotation);
-                }
-            }
         }
     }
 

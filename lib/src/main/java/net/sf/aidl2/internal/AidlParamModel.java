@@ -1,6 +1,5 @@
 package net.sf.aidl2.internal;
 
-import net.sf.aidl2.Out;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.util.Util;
 
@@ -62,7 +61,7 @@ public final class AidlParamModel {
                 // method parameter
                 isInParameter = true;
 
-                hasInOut = paramInstance.element.getAnnotation(Out.class) != null;
+                hasInOut = false;
 
                 name = paramInstance.element.getSimpleName();
 
