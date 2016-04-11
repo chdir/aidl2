@@ -83,13 +83,7 @@ public final class InterfaceLoader<X extends IInterface> {
             }
         }
 
-        if (!aidlInterface.isInterface()) {
-            throw new IllegalArgumentException("Received " + aidlInterface + ", but an interface was expected!");
-        }
-
-        if ((Modifier.PUBLIC & aidlInterface.getModifiers()) == 0) {
-            throw new IllegalArgumentException(aidlInterface.getCanonicalName() + " does not look like @AIDL interface: not public");
-        }
+        makeMotions(aidlInterface);
 
         throw new IllegalStateException("Failed to find generated implementation of " + aidlInterface);
     }
@@ -147,18 +141,37 @@ public final class InterfaceLoader<X extends IInterface> {
             }
         }
 
+        makeMotions(aidlInterface);
+
         throw new IllegalStateException("Failed to find generated implementation of " + aidlInterface);
+    }
+
+    private static void makeMotions(Class<?> datClass) {
+        if (!datClass.isInterface()) {
+            throw new IllegalArgumentException("Received " + datClass + ", but an interface was expected!");
+        }
+
+        if ((Modifier.PUBLIC & datClass.getModifiers()) == 0) {
+            throw new IllegalArgumentException(datClass.getCanonicalName() + " does not look like @AIDL interface: not public");
+        }
+
+        if (datClass.getAnnotation(AIDL.class) == null) {
+            throw new IllegalArgumentException("Failed to find generated implementation of " + datClass +
+                    ", are you sure, that it is annotated with @AIDL?");
+        }
     }
 
     @SuppressWarnings("unchecked")
     private static Linker getLinker() {
         try {
             Class<? extends Linker> linkerClass = (Class<? extends Linker>)
-                    Class.forName("net.sf.fakenames.gprocessor.LinkerImpl");
+                    Class.forName("net.sf.aidl2.LinkerImpl");
 
             return linkerClass.newInstance();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (useVerboseLogging) {
+                Log.i(TAG, "Failed to load linker", e);
+            }
 
             return null;
         }
@@ -228,18 +241,18 @@ public final class InterfaceLoader<X extends IInterface> {
         }
 
         public static IInterface loadClientViaFallback(Class<? extends IInterface> clazz, IBinder client) {
-            final String name = clazz.getClass().getName();
+            final String name = clazz.getName();
 
-            final String implType = "$$AidlServerImpl";
-
-            Constructor constructor = classes.get(name);
+            final String implType = "$$AidlClientImpl";
 
             String serverImplClassName = name + implType;
+
+            Constructor constructor = classes.get(serverImplClassName);
 
             try {
                 if (constructor == null) {
                     try {
-                        constructor = getConstructor(serverImplClassName, client.getClass());
+                        constructor = getConstructor(serverImplClassName, IBinder.class);
                     } catch (ClassNotFoundException ignored) {
                         final String renamedImpl = getClassImplName(clazz, implType);
 
@@ -251,7 +264,7 @@ public final class InterfaceLoader<X extends IInterface> {
 
                         serverImplClassName = renamedImpl;
 
-                        constructor = getConstructor(serverImplClassName, client.getClass());
+                        constructor = getConstructor(serverImplClassName, IBinder.class);
                     }
 
                     classes.put(serverImplClassName, constructor);
@@ -279,14 +292,14 @@ public final class InterfaceLoader<X extends IInterface> {
 
             final String implType = "$$AidlServerImpl";
 
-            Constructor constructor = classes.get(name);
-
             String serverImplClassName = name + implType;
+
+            Constructor constructor = classes.get(serverImplClassName);
 
             try {
                 if (constructor == null) {
                     try {
-                        constructor = getConstructor(serverImplClassName, server.getClass());
+                        constructor = getConstructor(serverImplClassName, clazz);
                     } catch (ClassNotFoundException ignored) {
                         final String renamedImpl = getClassImplName(clazz, implType);
 
@@ -298,7 +311,7 @@ public final class InterfaceLoader<X extends IInterface> {
 
                         serverImplClassName = renamedImpl;
 
-                        constructor = getConstructor(serverImplClassName, server.getClass());
+                        constructor = getConstructor(serverImplClassName, clazz);
                     }
 
                     classes.put(serverImplClassName, constructor);

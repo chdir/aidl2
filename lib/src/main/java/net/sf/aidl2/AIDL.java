@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
  * interface code.
  */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface AIDL {
     /**
      * String descriptor of interface, advertised to client processes.
