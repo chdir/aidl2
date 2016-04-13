@@ -1,0 +1,81 @@
+def packageDesc = 'AIDL tool replacement, implemented as Java annotation processor'
+def packageSite = 'https://github.com/chdir/aidl2'
+def mainLic = 'GPL-2.0+CE'
+def libVcs = 'https://github.com/chdir/aidl2'
+def aidl2ver = '0.0.1'
+
+def props = new Properties()
+
+def propFile
+def propName = project.properties.deploymentConfig
+if(propName && (propFile = file(propName)).exists()) {
+    new FileInputStream(propFile).withStream { InputStream is ->
+        props.load(is)
+    }
+}
+
+if (props) {
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
+
+    def pomXmlContents = new XmlParser().parseText '''
+        <dependencies>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>13.0</version>
+                <type>jar</type>
+                <scope>compile</scope>
+                <optional>false</optional>
+            </dependency>
+        </dependencies>
+    '''
+
+    publishing {
+        publications {
+            AIDL2(MavenPublication) {
+                artifact tasks.applyProguard.outJarFiles[0]
+                artifact tasks.sourcesJar
+                artifact tasks.javadocJar
+
+                groupId 'net.sf.aidl2'
+                artifactId 'compiler'
+                version aidl2ver
+
+                pom.withXml { provider ->
+                    provider.asNode().append(pomXmlContents)
+                }
+            }
+        }
+    }
+
+    bintray {
+        user = props['bintrayUser']
+        key = props['bintrayKey']
+        publications = ['AIDL2']
+
+        pkg {
+            repo = 'maven'
+            name = 'aidl2'
+            desc = packageDesc
+            websiteUrl = packageSite
+            issueTrackerUrl = 'https://github.com/Alexander--/aidl2/issues'
+            vcsUrl = libVcs
+            licenses = [mainLic]
+            labels = ['android', 'aidl', 'apt']
+            publicDownloadNumbers = true
+
+            githubRepo = 'chdir/aidl2'
+            githubReleaseNotesFile = 'README.md'
+
+            version {
+                name = aidl2ver
+                vcsTag = "v${name}"
+            }
+
+            publish = true
+        }
+    }
+
+    tasks.bintrayUpload.dependsOn tasks.applyProguard, tasks.sourcesJar, tasks.javadocJar
+}

@@ -1,9 +1,6 @@
 package net.sf.aidl2.internal.util;
 
 import com.squareup.javapoet.CodeBlock;
-import com.sun.source.util.Trees;
-
-import net.sf.aidl2.internal.AidlProcessor;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,8 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.annotation.Annotation;
 import java.util.Set;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementVisitor;

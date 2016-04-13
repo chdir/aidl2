@@ -23,7 +23,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class InterfaceLoader<X extends IInterface> {
+public final class InterfaceLoader {
     private static final String PROP_VERBOSE = "net.sf.aidl2.verbose";
 
     private static final boolean useVerboseLogging;

@@ -1,3 +1,12 @@
+apply plugin: 'idea'
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
 task wrapper (type:Wrapper) {
     gradleVersion = '2.12'
     distributionUrl = 'https://services.gradle.org/distributions/gradle-2.12-all.zip'
@@ -15,6 +24,9 @@ buildscript {
         classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
         classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.5.0-x'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+        classpath 'net.sf.proguard:proguard-gradle:5.2.1'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     }
 
     configurations.classpath {
@@ -24,6 +36,9 @@ buildscript {
             force 'org.apache.httpcomponents:httpclient:4.2.1'
             force 'org.apache.httpcomponents:httpcore:4.1'
             force 'commons-lang:commons-lang:2.4'
+            force 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.2'
+            force 'org.codehaus.plexus:plexus-utils:2.0.6'
+            force 'org.apache.ant:ant:1.9.4'
         }
     }
 }
@@ -40,6 +55,8 @@ allprojects {
             force 'com.google.guava:guava:18.0'
             force 'junit:junit:4.12'
         }
+
+        resolutionStrategy.cacheChangingModulesFor 15, 'seconds'
     }
 }
 

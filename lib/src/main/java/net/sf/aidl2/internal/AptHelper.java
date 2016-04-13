@@ -47,7 +47,7 @@ import static net.sf.aidl2.internal.util.Util.isTypeOf;
 import static net.sf.aidl2.internal.util.Util.literal;
 
 public abstract class AptHelper implements ProcessingEnvironment {
-    private final net.sf.aidl2.internal.AidlProcessor.Environment environment;
+    private final AidlProcessor.Environment environment;
 
     protected final Elements elements;
     protected final Types types;

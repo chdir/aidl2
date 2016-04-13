@@ -4,6 +4,7 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'propdeps'
 apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'com.github.kt3k.coveralls'
 
 sourceCompatibility = 1.8
@@ -14,11 +15,48 @@ task copyTestResources(type: Copy) {
     into sourceSets.test.output.classesDir
 }
 
+import com.github.jengelman.gradle.plugins.shadow.transformers.*
+import proguard.gradle.*
+
+shadowJar {
+    transform(DontIncludeResourceTransformer) { it.resource = 'META-INF/maven/com.squareup/javapoet/pom.xml' }
+    transform(DontIncludeResourceTransformer) { it.resource = 'META-INF/maven/com.squareup/javapoet/pom.properties' }
+
+    dependencies {
+        include(dependency('com.squareup:javapoet:1.5.1'))
+    }
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from project.sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from project.javadoc.destinationDir
+}
+
+task applyProguard(type: ProGuardTask) {
+    dependsOn shadowJar
+
+    injars shadowJar.outputs
+
+    outjars file("$buildDir/libs/optimized.jar")
+
+    libraryjars "${System.properties.'java.home'}/lib/rt.jar"
+    libraryjars configurations.compileOnly
+
+    configuration file('proguard-config.pro')
+
+    printmapping file("$buildDir/mapping.txt")
+}
+
 processResources.dependsOn copyTestResources
 
 retrolambda {
     exclude 'Test', 'TestReport', 'test', 'testCompile'
-    javaVersion JavaVersion.VERSION_1_7
+    javaVersion JavaVersion.VERSION_1_6
     jdk System.getenv("JAVA_HOME")
     oldJdk System.getenv("JAVA7_HOME")
 }
@@ -28,6 +66,10 @@ jacocoTestReport {
         xml.enabled = true // coveralls plugin depends on xml format report
         html.enabled = true
     }
+}
+
+if (project.hasProperty('deploymentConfig')) {
+    apply from: file("$rootProject.projectDir/deployment.gradle")
 }
 
 dependencies {
@@ -41,6 +83,5 @@ dependencies {
     testCompile 'com.google.testing.compile:compile-testing:0.9'
     testCompile 'com.google.truth:truth:0.28'
     testCompile 'org.robolectric:android-all:6.0.0_r1-robolectric-0'
-
-    provided files(Jvm.current().getToolsJar())
+    testCompile files(Jvm.current().getToolsJar())
 }
