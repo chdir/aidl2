@@ -27,12 +27,28 @@ shadowJar {
     }
 }
 
+tasks.javadoc.configure {
+    exclude '**/internal/**'
+
+    options.noTimestamp
+    options.windowTitle 'AIDL2 API documentation'
+    options.linksOffline('http://d.android.com/reference/', "$System.env.ANDROID_HOME/docs/reference")
+    options.header '' +
+            '<script>' +
+            'for(var i in document.links) {' +
+            ' var l = document.links[i]; if (l.href.indexOf("http") === 0) l.target = "_blank";' +
+            '}' +
+            '</script>'
+}
+
 task sourcesJar(type: Jar) {
     classifier = 'sources'
     from project.sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar) {
+    dependsOn tasks.javadoc
+
     classifier = 'javadoc'
     from project.javadoc.destinationDir
 }
@@ -50,6 +66,15 @@ task applyProguard(type: ProGuardTask) {
     configuration file('proguard-config.pro')
 
     printmapping file("$buildDir/mapping.txt")
+}
+
+task proguardMapping(type: Zip) {
+    dependsOn tasks.applyProguard
+
+    classifier = 'proguard-mapping'
+
+    from file("$buildDir/mapping.txt")
+    into file("$buildDir/proguard-mapping.zip")
 }
 
 processResources.dependsOn copyTestResources

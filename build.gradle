@@ -1,12 +1,3 @@
-apply plugin: 'idea'
-
-idea {
-    module {
-        downloadJavadoc = true
-        downloadSources = true
-    }
-}
-
 task wrapper (type:Wrapper) {
     gradleVersion = '2.12'
     distributionUrl = 'https://services.gradle.org/distributions/gradle-2.12-all.zip'
@@ -44,6 +35,15 @@ buildscript {
 }
 
 allprojects {
+    apply plugin: 'idea'
+
+    idea {
+        module {
+            downloadJavadoc = true
+            downloadSources = true
+        }
+    }
+
     repositories {
         jcenter()
     }
@@ -57,6 +57,12 @@ allprojects {
         }
 
         resolutionStrategy.cacheChangingModulesFor 15, 'seconds'
+    }
+}
+
+subprojects {
+    ext {
+        uploadInitiated = gradle.startParameter.taskNames.contains('bintrayUpload')
     }
 }
 

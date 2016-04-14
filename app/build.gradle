@@ -1,15 +1,8 @@
+evaluationDependsOn(':lib')
+
 apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.neenbedankt.android-apt'
-
-apply plugin: 'idea'
-
-idea {
-    module {
-        downloadJavadoc = true
-        downloadSources = true
-    }
-}
 
 repositories {
     maven {
@@ -51,7 +44,11 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
 
-    compile ('net.sf.aidl2:compiler:0.0.1') { changing = true }
+    if (uploadInitiated) {
+        compile project(':lib')
+    } else {
+        compile ('net.sf.aidl2:compiler:0.+') { changing = true }
+    }
 
     androidTestCompile 'junit:junit:4.12'
     androidTestCompile 'com.android.support.test:runner:0.4.1'

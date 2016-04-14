@@ -37,6 +37,7 @@ if (props) {
                 artifact tasks.applyProguard.outJarFiles[0]
                 artifact tasks.sourcesJar
                 artifact tasks.javadocJar
+                artifact tasks.proguardMapping
 
                 groupId 'net.sf.aidl2'
                 artifactId 'compiler'
@@ -77,5 +78,5 @@ if (props) {
         }
     }
 
-    tasks.bintrayUpload.dependsOn tasks.applyProguard, tasks.sourcesJar, tasks.javadocJar
+    tasks.bintrayUpload.dependsOn tasks.proguardMapping, tasks.sourcesJar, tasks.javadocJar
 }
