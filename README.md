@@ -15,7 +15,7 @@
 This is a replacement for Google's AIDL tool. Unlike it's predecessor, which parses extremely
 limited DSL, aidl2 uses Java annotation processing framework to generate Java implementation,
 based on Java interface code. This allows you to extend from other interfaces,
-annotate your interface classes, use Java generics and other features of Java language.
+annotate your interface classes, use generics and other features of Java language.
 
 ### Current status
 
@@ -28,7 +28,13 @@ avoid any unpleasant surprises.
 1. Add the library to project:
 
     ```groovy
-    compile 'net.sf.aidl2:compiler:0.0.1'
+    repositories {
+        maven { url 'http://dl.bintray.com/alexanderr/maven' }
+    }
+
+    dependencies {
+        compile 'net.sf.aidl2:compiler:0.0.1'
+    }
     ```
 
 2. Write an interface with required methods. It must extend `android.os.IInterface`. Furthermore,
@@ -47,37 +53,34 @@ Annotate the interface with `@AIDL`.
     Service code:
 
     ```java
-public class ExampleService extends Service {
-  public IBinder onBind(Intent intent) {
-    RemoteApi serviceApi = new RemoteApi() {
-      public String sayHello() {
-        return "Hello world";
-      }
+    public IBinder onBind(Intent intent) {
+      RemoteApi serviceApi = new RemoteApi() {
+        public String sayHello() {
+          return "Hello world";
+        }
 
-      public IBinder asBinder() {
-        return InterfaceLoader.asBinder(this, RemoteApi.class);
-      }
-    };
-
-    return serviceApi.asBinder();
-  }
-}
+        public IBinder asBinder() {
+          return InterfaceLoader.asBinder(this, RemoteApi.class);
+        }
+      };
+      return serviceApi.asBinder();
+    }
     ```
 
     Caller code:
 
     ```java
-  public void onServiceConnected(ComponentName name, IBinder serviceBinder) {
-    try {
-      final RemoteApi serviceApi = InterfaceLoader.asInterface(serviceBinder, RemoteApi.class);
+    public void onServiceConnected(ComponentName name, IBinder serviceBinder) {
+      try {
+        final RemoteApi serviceApi = InterfaceLoader.asInterface(serviceBinder, RemoteApi.class);
     
-      final String callResult = serviceApi.sayHello();
+        final String callResult = serviceApi.sayHello();
 
-      Toast.makeText(this, "Received message \"" + callResult + '"', Toast.LENGTH_SHORT).show();
-    } catch (RemoteException e) {
-      Toast.makeText(this, "Failed to receive a string " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Received message \"" + callResult + '"', Toast.LENGTH_SHORT).show();
+      } catch (RemoteException e) {
+        Toast.makeText(this, "Failed to receive a string " + e.getMessage(), Toast.LENGTH_SHORT).show();
+      }
     }
-  }
     ```
 
 ### Defining an interface
@@ -134,8 +137,8 @@ during validation step and results in runtime exception during compilation with 
     Example:
 
     ```java
-// will fail to compile with ugly message, asking you to send a bug report :(
-@AIDL(SomeNonExistingType.DESCRIPTOR)
+    // will fail to compile with ugly message, asking you to send a bug report :(
+    @AIDL(SomeNonExistingType.DESCRIPTOR)
     ```
 
     This is due to limitations of Javac, which converts erroneous "types" to strings
@@ -146,8 +149,8 @@ during validation step and results in runtime exception during compilation with 
 compile with source versions before Java 8.
 
     ```java
-// this will fail to compile with JDK 7
-<T extends Parcelable & Runnable> void methodWithIntersectionArgument(T param);
+    // this will fail to compile with JDK 7
+    <T extends Parcelable & Runnable> void methodWithIntersectionArgument(T param);
     ```
 
     This is because implementing those requires support for either advanced type inference
