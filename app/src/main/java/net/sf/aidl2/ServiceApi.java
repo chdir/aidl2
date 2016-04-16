@@ -3,7 +3,8 @@ package net.sf.aidl2;
 import android.os.IInterface;
 import android.os.RemoteException;
 
-@AIDL
+import net.sf.fakenames.aidl2.demo.Responder;
+
 public interface ServiceApi extends IInterface {
-    String test() throws RemoteException;
+    String sayHello(Responder responder) throws RemoteException;
 }

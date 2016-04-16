@@ -4,13 +4,15 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteException;
 
+import net.sf.fakenames.aidl2.demo.Responder;
+
 public class Service extends android.app.Service {
     @Override
     public IBinder onBind(Intent intent) {
-        final ServiceApi serviceApi = new ServiceApi() {
+        final ServiceApi remoteApi = new ServiceApi() {
             @Override
-            public String test() throws RemoteException {
-                return "Hello world";
+            public String sayHello(Responder responder) throws RemoteException {
+                return responder.sayHello();
             }
 
             @Override
@@ -19,6 +21,6 @@ public class Service extends android.app.Service {
             }
         };
 
-        return serviceApi.asBinder();
+        return remoteApi.asBinder();
     }
 }

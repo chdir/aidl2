@@ -1,11 +1,10 @@
 package net.sf.aidl2.internal;
 
-import android.os.Parcel;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
 
+import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
 import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.util.Util;
@@ -15,6 +14,7 @@ import java.io.Externalizable;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -99,11 +99,8 @@ public final class Writer extends AptHelper {
         final String errorMsg =
                 "Unsupported type: " + type + ".\n" +
                 "Must be one of:\n" +
-                "\t• android.os.Parcelable\n" +
-                "\t• java.io.Serializable\n" +
-                "\t• java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel\n" +
-                "\t• One of primitive type wrappers.";
+                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
 
         throw new CodegenException(errorMsg);
     }
@@ -137,6 +134,15 @@ public final class Writer extends AptHelper {
                 // Always prefer Parcelable reading strategy
                 if (types.isAssignable(type, parcelable)) {
                     final Strategy strategy = getParcelableStrategy(type);
+
+                    if (strategy != null) {
+                        return strategy;
+                    }
+                }
+
+                // Or IInterface reading strategy
+                if (types.isAssignable(type, theIInterface)) {
+                    final Strategy strategy = getIInterfaceStrategy(type);
 
                     if (strategy != null) {
                         return strategy;
@@ -205,6 +211,34 @@ public final class Writer extends AptHelper {
         }
 
         return SERIALIZABLE_STRATEGY;
+    }
+
+    private Strategy getIInterfaceStrategy(TypeMirror type) throws CodegenException {
+        final DeclaredType declared = findDeclaredParent(type, theIInterface);
+
+        if (declared == null || types.isSameType(declared, theIInterface)) {
+            throw new CodegenException("Can not pass unknown android.os.IInterface subtype over IPC. Try to use more specific type.");
+        }
+
+        final TypeElement el = (TypeElement) declared.asElement();
+
+        if (Util.getAnnotation(el, AIDL.class) == null) {
+            final TypeElement stubClass = lookupStaticClass(declared, "Stub", theBinder);
+
+            if (stubClass != null) {
+                if (lookupStaticMethod((DeclaredType) stubClass.asType(), "asInterface", theIInterface, "IBinder") == null) {
+                    // the type can not be deserialized as IInterface, so serializing it as such
+                    // isn't possible either
+                    return null;
+                }
+            }
+        }
+
+        final WritingStrategy strategy = Util.isNullable(type, nullable)
+                ? (b, obj) -> b.addStatement("$N.writeStrongBinder($N == null ? null : $N.asBinder())", parcelName, obj, obj)
+                : (b, obj) -> b.addStatement("$N.writeStrongBinder($N.asBinder())", parcelName, obj);
+
+        return Strategy.createNullSafe(strategy, type);
     }
 
     private Strategy getExternalizableStrategy(TypeMirror type) {
@@ -356,11 +390,8 @@ public final class Writer extends AptHelper {
         final String arrayErrorMsg =
                 "Unsupported array component type: " + component + ".\n" +
                 "Must be one of:\n" +
-                "\t• android.os.Parcelable\n" +
-                "\t• java.io.Serializable\n" +
-                "\t• java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel\n" +
-                "\t• One of primitive type wrappers.";
+                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
 
         throw new CodegenException(arrayErrorMsg);
     }
@@ -432,7 +463,7 @@ public final class Writer extends AptHelper {
                 builder.addStatement("$N.writeLong($L)", parcelName, name);
                 break;
             case DOUBLE:
-                builder.addStatement("$L.writeDouble($:)", parcelName, name);
+                builder.addStatement("$L.writeDouble($L)", parcelName, name);
                 break;
             case FLOAT:
                 builder.addStatement("$L.writeFloat($L)", parcelName, name);

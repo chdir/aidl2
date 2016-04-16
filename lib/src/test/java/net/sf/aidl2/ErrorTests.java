@@ -74,6 +74,21 @@ public class ErrorTests {
     }
 
     @Test
+    public void failsWhenEncounteringIInterface() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("BaseIInterfaceFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(2)
+                .withErrorContaining("use more specific type")
+                .in(testSource)
+                .onLine(8)
+                .and()
+                .withErrorContaining("bailing out");
+    }
+
+    @Test
     public void failsWhenReturnTypeDoesNotExist() {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("MissingTypeFailure.java"));
 

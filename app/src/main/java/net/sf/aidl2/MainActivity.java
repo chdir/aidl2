@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.widget.Toast;
 
+import net.sf.fakenames.aidl2.demo.Responder;
 import net.sf.fakenames.gprocessor.BuildConfig;
 import net.sf.fakenames.gprocessor.R;
 
@@ -40,9 +41,15 @@ public class MainActivity extends Activity implements ServiceConnection {
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         try {
-            final ServiceApi serviceApi = InterfaceLoader.asInterface(service, ServiceApi.class);
+            final ServiceApi remoteApi = InterfaceLoader.asInterface(service, ServiceApi.class);
 
-            final String callResult = serviceApi.test();
+            final String callResult = remoteApi.sayHello(new Responder.Stub() {
+
+                @Override
+                public String sayHello() throws RemoteException {
+                    return "Hello world";
+                }
+            });
 
             Toast.makeText(this, "Received message \"" + callResult + '"', Toast.LENGTH_SHORT).show();
         } catch (RemoteException e) {

@@ -8,13 +8,15 @@ import android.support.test.rule.ServiceTestRule;
 import android.support.test.runner.AndroidJUnit4;
 
 import net.sf.aidl2.InterfaceLoader;
-import net.sf.aidl2.Service;
 import net.sf.aidl2.ServiceApi;
+import net.sf.aidl2.Service;
+import net.sf.fakenames.aidl2.demo.Responder;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -32,6 +34,13 @@ public class ServiceTest {
 
         ServiceApi api = InterfaceLoader.asInterface(binder, ServiceApi.class);
 
-        assertThat(api.test()).isEqualTo("Hello world");
+        final String whatever = UUID.randomUUID().toString();
+
+        assertThat(api.sayHello(new Responder.Stub() {
+            @Override
+            public String sayHello() throws RemoteException {
+                return whatever;
+            }
+        })).isEqualTo(whatever);
     }
 }

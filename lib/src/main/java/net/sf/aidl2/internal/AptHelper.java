@@ -1,5 +1,8 @@
 package net.sf.aidl2.internal;
 
+import android.os.Binder;
+import android.os.IInterface;
+
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -29,6 +32,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -81,8 +85,8 @@ public abstract class AptHelper implements ProcessingEnvironment {
         theIInterface = lookup("android.os.IInterface");
         theCreator = lookup("android.os.Parcelable.Creator");
 
-        onTransact = lookupMethod(theBinder, "onTransact", int.class, "Parcel", "Parcel", int.class);
-        asBinder = lookupMethod(theIInterface, "asBinder");
+        onTransact = lookupMethod(theBinder, "onTransact", boolean.class, int.class, "Parcel", "Parcel", int.class);
+        asBinder = lookupMethod(theIInterface, "asBinder", "IBinder");
     }
 
     public boolean isSubsignature(TypeInvocation<?, ExecutableType> m1, TypeInvocation<?, ExecutableType> m2) {
@@ -115,7 +119,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         switch (t2Kind) {
             case DECLARED:
             case ARRAY:
-                if (t.getKind() == t2.getKind() && isRaw(t) && isRaw(t2)) {
+                if (t.getKind() == t2.getKind() && (isRaw(t) || isRaw(t2))) {
                     return emitCasts(t, t2, input);
                 }
             default:
@@ -247,20 +251,49 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return null;
     }
 
+    public TypeElement lookupStaticClass(DeclaredType type, CharSequence className, TypeMirror classType) {
+        for (TypeElement clazz : ElementFilter.typesIn(type.asElement().getEnclosedElements())) {
+            final Collection<? extends Modifier> modifiers = clazz.getModifiers();
+
+            if (clazz.getNestingKind() != NestingKind.MEMBER
+                    || !modifiers.contains(Modifier.STATIC)
+                    || !modifiers.contains(Modifier.PUBLIC)
+                    || !clazz.getKind().isClass()) {
+                continue;
+            }
+
+            if (!clazz.getSimpleName().contentEquals(className)) {
+                continue;
+            }
+
+            if (!types.isAssignable(clazz.asType(), classType)) {
+                continue;
+            }
+
+            return clazz;
+        }
+
+        return null;
+    }
+
     public boolean isEffectivelyObject(TypeMirror type) {
         return types.isSameType(types.erasure(type), theObject);
     }
 
-    public TypeInvocation<ExecutableElement, ExecutableType> lookupMethod(DeclaredType type, CharSequence methodName, Object... argv) {
+    public TypeInvocation<ExecutableElement, ExecutableType> lookupMethod(DeclaredType type, CharSequence methodName, Object ret, Object... argv) {
         methodSearch:
         for (ExecutableElement method : ElementFilter.methodsIn(type.asElement().getEnclosedElements())) {
             final Collection<? extends Modifier> modifiers = method.getModifiers();
 
-            if (modifiers.contains(Modifier.PRIVATE) || modifiers.contains(Modifier.STATIC)) {
+            if (!method.getSimpleName().contentEquals(methodName)
+                    || modifiers.contains(Modifier.PRIVATE)
+                    || modifiers.contains(Modifier.STATIC)) {
                 continue;
             }
 
-            if (!method.getSimpleName().contentEquals(methodName)) {
+            final ExecutableType methodType = (ExecutableType) types.asMemberOf(type, method);
+
+            if (!Util.matches(ret, methodType.getReturnType())) {
                 continue;
             }
 
@@ -269,8 +302,6 @@ public abstract class AptHelper implements ProcessingEnvironment {
                     continue;
                 }
             } else {
-                final ExecutableType methodType = (ExecutableType) types.asMemberOf(type, method);
-
                 final List<? extends TypeMirror> args = methodType.getParameterTypes();
 
                 if (args.size() != argv.length) {
@@ -278,26 +309,57 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 }
 
                 for (int i = 0; i < argv.length; i++) {
-                    if (argv[i] instanceof Class<?>) {
-                        if (!Util.isTypeOf((Class) argv[i], args.get(i))) {
-                            continue methodSearch;
-                        }
-                    } else {
-                        final TypeElement named = (TypeElement) ((DeclaredType) args.get(i)).asElement();
-
-                        if (!argv[i].toString().contentEquals(named.getSimpleName())) {
-                            continue methodSearch;
-                        }
+                    if (!Util.matches(argv[i], args.get(i))) {
+                        continue methodSearch;
                     }
                 }
             }
-
-            final ExecutableType methodType = (ExecutableType) types.asMemberOf(type, method);
 
             return new TypeInvocation<>(method, methodType);
         }
 
         throw new IllegalArgumentException("Failed to find instance method \"" + methodName + "\" in " + type);
+    }
+
+    public ExecutableElement lookupStaticMethod(DeclaredType type, CharSequence methodName, TypeMirror ret, Object... argv) {
+        methodSearch:
+        for (ExecutableElement method : ElementFilter.methodsIn(type.asElement().getEnclosedElements())) {
+            final Collection<? extends Modifier> modifiers = method.getModifiers();
+
+            if (!method.getSimpleName().contentEquals(methodName)
+                    || !modifiers.contains(Modifier.PUBLIC)
+                    || !modifiers.contains(Modifier.STATIC)) {
+                continue;
+            }
+
+            final ExecutableType methodType = (ExecutableType) types.asMemberOf(type, method);
+
+            if (types.isAssignable(ret, methodType.getReturnType())) {
+                continue;
+            }
+
+            if (argv.length == 0) {
+                if (!method.getParameters().isEmpty()) {
+                    continue;
+                }
+            } else {
+                final List<? extends TypeMirror> args = methodType.getParameterTypes();
+
+                if (args.size() != argv.length) {
+                    continue;
+                }
+
+                for (int i = 0; i < argv.length; i++) {
+                    if (!Util.matches(argv[i], args.get(i))) {
+                        continue methodSearch;
+                    }
+                }
+            }
+
+            return method;
+        }
+
+        return null;
     }
 
     public boolean isChecked(TypeMirror throwable) {

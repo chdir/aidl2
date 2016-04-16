@@ -1,3 +1,5 @@
+import org.gradle.internal.jvm.Jvm
+
 evaluationDependsOn(':lib')
 
 apply plugin: 'com.android.application'
@@ -40,6 +42,30 @@ apt {
     }
 }
 
+android.applicationVariants.all { variant ->
+    def buildTypeName = variant.buildType.name.capitalize()
+    def productFlavorNames = variant.productFlavors.collect { it.name.capitalize() } ?: ['']
+    def productFlavorName = productFlavorNames.join('')
+    def variationName = "${productFlavorName}${buildTypeName}"
+
+    tasks.withType(Test) { task ->
+        if (task.name.contains(variationName)) {
+            def variationPath = variant.buildType.name;
+
+            if (productFlavorName) {
+                variationPath = "${productFlavorName.uncapitalize()}/$variationPath"
+            }
+
+            def copyTestResourcesTask = project.tasks.create("copyTest${variationName}Resources", Copy) {
+                it.from("${projectDir}/src/test/resources")
+                it.into("${buildDir}/intermediates/classes/test/${variationPath}")
+            }
+
+            task.dependsOn(copyTestResourcesTask)
+        }
+    }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
@@ -47,11 +73,17 @@ dependencies {
     if (uploadInitiated) {
         compile project(':lib')
     } else {
-        compile ('net.sf.aidl2:compiler:0.+') { changing = true }
+        debugCompile project(':lib')
+        releaseCompile ('net.sf.aidl2:compiler:0.+') { changing = true }
     }
 
     androidTestCompile 'junit:junit:4.12'
     androidTestCompile 'com.android.support.test:runner:0.4.1'
     androidTestCompile 'com.android.support.test:rules:0.4.1'
     androidTestCompile 'com.google.truth:truth:0.28'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'com.google.testing.compile:compile-testing:0.9'
+    testCompile 'com.google.truth:truth:0.28'
+    testCompile files(Jvm.current().getToolsJar())
 }

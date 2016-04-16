@@ -191,6 +191,18 @@ public class Util {
         }
     };
 
+    private static final ElementVisitor<Name, Void> ELEMENT_SIMPLE_NAME_REFINER = new SimpleElementVisitor6<Name, Void>() {
+        @Override
+        public Name visitType(TypeElement typeElement, Void unused) {
+            return typeElement.getSimpleName();
+        }
+
+        @Override
+        protected Name defaultAction(Element element, Void aVoid) {
+            return null;
+        }
+    };
+
     public static @Nullable Name getQualifiedName(DeclaredType declared) {
         Element element = declared.asElement();
 
@@ -199,6 +211,16 @@ public class Util {
         }
 
         return ELEMENT_NAME_REFINER.visit(element);
+    }
+
+    public static @Nullable Name getSimpleName(DeclaredType declared) {
+        Element element = declared.asElement();
+
+        if (element == null) {
+            return null;
+        }
+
+        return ELEMENT_SIMPLE_NAME_REFINER.visit(element);
     }
 
     public static VariableElement arg(ExecutableElement method, CharSequence name) {
@@ -223,5 +245,25 @@ public class Util {
         return !modifiers.contains(Modifier.STATIC)
                 && modifiers.contains(Modifier.ABSTRACT)
                 && modifiers.contains(Modifier.PUBLIC);
+    }
+
+    public static boolean matches(Object type, TypeMirror mirror) {
+        if (type instanceof Class<?>) {
+            if (Util.isTypeOf((Class) type, mirror)) {
+                return true;
+            }
+        } else {
+            if (mirror.getKind() == TypeKind.DECLARED) {
+                final Name typeName = getSimpleName((DeclaredType) mirror);
+
+                if (typeName != null) {
+                    if (type.toString().contentEquals(typeName)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

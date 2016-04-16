@@ -4,7 +4,9 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
 
+import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
+import net.sf.aidl2.InterfaceLoader;
 import net.sf.aidl2.internal.codegen.Blocks;
 import net.sf.aidl2.internal.codegen.TypedExpression;
 import net.sf.aidl2.internal.exceptions.CodegenException;
@@ -112,11 +114,8 @@ public final class Reader extends AptHelper {
         final String errorMsg =
                 "Unsupported type: " + type + ".\n" +
                 "Must be one of:\n" +
-                "\t• android.os.Parcelable\n" +
-                "\t• java.io.Serializable\n" +
-                "\t• java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel\n" +
-                "\t• One of primitive type wrappers.";
+                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
 
         throw new CodegenException(errorMsg);
     }
@@ -184,6 +183,15 @@ public final class Reader extends AptHelper {
                     return getUnknownParcelableStrategy();
                 }
 
+                // Or IInterface reading strategy
+                if (types.isAssignable(type, theIInterface)) {
+                    final Strategy strategy = getIInterfaceStrategy(type);
+
+                    if (strategy != null) {
+                        return strategy;
+                    }
+                }
+
                 // Or at least Externalizable strategy
                 if (types.isAssignable(type, externalizable)) {
                     final DeclaredType concreteParent = findConcreteParent(type, externalizable);
@@ -195,7 +203,7 @@ public final class Reader extends AptHelper {
                     }
                 }
 
-                // check for varargs, that resolve to wrapper types...
+                // check for parameters, that resolve to wrapper types...
                 final TypeMirror captured = types.erasure(type);
 
                 if (captured.getKind() == TypeKind.DECLARED) {
@@ -241,6 +249,65 @@ public final class Reader extends AptHelper {
         }
 
         return null;
+    }
+
+    private Strategy getIInterfaceStrategy(TypeMirror type) throws CodegenException {
+        final DeclaredType declared = findDeclaredParent(type, theIInterface);
+
+        if (declared == null || types.isSameType(declared, theIInterface)) {
+            throw new CodegenException("Can not pass unknown android.os.IInterface subtype over IPC. Try to use more specific type.");
+        }
+
+        final TypeElement el = (TypeElement) declared.asElement();
+
+        if (Util.getAnnotation(el, AIDL.class) != null) {
+            return getInterfaceLoaderStrategy(declared, Util.isNullable(type, nullable));
+        }
+
+        final TypeElement stubClass = lookupStaticClass(declared, "Stub", theBinder);
+
+        if (stubClass != null) {
+            if (lookupStaticMethod((DeclaredType) stubClass.asType(), "asInterface", theIInterface, "IBinder") != null) {
+                return getOldIInterfaceStrategy(stubClass);
+            }
+        }
+
+        return null;
+    }
+
+    private Strategy getOldIInterfaceStrategy(TypeElement stubClass) {
+        return Strategy.createNullSafe(block -> literal("$T.asInterface($N.readStrongBinder())", stubClass, parcelName),
+                stubClass.getEnclosingElement().asType());
+    }
+
+    private Strategy getInterfaceLoaderStrategy(DeclaredType type, boolean nullable) {
+        final TypeMirror raw = types.erasure(type);
+
+        final ReadingStrategy strategy;
+        if (nullable) {
+            final TypeMirror captured = captureAll(type);
+
+            strategy = init -> {
+                final String tmpBinder = allocator.newName(selfName + "Binder");
+
+                init.addStatement("final $T $N = $N.readStrongBinder()", iBinder, tmpBinder, parcelName);
+
+                final String tmpInterface = allocator.newName("i" +
+                        Character.toUpperCase(selfName.charAt(0)) + selfName.subSequence(1, selfName.length()));
+
+                init.addStatement("final $T $N = $N == null ? null : $T.asInterface($N, $T.class)",
+                        captured, tmpInterface, tmpBinder, ClassName.get(InterfaceLoader.class), tmpBinder, raw);
+
+                return literal(tmpInterface);
+            };
+
+            return Strategy.createNullSafe(strategy, captured);
+        } else {
+            strategy = block -> literal("$T.asInterface($N.readStrongBinder(), $T.class)",
+                    ClassName.get(InterfaceLoader.class), parcelName, raw);
+
+            return Strategy.createNullSafe(strategy, type);
+        }
     }
 
     private Strategy getExternalizableStrategy(DeclaredType type) {
@@ -327,12 +394,10 @@ public final class Reader extends AptHelper {
         }
 
         final String arrayErrorMsg =
-                "Unsupported array component type: " + component + ". " +
-                "Must be one of: " +
-                "android.os.Parcelable, " +
-                "java.io.Serializable, " +
-                "one of classes, natively supported by Parcel, " +
-                "or one of primitive types";
+                "Unsupported array component type: " + component + ".\n" +
+                "Must be one of:\n" +
+                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
 
         throw new CodegenException(arrayErrorMsg);
     }
