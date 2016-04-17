@@ -19,8 +19,8 @@ cache:
 
 before_script:
   - if [ "$TRAVIS_BRANCH" == "staging" ]; then
-      spawn android update sdk --no-ui --all --filter sys-img-armeabi-v7a-android-18
-      echo no | android create avd --force --name test --target android-18 --abi armeabi-v7a
+      spawn android update sdk --no-ui --all --filter sys-img-armeabi-v7a-android-18;
+      echo no | android create avd --force --name test --target android-18 --abi armeabi-v7a;
       emulator -avd test -no-skin -no-audio -no-window &
     fi
 

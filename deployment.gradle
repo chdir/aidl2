@@ -2,7 +2,7 @@ def packageDesc = 'AIDL tool replacement, implemented as Java annotation process
 def packageSite = 'https://github.com/chdir/aidl2'
 def mainLic = 'GPL-2.0+CE'
 def libVcs = 'https://github.com/chdir/aidl2'
-def aidl2ver = '0.1.0a'
+def aidl2ver = '0.1.0b'
 
 def props = new Properties()
 
