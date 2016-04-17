@@ -9,7 +9,6 @@ android:
     - android-23
     - extra
     - addon
-    - sys-img-armeabi-v7a-android-18
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -19,17 +18,22 @@ cache:
     - $HOME/.gradle/wrapper/
 
 before_script:
-  - echo no | android create avd --force --name test --target android-18 --abi armeabi-v7a
-  - emulator -avd test -no-skin -no-audio -no-window &
+  - if [ "$TRAVIS_BRANCH" == "staging" ]; then
+      spawn android update sdk --no-ui --all --filter sys-img-armeabi-v7a-android-18
+      echo no | android create avd --force --name test --target android-18 --abi armeabi-v7a
+      emulator -avd test -no-skin -no-audio -no-window &
+    fi
 
 script:
   - jdk_switcher use openjdk7
   - jdk_switcher use oraclejdk8
   - ./gradlew assemble test -PdisablePreDex
-  - android-wait-for-emulator
-  - adb devices
-  - adb shell input keyevent 82 &
-  - ./gradlew connectedCheck  -PdisablePreDex
+  - if [ "$TRAVIS_BRANCH" == "staging" ]; then
+      android-wait-for-emulator;
+      adb devices;
+      adb shell input keyevent 82 &
+      ./gradlew connectedCheck  -PdisablePreDex;
+    fi
 
 after_success:
   - ./gradlew jacocoTestReport coveralls
