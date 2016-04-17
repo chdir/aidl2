@@ -44,6 +44,19 @@ public class ErrorTests {
     }
 
     @Test
+    public void failsWhenAidlIsNotInterface() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AIDLNonInterfaceFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(2)
+                .withErrorContaining("interfaces only")
+                .and()
+                .withErrorContaining("bailing out");
+    }
+
+    @Test
     public void failsWhenRawobjectNoUnchecked() {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("RawObjectNotSuppressedFailure.java"));
 
