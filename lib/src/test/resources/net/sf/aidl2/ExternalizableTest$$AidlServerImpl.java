@@ -49,8 +49,7 @@ public final class ExternalizableTest$$AidlServerImpl extends Binder {
                         externalizableExternalizable = new SomeExternalizable();
                         externalizableExternalizable.readExternal(objectInputStream);
                     } catch (Exception e) {
-                        data.writeException(new IllegalStateException("Failed to deserialize net.sf.aidl2.SomeExternalizable", e));
-                        return true;
+                        throw new IllegalStateException("Failed to deserialize net.sf.aidl2.SomeExternalizable", e);
                     } finally {
                         AidlUtil.shut(objectInputStream);
                     }

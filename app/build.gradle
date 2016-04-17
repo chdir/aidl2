@@ -70,11 +70,10 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
 
-    if (uploadInitiated) {
+    if (project.properties.uploadInitiated || !project.hasProperty('theTimeHasCometh')) {
         compile project(':lib')
     } else {
-        debugCompile project(':lib')
-        releaseCompile ('net.sf.aidl2:compiler:0.+') { changing = true }
+        compile ('net.sf.aidl2:compiler:0.+') { changing = true }
     }
 
     androidTestCompile 'junit:junit:4.12'

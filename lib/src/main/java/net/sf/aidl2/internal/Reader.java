@@ -1,5 +1,7 @@
 package net.sf.aidl2.internal;
 
+import android.os.Parcel;
+
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
@@ -194,9 +196,7 @@ public final class Reader extends AptHelper {
 
                 // Or at least Externalizable strategy
                 if (types.isAssignable(type, externalizable)) {
-                    final DeclaredType concreteParent = findConcreteParent(type, externalizable);
-
-                    final Strategy strategy = getExternalizableStrategy(concreteParent);
+                    final Strategy strategy = getExternalizableStrategy(type);
 
                     if (strategy != null) {
                         return strategy;
@@ -310,7 +310,12 @@ public final class Reader extends AptHelper {
         }
     }
 
-    private Strategy getExternalizableStrategy(DeclaredType type) {
+    private Strategy getExternalizableStrategy(TypeMirror t) {
+        final DeclaredType type = findConcreteParent(t, externalizable);
+        if (type == null) {
+            return getUnknownExternalizableStrategy(t);
+        }
+
         final TypeElement clazz = (TypeElement) type.asElement();
 
         for (ExecutableElement constructor : ElementFilter.constructorsIn(clazz.getEnclosedElements())) {
@@ -335,9 +340,7 @@ public final class Reader extends AptHelper {
 
                     block.nextControlFlow("catch (Exception $N)", err);
 
-                    block.addStatement("$N.writeException(new IllegalStateException($S, $N))",
-                            parcelName, "Failed to deserialize " + type, err);
-                    block.addStatement("return true");
+                    block.addStatement("throw new IllegalStateException($S, $N)", "Failed to deserialize " + type, err);
 
                     block.nextControlFlow("finally");
                     block.addStatement("$T.shut($N)", AidlUtil.class, ois);
@@ -551,6 +554,24 @@ public final class Reader extends AptHelper {
         }
 
         return SERIALIZABLE_STRATEGY;
+    }
+
+    private Strategy EXTERNALIZABLE_STRATEGY;
+
+    // Always nullable by design
+    private Strategy getUnknownExternalizableStrategy(TypeMirror type) {
+        if (EXTERNALIZABLE_STRATEGY == null) {
+            EXTERNALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
+                private final CodeBlock block = literal("$T.readSafeExternalizable($N)", ClassName.get(AidlUtil.class), parcelName);
+
+                @Override
+                public CodeBlock read(CodeBlock.Builder unused) {
+                    return block;
+                }
+            }, type);
+        }
+
+        return EXTERNALIZABLE_STRATEGY;
     }
 
     // Always nullable by design

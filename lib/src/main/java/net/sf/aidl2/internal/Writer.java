@@ -203,6 +203,17 @@ public final class Writer extends AptHelper {
     }
 
     // Always nullable by design
+    private Strategy EXTERNALIZABLE_STRATEGY;
+
+    private Strategy getUnknownExternalizableStrategy(TypeMirror t) {
+        if (EXTERNALIZABLE_STRATEGY == null) {
+            EXTERNALIZABLE_STRATEGY = Strategy.createNullSafe(Writer.this::writeExternalizable, externalizable);
+        }
+
+        return EXTERNALIZABLE_STRATEGY;
+    }
+
+    // Always nullable by design
     private Strategy SERIALIZABLE_STRATEGY;
 
     private Strategy getSerializableStrategy() {
@@ -241,7 +252,12 @@ public final class Writer extends AptHelper {
         return Strategy.createNullSafe(strategy, type);
     }
 
-    private Strategy getExternalizableStrategy(TypeMirror type) {
+    private Strategy getExternalizableStrategy(TypeMirror t) {
+        final DeclaredType type = findConcreteParent(t, externalizable);
+        if (type == null) {
+            return getUnknownExternalizableStrategy(t);
+        }
+
         return Strategy.create((block, name) -> {
             final String oos = allocator.newName("objectOutputStream");
             final String baos = allocator.newName("arrayOutputStream");
@@ -475,6 +491,10 @@ public final class Writer extends AptHelper {
                 builder.addStatement("$L.writeInt($L)", parcelName, name);
                 break;
         }
+    }
+
+    private void writeExternalizable(CodeBlock.Builder block, Object name) {
+        block.addStatement("$T.writeExternalizable($N, $L)", ClassName.get(AidlUtil.class), parcelName, name);
     }
 
     private void writeSerializable(CodeBlock.Builder block, Object name) {
