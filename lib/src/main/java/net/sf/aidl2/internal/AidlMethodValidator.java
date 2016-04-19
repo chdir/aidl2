@@ -47,14 +47,17 @@ final class AidlMethodValidator extends AptHelper {
 
         final List<? extends TypeMirror> thrown = method.type.getThrownTypes();
 
-        if (thrown.size() != 1 || !types.isSameType(remoteException, thrown.get(0))) {
-            throw new ElementException("@AIDL methods must declare single thrown exception — android.os.RemoteException", method.element);
-        }
-    }
+        for (TypeMirror throwable : thrown) {
+            if (isChecked(throwable)) {
+                if (types.isSameType(remoteException, throwable)) {
+                    return;
+                }
 
-    private boolean isKnownImmutable(TypeMirror paramType) {
-        return types.unboxedType(paramType) != null
-                || types.isSubtype(paramType, stringClass)
-                || types.isSubtype(paramType, enumType);
+                throw new ElementException("@AIDL method declares unsupported Exception type: " + throwable
+                         + ". Only android.os.RemoteException and non-checked Throwable subtypes are allowed.", method.element);
+            }
+        }
+
+        throw new ElementException("@AIDL methods must declare android.os.RemoteException", method.element);
     }
 }

@@ -64,6 +64,21 @@ public class MiscTests {
     }
 
     @Test
+    public void empty() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("Empty.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("Empty$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("Empty$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
     public void compileComplex() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AllTogether.java"));
 
@@ -71,5 +86,14 @@ public class MiscTests {
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutError();
+    }
+
+    @Test
+    public void nothing() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forSourceLines("Nothing.java");
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings();
     }
 }

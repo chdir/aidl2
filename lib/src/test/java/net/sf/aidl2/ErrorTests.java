@@ -29,6 +29,21 @@ public class ErrorTests {
     }
 
     @Test
+    public void failsWhenAidlMethodDeclaresUnsupportedException() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("UnsupportedExceptionFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(2)
+                .withErrorContaining("IOException")
+                .in(testSource)
+                .onLine(9)
+                .and()
+                .withErrorContaining("bailing out");
+    }
+
+    @Test
     public void failsWhenAidlDoesNotImplementIInterface() {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("NotIInterfaceFailure.java"));
 
