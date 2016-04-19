@@ -12,10 +12,38 @@
 
 ### AIDL2
 
-This is a replacement for Google's AIDL tool. Unlike it's predecessor, which parses extremely
-limited DSL, aidl2 uses Java annotation processing framework to generate Java implementation,
-based on Java interface code. This allows you to extend from other interfaces,
-annotate your interface classes, use generics and other features of Java language.
+This is a replacement for Google's AIDL tool. Instead of parsing highly limited DSL aidl2
+uses Java annotation processing framework to generate Java implementation, based on Java interface code.
+This allows you to extend from other interfaces, annotate your interface classes, use generics
+and other features of Java language.
+
+### Differences with Android aidl tool
+
+Unlike Google's aidl tool, which is implemented as standalone C++ executable, executed
+by Android build system, AIDL2 is an annotation processor, that is — a plugin for
+Java compiler. It has better error reporting and can be used with plain Java projects
+as long as Android framework classes are on classpath. It works automatically by adding
+jar file to project dependencies.
+
+Better integration with compiler gives aidl2 better understanding of involved types, which
+makes it possible to support more types without resorting to runtime reflection. In addition
+to types, supported by aidl tool, aidl2 allows use of
+
+* IInterface subtypes (both from AIDL2 and aidl tool)
+* Externalizable/Serializable types
+* Multi-dimensional arrays
+* Void — ignored during (de)serialization, always evaluates to null
+
+All generated code is human-readable and well-formatted. Annotating a method with `@SuppresWarnings`
+will carry the annotation over to generated classes (please create an issue, if you'd like for
+other annotations to be transplanted the same way).
+
+Following features of aidl tool are not (yet) supported:
+
+* Pure `out` and `inout` parameters
+
+Aidl2 won't work with Google's Jack and other compilers incompatible with post-Java 5 language.
+It is not tested for compatibility with Eclipse Java compiler, but any feedback is welcome.
 
 ### Current status
 
@@ -87,7 +115,7 @@ Annotate the interface with `@AIDL`.
 
 You can specify any number of parameters, including varargs. Parameters and
 return values must be of types, supported by `android.os.Parcel`. You can use tricky
-generic if you want, but make sure, that those can be interpreted as one of supported
+generic types if you want, but make sure, that those can be interpreted as one of supported
 types:
 
 ```java
@@ -102,7 +130,7 @@ will fail to compile with error, because Parcel does not support Runnables.
 ```java
 @AIDL
 public interface RemoteApi extends IInterface {
-    <T extends Runnable & Parcelable> void exampleMethod(T runnableParameter) throws RemoteException;
+    <T extends Runnable & Parcelable> T exampleMethod() throws RemoteException;
 }
 ```
 
@@ -112,19 +140,11 @@ between processes.
 ```java
 @AIDL
 public interface RemoteApi extends IInterface {
-    void exampleMethod(Date dateParameter) throws RemoteException;
+    void exampleMethod(Date[] dateArray) throws RemoteException;
 }
 ```
 
-will compile and use `readSerializable` and `writeSerializable` to passs "dateParameter" between processes.
-
-### Differences with Android aidl tool
-
-In additiona to types, supported by aidl tool AIDL2 allows use of
-
-* Multi-dimensional arrays
-* Void — ignored during (de)serialization always evaluate to null
-* Externalizable/Serializable
+will compile and use `readSerializable` and `writeSerializable` to passs "dateArray" between processes.
 
 ### Limitations/Known Issues
 

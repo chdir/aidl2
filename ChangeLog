@@ -1,0 +1,5 @@
+## Version 0.1.1
+
+* Added support for non-concrete Externalizable types
+* Added IInterface support
+* Allow unchecked Throwables to be declared on interface methods
