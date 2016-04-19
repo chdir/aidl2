@@ -102,12 +102,12 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
 
         if (!model.methods.isEmpty()) {
             final State aidlWriter = new State(getBaseEnvironment(), baseAllocator)
-                    .allowUnchecked((model.suppressed & Util.SUPPRESS_UNCHECKED) != 0);
+                    .allowUnchecked(isSuppressed(model.suppressed, Util.SUPPRESS_UNCHECKED));
 
             for (AidlMethodModel method : model.methods) {
                 final State methodWriter = aidlWriter.clone();
 
-                if ((method.warningsSuppressedOnMethod & Util.SUPPRESS_UNCHECKED) != 0) {
+                if (isSuppressed(method.warningsSuppressedOnMethod, Util.SUPPRESS_UNCHECKED)) {
                     methodWriter.allowUnchecked(true);
                 }
 
@@ -159,7 +159,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                     final State paramMarshaller = methodWriter.clone()
                             .setParameter(param);
 
-                    if ((param.suppressed & Util.SUPPRESS_UNCHECKED) != 0) {
+                    if (isSuppressed(param.suppressed, Util.SUPPRESS_UNCHECKED)) {
                         paramMarshaller.allowUnchecked(true);
                     }
 

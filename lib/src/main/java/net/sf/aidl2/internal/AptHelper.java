@@ -94,6 +94,11 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 && types.isSubsignature(m1.type, m2.type);
     }
 
+    protected boolean isSuppressed(int suppressed, int suppressedMask) {
+        return environment.getConfig().isNoWarn()
+                || ((suppressed & suppressedMask) != 0);
+    }
+
     public CodeBlock emitCasts(TypeMirror t, TypeMirror t2, CodeBlock input) {
         if (types.isAssignable(t, t2)) {
             // no need for casting

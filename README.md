@@ -53,34 +53,34 @@ avoid any unpleasant surprises.
 
 ### Usage
 
-1. Add the library to project:
+Add the library to project:
 
-    ```groovy
-    repositories {
-        maven { url 'http://dl.bintray.com/alexanderr/maven' }
-    }
+```groovy
+repositories {
+  maven { url 'http://dl.bintray.com/alexanderr/maven' }
+}
 
-    dependencies {
-        compile 'net.sf.aidl2:compiler:0.0.1'
-    }
-    ```
+dependencies {
+  compile 'net.sf.aidl2:compiler:0.0.1'
+}
+```
 
-2. Write an interface with required methods. It must extend `android.os.IInterface`. Furthermore,
+Write an interface with required methods. It must extend `android.os.IInterface`. Furthermore,
 each method must declare `android.os.RemoteException` to be thrown.
 Annotate the interface with `@AIDL`.
 
-    ```java
-    @AIDL
-    public interface RemoteApi extends IInterface {
-        String sayHello() throws RemoteException;
-    }
-    ```
+```java
+@AIDL
+public interface RemoteApi extends IInterface {
+  String sayHello() throws RemoteException;
+}
+```
 
-3. Retrive generated proxy/stub using `InterfaceLoader`.
+Retrive generated proxy/stub using `InterfaceLoader`.
 
-    Service code:
+Service code:
 
-    ```java
+```java
     public IBinder onBind(Intent intent) {
       RemoteApi serviceApi = new RemoteApi() {
         public String sayHello() {
@@ -93,11 +93,11 @@ Annotate the interface with `@AIDL`.
       };
       return serviceApi.asBinder();
     }
-    ```
+```
 
-    Caller code:
+Caller code:
 
-    ```java
+```java
     public void onServiceConnected(ComponentName name, IBinder serviceBinder) {
       try {
         final RemoteApi serviceApi = InterfaceLoader.asInterface(serviceBinder, RemoteApi.class);
@@ -109,7 +109,7 @@ Annotate the interface with `@AIDL`.
         Toast.makeText(this, "Failed to receive a string " + e.getMessage(), Toast.LENGTH_SHORT).show();
       }
     }
-    ```
+```
 
 ### Defining an interface
 
@@ -146,39 +146,6 @@ public interface RemoteApi extends IInterface {
 
 will compile and use `readSerializable` and `writeSerializable` to passs "dateArray" between processes.
 
-### Limitations/Known Issues
+### Other documentation
 
-* JDK 6 *may* work, but isn't supported, since it is no longer supported by it's
-creator and developers of Javapoet.
-
-* Passing invalid expressions as annotation parameters may not be correctly detected
-during validation step and results in runtime exception during compilation with Javac.
-
-    Example:
-
-    ```java
-    // will fail to compile with ugly message, asking you to send a bug report :(
-    @AIDL(SomeNonExistingType.DESCRIPTOR)
-    ```
-
-    This is due to limitations of Javac, which converts erroneous "types" to strings
-    before passing them to AnnotationValueVisitor. This also happens with other annotation
-    processors, such as ButterKnife.
-
-* Generated implementations of interfaces, containing intersection types, may fail to
-compile with source versions before Java 8.
-
-    ```java
-    // this will fail to compile with JDK 7
-    <T extends Parcelable & Runnable> void methodWithIntersectionArgument(T param);
-    ```
-
-    This is because implementing those requires support for either advanced type inference
-    or casts to intersection, both of which didn't exist until Java 8.
-
-* Some of generated files may contain redundant casts. This is due to limitation of
-Java compilers, which sometimes fail to correctly tell annotation processors
-whether a cast is needed (this tends to happen when generics are involved).
-
-* Nonsential intersection types like `Boolean & Runnable` aren't detected.
-I believe, that those should be handled by the compiler.
+Read [project wiki](http://sf.net/p/aidl2/docs/) for in-depth documentations and some useful links.
