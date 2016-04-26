@@ -6,6 +6,7 @@ import com.squareup.javapoet.NameAllocator;
 
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
+import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.util.Util;
 
@@ -13,14 +14,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Type;
+import java.util.Iterator;
 
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+
+import static net.sf.aidl2.internal.util.Util.hasPublicDefaultConstructor;
 
 public final class Writer extends AptHelper {
     private final ClassName textUtils = ClassName.get("android.text", "TextUtils");
@@ -50,6 +57,10 @@ public final class Writer extends AptHelper {
 
     private final Object flags;
 
+    private final DeclaredType theIterator;
+
+    private final TypeInvocation<ExecutableElement, ExecutableType> collectionIterator;
+
     public Writer(AidlProcessor.Environment environment, State state, CharSequence outParcelName) {
         super(environment);
 
@@ -75,6 +86,10 @@ public final class Writer extends AptHelper {
         this.serializable = lookup(Serializable.class);
         this.externalizable = lookup(Externalizable.class);
 
+        this.theIterator = lookup(Iterator.class);
+
+        collectionIterator = lookupMethod(theCollection, "iterator", "Iterator");
+
         if (state.returnValue) {
             flags = Util.literal("$T.PARCELABLE_WRITE_RETURN_VALUE", parcelable);
         } else {
@@ -88,9 +103,9 @@ public final class Writer extends AptHelper {
         if (strategy != null) {
             if (nullable && strategy.needNullHandling) {
                 getNullableStrategy(strategy)
-                        .write(paramWriting, name);
+                        .write(paramWriting, name, type);
             } else {
-                strategy.write(paramWriting, name);
+                strategy.write(paramWriting, name, type);
             }
 
             return strategy.requiredType;
@@ -100,7 +115,8 @@ public final class Writer extends AptHelper {
                 "Unsupported type: " + type + ".\n" +
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
+                "\t• Collection of supported type with public default constructor";
 
         throw new CodegenException(errorMsg);
     }
@@ -115,7 +131,7 @@ public final class Writer extends AptHelper {
             case LONG:
             case DOUBLE:
             case FLOAT:
-                return Strategy.createNullSafe((b, n) -> writePrimitive(b, n, (PrimitiveType) type), type);
+                return Strategy.createNullSafe((b, n, t) -> writePrimitive(b, n, (PrimitiveType) type), type);
             case ARRAY:
                 return getArrayStrategy((ArrayType) type);
             case DECLARED:
@@ -165,6 +181,15 @@ public final class Writer extends AptHelper {
                     }
                 }
 
+                // Check for Collection subtypes
+                if (types.isAssignable(type, theCollection)) {
+                    final Strategy strategy = getCollectionStrategy(type);
+
+                    if (strategy != null) {
+                        return strategy;
+                    }
+                }
+
                 if (types.isAssignable(type, serializable)) {
                     return getSerializableStrategy();
                 }
@@ -173,7 +198,7 @@ public final class Writer extends AptHelper {
         return null;
     }
 
-    private final Strategy VOID_STRATEGY = Strategy.createNullSafe(($, $$) -> {}, theObject);
+    private final Strategy VOID_STRATEGY = Strategy.createNullSafe(($, $$, $$$) -> {}, theObject);
 
     private Strategy getWrapperTypeStrategy(DeclaredType type) {
         final CharSequence name = Util.getQualifiedName(type);
@@ -191,7 +216,7 @@ public final class Writer extends AptHelper {
                     final PrimitiveType primitiveVariety = types.unboxedType(type);
 
                     if (primitiveVariety != null) {
-                        return Strategy.create((b, n) -> writePrimitive(b, n, primitiveVariety), type);
+                        return Strategy.create((b, n, t) -> writePrimitive(b, n, primitiveVariety), type);
                     }
                     break;
                 case "java.lang.Void":
@@ -246,8 +271,8 @@ public final class Writer extends AptHelper {
         }
 
         final WritingStrategy strategy = Util.isNullable(type, nullable)
-                ? (b, obj) -> b.addStatement("$N.writeStrongBinder($N == null ? null : $N.asBinder())", parcelName, obj, obj)
-                : (b, obj) -> b.addStatement("$N.writeStrongBinder($N.asBinder())", parcelName, obj);
+                ? (b, obj, unused) -> b.addStatement("$L.writeStrongBinder($L == null ? null : $L.asBinder())", parcelName, obj, obj)
+                : (b, obj, unused) -> b.addStatement("$L.writeStrongBinder($L.asBinder())", parcelName, obj);
 
         return Strategy.createNullSafe(strategy, type);
     }
@@ -258,7 +283,7 @@ public final class Writer extends AptHelper {
             return getUnknownExternalizableStrategy(t);
         }
 
-        return Strategy.create((block, name) -> {
+        return Strategy.create((block, name, unused) -> {
             final String oos = allocator.newName("objectOutputStream");
             final String baos = allocator.newName("arrayOutputStream");
             final String err = allocator.newName("e");
@@ -272,7 +297,7 @@ public final class Writer extends AptHelper {
             block.addStatement("$N = new $T($N)", oos, ObjectOutputStream.class, baos);
 
             block.addStatement("$L.writeExternal($N)", name, oos);
-            block.addStatement("$N.writeByteArray($N.toByteArray())", parcelName, baos);
+            block.addStatement("$L.writeByteArray($N.toByteArray())", parcelName, baos);
 
             block.nextControlFlow("catch (Exception $N)", err);
 
@@ -303,40 +328,40 @@ public final class Writer extends AptHelper {
             return getAbstractParcelableStrategy();
         }
 
-        return Strategy.create((block, name) -> block.addStatement("$L.writeToParcel($L, $L)", name, parcelName, flags), parcelable);
+        return Strategy.create((block, name, unused) -> block.addStatement("$L.writeToParcel($L, $L)", name, parcelName, flags), parcelable);
     }
 
     private Strategy getAbstractParcelableStrategy() {
-        return Strategy.createNullSafe((b, name) -> b.addStatement("$L.writeParcelable($L, $L)", parcelName, name, flags), parcelable);
+        return Strategy.createNullSafe((b, name, unused) -> b.addStatement("$L.writeParcelable($L, $L)", parcelName, name, flags), parcelable);
     }
 
     private Strategy getBuiltinStrategy(TypeMirror type) throws CodegenException {
         if (types.isAssignable(type, sizeF)) {
-            return Strategy.create((block, name) -> block.addStatement("$L.writeSizeF($L)", parcelName, name), sizeF);
+            return Strategy.create((block, name, unused) -> block.addStatement("$L.writeSizeF($L)", parcelName, name), sizeF);
         } else if (types.isAssignable(type, sizeType)) {
-            return Strategy.create((block, name) -> block.addStatement("$L.writeSize($L)", parcelName, name), sizeType);
+            return Strategy.create((block, name, unused) -> block.addStatement("$L.writeSize($L)", parcelName, name), sizeType);
         }
         // supported via native methods, always nullable
         else if (types.isAssignable(type, string)) {
-            return Strategy.createNullSafe((block, name) -> block.addStatement("$L.writeString($L)", parcelName, name), string);
+            return Strategy.createNullSafe((block, name, unused) -> block.addStatement("$L.writeString($L)", parcelName, name), string);
         } else if (types.isAssignable(type, iBinder)) {
-            return Strategy.createNullSafe((block, name) -> block.addStatement("$L.writeStrongBinder($L)", parcelName, name), iBinder);
+            return Strategy.createNullSafe((block, name, unused) -> block.addStatement("$L.writeStrongBinder($L)", parcelName, name), iBinder);
         }
         // supported via non-standard method, always nullable
         else if (types.isAssignable(type, charSequence)) {
-            return Strategy.createNullSafe((block, name) -> block.addStatement("$T.writeToParcel($L, $L, $L)", textUtils, name, parcelName, flags), charSequence);
+            return Strategy.createNullSafe((block, name, unused) -> block.addStatement("$T.writeToParcel($L, $L, $L)", textUtils, name, parcelName, flags), charSequence);
         }
         // containers, so naturally nullable
         else if (types.isAssignable(type, sparseBoolArray)) {
-            return Strategy.createNullSafe((block, name) -> block.addStatement("$L.writeSparseBooleanArray($L)", parcelName, name), sparseBoolArray);
+            return Strategy.createNullSafe((block, name, unused) -> block.addStatement("$L.writeSparseBooleanArray($L)", parcelName, name), sparseBoolArray);
         } else if (types.isAssignable(type, bundle)) {
-            return Strategy.createNullSafe((block, name) -> block.addStatement("$L.writeBundle($L)", parcelName, name), bundle);
+            return Strategy.createNullSafe((block, name, unused) -> block.addStatement("$L.writeBundle($L)", parcelName, name), bundle);
         } else if (types.isAssignable(type, persistable)) {
-            return Strategy.createNullSafe((block, name) -> block.addStatement("$L.writePersistableBundle($L)", parcelName, name), persistable);
+            return Strategy.createNullSafe((block, name, unused) -> block.addStatement("$L.writePersistableBundle($L)", parcelName, name), persistable);
         } else {
             if (isEffectivelyObject(type)) {
                 if (allowUnchecked) {
-                    return Strategy.createNullSafe((block, name) -> block.addStatement("$N.writeValue($L)", parcelName, name), theObject);
+                    return Strategy.createNullSafe((block, name, unused) -> block.addStatement("$N.writeValue($L)", parcelName, name), theObject);
                 }
 
                 String errMsg =
@@ -361,23 +386,23 @@ public final class Writer extends AptHelper {
             return strategy;
         }
 
-        return Strategy.createNullSafe((block, name) -> {
+        return Strategy.createNullSafe((block, name, unused) -> {
             block.beginControlFlow("if ($L == null)", name);
             block.addStatement("$N.writeByte((byte) -1)", parcelName);
             block.nextControlFlow("else");
             block.addStatement("$N.writeByte((byte) 0)", parcelName);
-            strategy.write(block, name);
+            strategy.write(block, name, strategy.requiredType);
             block.endControlFlow();
         }, strategy.requiredType);
     }
 
     private Strategy getArrayStrategy(ArrayType arrayType) throws CodegenException {
-        final TypeMirror component = arrayType.getComponentType();
-        final TypeKind componentKind = component.getKind();
+        final TypeMirror componentType = arrayType.getComponentType();
+        final TypeKind componentKind = componentType.getKind();
 
         switch (componentKind) {
             case ARRAY:
-                return getSpecialArrayStrategy(getArrayStrategy((ArrayType) component), component);
+                return getSpecialArrayStrategy(getArrayStrategy((ArrayType) componentType), componentType);
             case BOOLEAN:
             case INT:
             case SHORT:
@@ -386,65 +411,164 @@ public final class Writer extends AptHelper {
             case LONG:
             case DOUBLE:
             case FLOAT:
-                return getPrimitiveArrayStrategy((PrimitiveType) component);
+                return getPrimitiveArrayStrategy((PrimitiveType) componentType);
             default:
-                if (types.isSubtype(component, parcelable)) {
-                    return getSpecialArrayStrategy(getParcelableStrategy(component), component);
+                if (types.isSubtype(componentType, parcelable)) {
+                    return getSpecialArrayStrategy(getParcelableStrategy(componentType), componentType);
                 }
 
-                final Strategy specialStrategy = getStrategy(component);
+                final Strategy specialStrategy = getStrategy(componentType);
 
                 if (specialStrategy != null) {
                     if (specialStrategy == SERIALIZABLE_STRATEGY) {
                         return getSerializableStrategy();
                     } else {
-                        return getSpecialArrayStrategy(specialStrategy, component);
+                        return getSpecialArrayStrategy(specialStrategy, componentType);
                     }
                 }
         }
 
         final String arrayErrorMsg =
-                "Unsupported array component type: " + component + ".\n" +
+                "Unsupported array component type: " + componentType + ".\n" +
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
+                "\t• Collection of supported type with public default constructor";
 
         throw new CodegenException(arrayErrorMsg);
     }
 
-    private Strategy getSpecialArrayStrategy(Strategy delegate, TypeMirror component) {
+    private Strategy getSpecialArrayStrategy(Strategy delegate, TypeMirror componentType) {
         if (delegate == VOID_STRATEGY) {
             return VOID_STRATEGY;
         }
 
         // arrays don't support generics — the only thing, that matters, is a raw runtime type
-        final TypeMirror resultType = types.erasure(component);
+        final TypeMirror resultType = types.erasure(componentType);
 
         final TypeMirror requestedType = delegate.requiredType;
 
-        return Strategy.create((block, name) -> {
-            final String element = allocator.newName(name + "Element");
+        return Strategy.createNullSafe((block, name, actualType) -> {
+            final String component = allocator.newName(Util.appendSuffix(name, "Component"));
 
-            block.beginControlFlow("for ($T $N : $L)", resultType, element, name);
+            block.beginControlFlow("if ($L == null)", name);
+            block.addStatement("$N.writeInt(-1)", parcelName);
 
-            final boolean nullable = Util.isNullable(component, this.nullable);
+            block.nextControlFlow("else");
+            block.addStatement("$N.writeInt($L.length)", parcelName, name);
+
+            block.beginControlFlow("for ($T $N : $L)", resultType, component, name);
+
+            final boolean nullable = Util.isNullable(componentType, this.nullable);
 
             // now with casts!
-            final CodeBlock elementBlock = emitFullCast(resultType, requestedType, Util.literal(element));
+            final CodeBlock elementBlock = emitFullCast(resultType, requestedType, Util.literal(component));
 
             if (nullable && delegate.needNullHandling) {
                 getNullableStrategy(delegate)
-                        .write(block, elementBlock);
+                        .write(block, elementBlock, resultType);
             } else {
-                delegate.write(block, elementBlock);
+                delegate.write(block, elementBlock, resultType);
             }
+
+            block.endControlFlow();
 
             block.endControlFlow();
         }, types.getArrayType(resultType));
     }
 
+    private TypeMirror getReadableElementType(TypeMirror type) {
+        final DeclaredType base = getCollectionInterface(type);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> specificIteratorMethod =
+                collectionIterator.refine(types, base);
+
+        final DeclaredType specificIteratorType = (DeclaredType) specificIteratorMethod.type.getReturnType();
+
+        final TypeInvocation<ExecutableElement, ExecutableType> nextMethod =
+                lookupMethod(theIterator, "next", "Object").refine(types, specificIteratorType);
+
+        return nextMethod.type.getReturnType();
+    }
+
+    private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
+        final DeclaredType base = getCollectionInterface(type);
+
+        final TypeMirror elementType = getReadableElementType(type);
+
+        final Strategy elementStrategy = getStrategy(elementType);
+
+        if (elementStrategy == null) {
+            return null;
+        }
+
+        // pretend, that this nonsense didn't happen
+        if (elementStrategy == VOID_STRATEGY) {
+            return null;
+        }
+
+        if (elementStrategy == SERIALIZABLE_STRATEGY && types.isAssignable(type, serializable)) {
+            return getSerializableStrategy();
+        }
+
+        final TypeMirror concreteParent = findConcreteParent(type, theCollection);
+
+        if (concreteParent == null) {
+            if (!hasBound(type, listBound)  && !hasBound(type, setBound)) {
+                return null;
+            }
+        } else {
+            final TypeMirror captured = captureAll(type);
+
+            if (!Util.isProperClass(captured)) {
+                throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
+            }
+
+            final TypeElement te = (TypeElement) ((DeclaredType) captured).asElement();
+
+            if (!hasPublicDefaultConstructor(te)) {
+                return null;
+            }
+        }
+
+        final TypeMirror requestedType = elementStrategy.requiredType;
+
+        return Strategy.createNullSafe((block, name1, actualType) -> {
+            final String element = allocator.newName(Util.appendSuffix(name1, "Element"));
+
+            block.beginControlFlow("if ($L == null)", name1);
+            block.addStatement("$N.writeInt(-1)", parcelName);
+
+            block.nextControlFlow("else");
+            block.addStatement("$N.writeInt($L.size())", parcelName, name1);
+
+            final TypeMirror actualComponentType = getReadableElementType(actualType);
+
+            if (types.isAssignable(actualComponentType, requestedType)) {
+                block.beginControlFlow("for ($T $N : $L)", requestedType, element, name1);
+            } else {
+                block.beginControlFlow("for ($T $N : $T.<$T<$T>>unsafeCast($L))",
+                        requestedType, element, ClassName.get(AidlUtil.class), ClassName.get(Iterable.class), requestedType, name1);
+            }
+
+
+            final boolean nullable = Util.isNullable(elementType, this.nullable);
+
+            if (nullable && elementStrategy.needNullHandling) {
+                getNullableStrategy(elementStrategy)
+                        .write(block, element, type);
+            } else {
+                elementStrategy.write(block, element, type);
+            }
+
+            block.endControlFlow();
+
+            block.endControlFlow();
+        }, types.getDeclaredType(collectionElement, requestedType));
+    }
+
     private Strategy getPrimitiveArrayStrategy(PrimitiveType component) {
-        return Strategy.createNullSafe((block, name) -> {
+        return Strategy.createNullSafe((block, name, unused) -> {
             switch (component.getKind()) {
                 case BYTE:
                     block.addStatement("$L.writeByteArray($L)", parcelName, name);
@@ -468,7 +592,7 @@ public final class Writer extends AptHelper {
                     block.addStatement("$L.writeFloatArray($L)", parcelName, name);
                     break;
                 default:
-                    writeSerializable(block, name);
+                    writeSerializable(block, name, types.getArrayType(component));
             }
         }, types.getArrayType(component));
     }
@@ -493,11 +617,11 @@ public final class Writer extends AptHelper {
         }
     }
 
-    private void writeExternalizable(CodeBlock.Builder block, Object name) {
+    private void writeExternalizable(CodeBlock.Builder block, Object name, TypeMirror ignored) {
         block.addStatement("$T.writeExternalizable($N, $L)", ClassName.get(AidlUtil.class), parcelName, name);
     }
 
-    private void writeSerializable(CodeBlock.Builder block, Object name) {
+    private void writeSerializable(CodeBlock.Builder block, Object name, TypeMirror ignored) {
         block.addStatement("$L.writeSerializable($L)", parcelName, name);
     }
 
@@ -521,12 +645,12 @@ public final class Writer extends AptHelper {
         }
 
         @Override
-        public void write(CodeBlock.Builder block, Object name) throws CodegenException {
-            delegate.write(block, name);
+        public void write(CodeBlock.Builder block, Object name, TypeMirror type) throws CodegenException {
+            delegate.write(block, name, type);
         }
     }
 
     private interface WritingStrategy {
-        void write(CodeBlock.Builder block, Object name) throws CodegenException;
+        void write(CodeBlock.Builder block, Object name, TypeMirror type) throws CodegenException;
     }
 }

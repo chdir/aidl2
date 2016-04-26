@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -15,6 +17,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -22,6 +25,7 @@ import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleElementVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
 
@@ -52,6 +56,28 @@ public class Util {
         }
 
         return 0;
+    }
+
+    public static boolean hasDefaultConstructor(TypeElement clazz) {
+        for (ExecutableElement constructor : ElementFilter.constructorsIn(clazz.getEnclosedElements())) {
+            // do not check for public access here, this method is meant to be called when such
+            // access is already assumed by contract!
+            if (constructor.getParameters().isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean hasPublicDefaultConstructor(TypeElement clazz) {
+        for (ExecutableElement constructor : ElementFilter.constructorsIn(clazz.getEnclosedElements())) {
+            if (constructor.getParameters().isEmpty()) {
+                return constructor.getModifiers().contains(Modifier.PUBLIC);
+            }
+        }
+
+        return false;
     }
 
     public static boolean isNullable(Element element, boolean defaultNullable) {
@@ -179,6 +205,25 @@ public class Util {
                 && getQualifiedName((DeclaredType) declared) != null;
     }
 
+    public static String appendSuffix(Object original, String suffix) {
+        final String incomingName = original.toString();
+
+        final int previousSuffix = incomingName.indexOf(suffix);
+
+        if (previousSuffix == -1) {
+            return incomingName + suffix;
+        }
+
+        for (int i = previousSuffix + suffix.length(); i < incomingName.length(); ++i) {
+            if (incomingName.charAt(i) != '_') {
+                return incomingName + suffix;
+            }
+        }
+
+        // nothing, but _ are after previous suffix, let NameAllocator resolve the rest
+        return incomingName;
+    }
+
     private static final ElementVisitor<Name, Void> ELEMENT_NAME_REFINER = new SimpleElementVisitor6<Name, Void>() {
         @Override
         public Name visitType(TypeElement typeElement, Void unused) {
@@ -254,12 +299,14 @@ public class Util {
             }
         } else {
             if (mirror.getKind() == TypeKind.DECLARED) {
-                final Name typeName = getSimpleName((DeclaredType) mirror);
+                final String nam = type.toString();
+
+                final Name typeName = nam.indexOf('.') != -1
+                        ? getQualifiedName((DeclaredType) mirror)
+                        : getSimpleName((DeclaredType) mirror);
 
                 if (typeName != null) {
-                    if (type.toString().contentEquals(typeName)) {
-                        return true;
-                    }
+                    return nam.contentEquals(typeName);
                 }
             }
         }

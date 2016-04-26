@@ -40,11 +40,11 @@ public final class CharArrayTest$$AidlServerImpl extends Binder {
                 reply.writeNoException();
 
                 if (returnValue == null) {
-                    reply.writeByte((byte) -1);
+                    reply.writeInt(-1);
                 } else {
-                    reply.writeByte((byte) 0);
-                    for (char[] returnValueElement : returnValue) {
-                        reply.writeCharArray(returnValueElement);
+                    reply.writeInt(returnValue.length);
+                    for (char[] returnValueComponent : returnValue) {
+                        reply.writeCharArray(returnValueComponent);
                     }
                 }
 

@@ -102,6 +102,21 @@ public class ErrorTests {
     }
 
     @Test
+    public void failsWhenCollectionNoDefaultConstructor() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("WeirdCollectionFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(2)
+                .withErrorContaining("Collection")
+                .in(testSource)
+                .onLine(8)
+                .and()
+                .withErrorContaining("bailing out");
+    }
+
+    @Test
     public void failsWhenEncounteringIInterface() {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("BaseIInterfaceFailure.java"));
 

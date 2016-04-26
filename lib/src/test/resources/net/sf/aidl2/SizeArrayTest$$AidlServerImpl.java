@@ -41,15 +41,15 @@ public final class SizeArrayTest$$AidlServerImpl extends Binder {
                 reply.writeNoException();
 
                 if (returnValue == null) {
-                    reply.writeByte((byte) -1);
+                    reply.writeInt(-1);
                 } else {
-                    reply.writeByte((byte) 0);
-                    for (Size returnValueElement : returnValue) {
-                        if (returnValueElement == null) {
+                    reply.writeInt(returnValue.length);
+                    for (Size returnValueComponent : returnValue) {
+                        if (returnValueComponent == null) {
                             reply.writeByte((byte) -1);
                         } else {
                             reply.writeByte((byte) 0);
-                            reply.writeSize(returnValueElement);
+                            reply.writeSize(returnValueComponent);
                         }
                     }
                 }

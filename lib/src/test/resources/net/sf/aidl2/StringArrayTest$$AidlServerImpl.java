@@ -40,11 +40,11 @@ public final class StringArrayTest$$AidlServerImpl extends Binder {
                 reply.writeNoException();
 
                 if (returnValue == null) {
-                    reply.writeByte((byte) -1);
+                    reply.writeInt(-1);
                 } else {
-                    reply.writeByte((byte) 0);
-                    for (String returnValueElement : returnValue) {
-                        reply.writeString(returnValueElement);
+                    reply.writeInt(returnValue.length);
+                    for (String returnValueComponent : returnValue) {
+                        reply.writeString(returnValueComponent);
                     }
                 }
 

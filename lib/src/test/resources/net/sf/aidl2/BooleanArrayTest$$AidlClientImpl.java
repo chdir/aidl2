@@ -36,25 +36,25 @@ public final class BooleanArrayTest$$AidlClientImpl<B extends Boolean> implement
             data.writeInterfaceToken(BooleanArrayTest$$AidlServerImpl.DESCRIPTOR);
 
             if (booleanArrayParam == null) {
-                data.writeByte((byte) -1);
+                data.writeInt(-1);
             } else {
-                data.writeByte((byte) 0);
-                for (Boolean[][] booleanArrayParamElement : booleanArrayParam) {
-                    if (booleanArrayParamElement == null) {
-                        data.writeByte((byte) -1);
+                data.writeInt(booleanArrayParam.length);
+                for (Boolean[][] booleanArrayParamComponent : booleanArrayParam) {
+                    if (booleanArrayParamComponent == null) {
+                        data.writeInt(-1);
                     } else {
-                        data.writeByte((byte) 0);
-                        for (Boolean[] booleanArrayParamElementElement : booleanArrayParamElement) {
-                            if (booleanArrayParamElementElement == null) {
-                                data.writeByte((byte) -1);
+                        data.writeInt(booleanArrayParamComponent.length);
+                        for (Boolean[] booleanArrayParamComponent_ : booleanArrayParamComponent) {
+                            if (booleanArrayParamComponent_ == null) {
+                                data.writeInt(-1);
                             } else {
-                                data.writeByte((byte) 0);
-                                for (Boolean booleanArrayParamElementElementElement : booleanArrayParamElementElement) {
-                                    if (booleanArrayParamElementElementElement == null) {
+                                data.writeInt(booleanArrayParamComponent_.length);
+                                for (Boolean booleanArrayParamComponent__ : booleanArrayParamComponent_) {
+                                    if (booleanArrayParamComponent__ == null) {
                                         data.writeByte((byte) -1);
                                     } else {
                                         data.writeByte((byte) 0);
-                                        data.writeInt(booleanArrayParamElementElementElement ? 1 : 0);
+                                        data.writeInt(booleanArrayParamComponent__ ? 1 : 0);
                                     }
                                 }
                             }

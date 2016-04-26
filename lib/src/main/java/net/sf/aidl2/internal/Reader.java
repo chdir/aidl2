@@ -1,6 +1,7 @@
 package net.sf.aidl2.internal;
 
 import android.os.Parcel;
+import android.os.Parcelable;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -10,36 +11,42 @@ import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
 import net.sf.aidl2.InterfaceLoader;
 import net.sf.aidl2.internal.codegen.Blocks;
+import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.codegen.TypedExpression;
 import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.util.Util;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 
 import static net.sf.aidl2.internal.util.Util.getQualifiedName;
+import static net.sf.aidl2.internal.util.Util.hasDefaultConstructor;
+import static net.sf.aidl2.internal.util.Util.hasPublicDefaultConstructor;
 import static net.sf.aidl2.internal.util.Util.literal;
 
 public final class Reader extends AptHelper {
-    private static final CodeBlock EMPTY = CodeBlock.builder().build();
-
     private final ClassName textUtils = ClassName.get("android.text", "TextUtils");
 
     private final boolean allowUnchecked;
@@ -60,11 +67,15 @@ public final class Reader extends AptHelper {
     private final TypeMirror serializable;
     private final TypeMirror charSequence;
 
+    private final TypeMirror intType;
+
     protected final DeclaredType genericCreator;
 
     private final CharSequence parcelName;
     private final CharSequence selfName;
     private final NameAllocator allocator;
+
+    private final TypeInvocation<ExecutableElement, ExecutableType> collectionAdd;
 
     public Reader(AidlProcessor.Environment environment, State state, CharSequence parcelName) {
         super(environment);
@@ -93,6 +104,10 @@ public final class Reader extends AptHelper {
         final TypeElement creatorType = lookupGeneric("android.os.Parcelable.Creator");
         final TypeMirror bound = types.getWildcardType(null, parcelable);
         genericCreator = types.getDeclaredType(creatorType, bound);
+
+        collectionAdd = lookupMethod(theCollection, "add", boolean.class, "Object");
+
+        intType = types.getPrimitiveType(TypeKind.INT);
     }
 
     /**
@@ -117,7 +132,8 @@ public final class Reader extends AptHelper {
                 "Unsupported type: " + type + ".\n" +
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
+                "\t• Collection of supported type with public default constructor";
 
         throw new CodegenException(errorMsg);
     }
@@ -141,7 +157,7 @@ public final class Reader extends AptHelper {
             init.endControlFlow();
 
             return literal(tmp);
-        }, capturedType);
+        }, type);
     }
 
     private @Nullable Strategy getStrategy(TypeMirror type) throws CodegenException {
@@ -204,13 +220,23 @@ public final class Reader extends AptHelper {
                 }
 
                 // check for parameters, that resolve to wrapper types...
-                final TypeMirror captured = types.erasure(type);
+                // intersection types go to hell
+                final TypeMirror erased = types.erasure(type);
 
-                if (captured.getKind() == TypeKind.DECLARED) {
-                    final Strategy typeArgWrapperTypeStr = getWrapperTypeStrategy((DeclaredType) captured);
+                if (erased.getKind() == TypeKind.DECLARED) {
+                    final Strategy typeArgWrapperTypeStr = getWrapperTypeStrategy((DeclaredType) erased);
 
                     if (typeArgWrapperTypeStr != null) {
                         return typeArgWrapperTypeStr;
+                    }
+                }
+
+                // Check for Collection subtypes
+                if (types.isAssignable(type, theCollection)) {
+                    final Strategy strategy = getCollectionStrategy(type);
+
+                    if (strategy != null) {
+                        return strategy;
                     }
                 }
 
@@ -318,40 +344,38 @@ public final class Reader extends AptHelper {
 
         final TypeElement clazz = (TypeElement) type.asElement();
 
-        for (ExecutableElement constructor : ElementFilter.constructorsIn(clazz.getEnclosedElements())) {
-            if (constructor.getParameters().isEmpty()) {
-                // strip generics to prevent them from messing up creation code
-                final TypeMirror capturedType = captureAll(type);
-
-                return Strategy.create(block -> {
-                    final String ois = allocator.newName("objectInputStream");
-                    final String xtrnlzbl = allocator.newName(selfName + "Externalizable");
-                    final String err = allocator.newName("e");
-
-                    block.addStatement("$T $N = null", ObjectInputStream.class, ois);
-                    block.addStatement("$T $N = null", capturedType, xtrnlzbl);
-
-                    block.beginControlFlow("try");
-
-                    block.addStatement("$N = new $T(new $T($N.createByteArray()))", ois,
-                            ObjectInputStream.class, ByteArrayInputStream.class, parcelName);
-                    block.addStatement("$N = $L", xtrnlzbl, emitDefaultConstructorCall(capturedType));
-                    block.addStatement("$N.readExternal($N)", xtrnlzbl, ois);
-
-                    block.nextControlFlow("catch (Exception $N)", err);
-
-                    block.addStatement("throw new IllegalStateException($S, $N)", "Failed to deserialize " + type, err);
-
-                    block.nextControlFlow("finally");
-                    block.addStatement("$T.shut($N)", AidlUtil.class, ois);
-                    block.endControlFlow();
-
-                    return literal(xtrnlzbl);
-                }, capturedType);
-            };
+        if (!hasDefaultConstructor(clazz)) {
+            return null;
         }
 
-        return null;
+        // strip generics to prevent them from messing up creation code
+        final TypeMirror capturedType = captureAll(type);
+
+        return Strategy.create(block -> {
+            final String ois = allocator.newName("objectInputStream");
+            final String xtrnlzbl = allocator.newName(selfName + "Externalizable");
+            final String err = allocator.newName("e");
+
+            block.addStatement("$T $N = null", ObjectInputStream.class, ois);
+            block.addStatement("$T $N = null", capturedType, xtrnlzbl);
+
+            block.beginControlFlow("try");
+
+            block.addStatement("$N = new $T(new $T($N.createByteArray()))", ois,
+                    ObjectInputStream.class, ByteArrayInputStream.class, parcelName);
+            block.addStatement("$N = $L", xtrnlzbl, emitDefaultConstructorCall(capturedType));
+            block.addStatement("$N.readExternal($N)", xtrnlzbl, ois);
+
+            block.nextControlFlow("catch (Exception $N)", err);
+
+            block.addStatement("throw new IllegalStateException($S, $N)", "Failed to deserialize " + type, err);
+
+            block.nextControlFlow("finally");
+            block.addStatement("$T.shut($N)", AidlUtil.class, ois);
+            block.endControlFlow();
+
+            return literal(xtrnlzbl);
+        }, capturedType);
     }
 
     private Strategy getArrayStrategy(ArrayType arrayType) throws CodegenException {
@@ -388,11 +412,7 @@ public final class Reader extends AptHelper {
                 final Strategy specialStrategy = getStrategy(component);
 
                 if (specialStrategy != null) {
-                    if (specialStrategy == SERIALIZABLE_STRATEGY) {
-                        return getSerializableStrategy(arrayType);
-                    } else {
-                        return getSpecialArrayStrategy(specialStrategy, component);
-                    }
+                    return getSpecialArrayStrategy(specialStrategy, component);
                 }
         }
 
@@ -400,7 +420,8 @@ public final class Reader extends AptHelper {
                 "Unsupported array component type: " + component + ".\n" +
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers.";
+                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
+                "\t• Collection of supported type with public default constructor";
 
         throw new CodegenException(arrayErrorMsg);
     }
@@ -488,9 +509,13 @@ public final class Reader extends AptHelper {
     }
 
     // Container, so nullable by design
-    private Strategy getSpecialArrayStrategy(Strategy readingStrategy, TypeMirror actualComponent) {
+    private @NotNull  Strategy getSpecialArrayStrategy(Strategy readingStrategy, TypeMirror actualComponent) {
         if (readingStrategy == VOID_STRATEGY) {
             return VOID_STRATEGY;
+        }
+
+        if (readingStrategy == SERIALIZABLE_STRATEGY) {
+            return getSerializableStrategy(types.getArrayType(actualComponent));
         }
 
         // arrays don't support generics — the only thing, that matters, is a raw runtime type
@@ -538,20 +563,194 @@ public final class Reader extends AptHelper {
         }, types.getArrayType(resultType));
     }
 
+    private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
+        // allow upper-bound wildcards to be used
+        final TypeMirror noWildcards = types.capture(type);
+
+        final DeclaredType base = getCollectionInterface(noWildcards);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> specificAddMethod =
+                collectionAdd.refine(types, base);
+
+        final TypeMirror elementType = specificAddMethod.type.getParameterTypes().get(0);
+
+        Strategy elementStrategy = getStrategy(elementType);
+
+        // pretend, that this nonsense didn't happen
+        if (elementStrategy == VOID_STRATEGY) {
+            return null;
+        }
+
+        if (types.isAssignable(type, serializable)) {
+            if (elementStrategy == null) {
+                if (allowUnchecked) {
+                    elementStrategy = getStrategy(theObject);
+                } else {
+                    final TypeMirror concreteParent = types.erasure(findConcreteParent(type, theCollection));
+
+                    throw new CodegenException(
+                            "Unable to find serialization strategy for Collection type " + type + ".\n"
+                            + concreteParent + " is serializable, but it's element is not. If you want"
+                            + " Java serialization to be used anyway, add @SuppressWarnings(\"unchecked\") to the method.");
+                }
+            } else if (elementStrategy == SERIALIZABLE_STRATEGY) {
+                return getSerializableStrategy(type);
+            }
+        }
+
+        boolean failedElementTypeCheck = elementStrategy == null;
+
+        // thankfully, Java does not support multiple inheritance for classes
+        final TypeMirror concreteParent = findConcreteParent(type, theCollection);
+
+        if (concreteParent == null) {
+            if (hasBound(type, listBound)) {
+                final TypeMirror lt = types.getDeclaredType((TypeElement) arrayList.asElement(), elementType);
+
+                return getCapacityAwareCollectionStrategy(captureAll(lt), captureAll(elementType), elementStrategy);
+            }
+
+            if (hasBound(type, setBound)) {
+                final TypeMirror st = types.getDeclaredType((TypeElement) hashSet.asElement(), elementType);
+
+                return getCapacityAwareCollectionStrategy(captureAll(st), captureAll(elementType), elementStrategy);
+            }
+
+            throw new CodegenException("Unsupported abstract collection type: " + type + ". Allowed types: java.util.List, java.util.Set");
+        }
+
+        final TypeMirror captured = captureAll(type);
+
+        if (!Util.isProperClass(captured)) {
+            throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
+        }
+
+        final TypeElement te = (TypeElement) ((DeclaredType) captured).asElement();
+
+        if (!hasPublicDefaultConstructor(te)) {
+            throw new CodegenException("Type " + type + " does not have default public constructor, can not instantiate");
+        }
+
+        if (failedElementTypeCheck) {
+            final String errMsg = "Unsupported collection element type: " + elementType + ".\n" +
+                    "Must be one of:\n" +
+                    "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
+                    "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
+                    "\t• Collection of supported type with public default constructor";
+
+            throw new CodegenException(errMsg);
+        }
+
+        if (hasPublicCapacityConstructor(te)) {
+            return getCapacityAwareCollectionStrategy(captured, elementType, elementStrategy);
+        }
+
+        return getSimpleCollectionStrategy(captured, elementType, elementStrategy);
+    }
+
+    private boolean hasPublicCapacityConstructor(TypeElement clazz) {
+        for (ExecutableElement constructor : ElementFilter.constructorsIn(clazz.getEnclosedElements())) {
+            if (constructor.getParameters().size() == 1
+                    && constructor.getModifiers().contains(Modifier.PUBLIC)) {
+                VariableElement param = constructor.getParameters().get(0);
+
+                if (types.isAssignable(param.asType(), intType)) {
+                    final Name packageName = elements.getPackageOf(clazz).getQualifiedName();
+
+                    return packageName.toString().startsWith("java.util")
+                            || "capacity".equalsIgnoreCase(param.getSimpleName().toString());
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private Strategy getSimpleCollectionStrategy(TypeMirror captured, TypeMirror elementType, Strategy strategy) {
+        return Strategy.createNullSafe(init -> {
+            final String collection = allocator.newName(selfName + "Collection");
+            final String size = allocator.newName(selfName + "Size");
+            final String i = allocator.newName("j");
+
+            init.addStatement("final $T $N", captured, collection);
+            init.addStatement("final int $N = $N.readInt()", size, parcelName);
+            init.beginControlFlow("if ($N < 0)", size);
+            init.addStatement("$N = null", collection);
+            init.nextControlFlow("else");
+            init.addStatement("$N = $L", collection, emitDefaultConstructorCall(captured));
+
+            final boolean nullable1 = Util.isNullable(elementType, nullable);
+
+            final Strategy strategyToUse;
+
+            if (nullable1 && strategy.needNullHandling) {
+                strategyToUse = getNullableStrategy(elementType, strategy);
+            } else {
+                strategyToUse = strategy;
+            }
+
+            final TypeMirror resultType = strategy.returnType;
+
+            init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", i, i, size, i);
+            init.addStatement("$N.add($L)", collection, emitCasts(resultType, captureAll(elementType), strategyToUse.read(init)));
+            init.endControlFlow();
+
+            init.endControlFlow();
+
+            return literal(collection);
+        }, captured);
+    }
+
+    private Strategy getCapacityAwareCollectionStrategy(
+            TypeMirror captured,
+            TypeMirror elementType,
+            Strategy strategy) {
+        return Strategy.createNullSafe(init -> {
+            final String collection = allocator.newName(selfName + "Collection");
+            final String size = allocator.newName(selfName + "Size");
+            final String i = allocator.newName("j");
+
+            init.addStatement("final $T $N", captured, collection);
+            init.addStatement("final int $N = $N.readInt()", size, parcelName);
+            init.beginControlFlow("if ($N < 0)", size);
+            init.addStatement("$N = null", collection);
+            init.nextControlFlow("else");
+            init.addStatement("$N = $L", collection, emitCapacityConstructorCall(captured, size));
+
+            final boolean nullable1 = Util.isNullable(elementType, nullable);
+
+            final Strategy strategyToUse;
+
+            if (nullable1 && strategy.needNullHandling) {
+                strategyToUse = getNullableStrategy(elementType, strategy);
+            } else {
+                strategyToUse = strategy;
+            }
+
+            final TypeMirror resultType = strategy.returnType;
+
+            init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", i, i, size, i);
+            init.addStatement("$N.add($L)", collection, emitCasts(resultType, elementType, strategyToUse.read(init)));
+            init.endControlFlow();
+
+            init.endControlFlow();
+
+            return literal(collection);
+        }, captured);
+    }
+
     // Always nullable by design
     private Strategy SERIALIZABLE_STRATEGY;
 
     private Strategy getSerializableStrategy(TypeMirror type) {
-        if (SERIALIZABLE_STRATEGY == null) {
-            SERIALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
-                private final CodeBlock block = readSerializable();
+        SERIALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
+            private final CodeBlock block = readSerializable();
 
-                @Override
-                public CodeBlock read(CodeBlock.Builder unused) {
-                    return block;
-                }
-            }, type);
-        }
+            @Override
+            public CodeBlock read(CodeBlock.Builder unused) {
+                return block;
+            }
+        }, type);
 
         return SERIALIZABLE_STRATEGY;
     }
