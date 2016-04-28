@@ -9,10 +9,13 @@ import net.sf.aidl2.tests.LogFileRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import javax.tools.JavaFileObject;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class MiscTests {
     @Rule
@@ -95,5 +98,23 @@ public class MiscTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings();
+    }
+
+    @Test
+    public void localNameIsolation() throws Exception {
+        JavaFileObject testSource1 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParamNameIsolation1.java"));
+        JavaFileObject testSource2 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParamNameIsolation2.java"));
+
+        JavaFileObject generatedStub1 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation1$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy1 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation1$$AidlClientImpl.java"));
+        JavaFileObject generatedStub2 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy2 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation2$$AidlClientImpl.java"));
+
+        assertAbout(javaSources()).that(Arrays.asList(testSource1, testSource2))
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub1, generatedProxy1, generatedStub2, generatedProxy2);
     }
 }

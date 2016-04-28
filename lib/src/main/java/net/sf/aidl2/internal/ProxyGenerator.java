@@ -61,6 +61,8 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
     }
 
     private void writeModel(AidlModel model, Filer filer) throws IOException, ElementException {
+        final NameAllocator modelAllocator = baseAllocator.clone();
+
         final String name = model.clientImplName.toString();
 
         final TypeName interfaceType = model.interfaceName;
@@ -101,7 +103,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 .build());
 
         if (!model.methods.isEmpty()) {
-            final State aidlWriter = new State(getBaseEnvironment(), baseAllocator)
+            final State aidlWriter = new State(getBaseEnvironment(), modelAllocator)
                     .allowUnchecked(isSuppressed(model.suppressed, Util.SUPPRESS_UNCHECKED));
 
             for (AidlMethodModel method : model.methods) {

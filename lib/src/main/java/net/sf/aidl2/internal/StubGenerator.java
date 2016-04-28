@@ -84,6 +84,8 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
     }
 
     private void writeModel(AidlModel model, Filer filer) throws IOException, net.sf.aidl2.internal.exceptions.ElementException {
+        final NameAllocator modelAllocator = baseAllocator.clone();
+
         final String name = model.serverImplName.toString();
 
         final TypeName interfaceType = model.interfaceName;
@@ -113,7 +115,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         }
 
         if (!model.methods.isEmpty()) {
-            final State aidlReader = new State(getBaseEnvironment(), baseAllocator)
+            final State aidlReader = new State(getBaseEnvironment(), modelAllocator)
                     .allowUnchecked((model.suppressed & Util.SUPPRESS_UNCHECKED) != 0);
 
             final MethodSpec.Builder onTransactSpec = onTransact.toBuilder();
