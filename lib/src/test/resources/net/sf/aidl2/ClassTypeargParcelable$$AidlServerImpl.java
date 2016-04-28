@@ -37,7 +37,7 @@ public final class ClassTypeargParcelable$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithParcelableReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Parcelable returnValue = (Parcelable) this.delegate.methodWithParcelableReturn();
+                Parcelable returnValue = this.delegate.methodWithParcelableReturn();
                 reply.writeNoException();
                 reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
 

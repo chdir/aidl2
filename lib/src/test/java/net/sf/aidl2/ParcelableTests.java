@@ -104,8 +104,7 @@ public class ParcelableTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
-                .withWarningCount(1)
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
@@ -123,7 +122,7 @@ public class ParcelableTests {
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutError()
-                .withWarningCount(3)
+                .withWarningCount(2)
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }

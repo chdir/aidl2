@@ -157,23 +157,32 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
     }
 
-    private boolean isTricky(TypeMirror t) {
+    public boolean isTricky(TypeMirror t) {
         if (t == null) return false;
 
-        final TypeKind kind = t.getKind();
+        final TypeKind k = t.getKind();
 
-        if (kind.isPrimitive()) return false;
-
-        switch (kind) {
+        switch (k) {
+            case ARRAY:
+            case ERROR:
+            case NULL:
+            case NONE:
+                return false;
             case DECLARED:
                 return !isProperDeclared(t);
-            case ARRAY:
-                return false;
+            case WILDCARD:
+                return isTricky(((WildcardType) t).getExtendsBound())
+                        || isTricky(((WildcardType) t).getSuperBound());
+            case TYPEVAR:
+                return isTricky(((TypeVariable) t).getLowerBound())
+                        || isTricky(((TypeVariable) t).getUpperBound());
             default:
-                final TypeMirror simplified = types.capture(t);
-
-                return simplified.getKind() != TypeKind.DECLARED || !isProperDeclared(simplified);
+                if (!k.isPrimitive()) {
+                    return true;
+                }
         }
+
+        return false;
     }
 
     public boolean castAllowed(TypeMirror Source, TypeMirror Target) {
@@ -239,7 +248,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return true;
     }
 
-    public Collection<? extends TypeMirror> getSupertypes(DeclaredType s) {
+    public Collection<? extends TypeMirror> getSupertypes(TypeMirror s) {
         final Set<TypeMirror> superTypes = new HashSet<>(3);
 
         new SimpleTypeVisitor6<Void, Void>() {
