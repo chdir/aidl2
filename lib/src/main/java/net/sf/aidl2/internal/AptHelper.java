@@ -157,6 +157,16 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
     }
 
+    public CodeBlock emitFullCast(TypeMirror t, TypeMirror t2, CodeBlock input) {
+        final CodeBlock cast = emitCasts(t, t2, input);
+
+        if (cast == input) {
+            return cast;
+        }
+
+        return literal("($L)", cast);
+    }
+
     public boolean isTricky(TypeMirror t) {
         if (t == null) return false;
 
@@ -313,24 +323,6 @@ public abstract class AptHelper implements ProcessingEnvironment {
         final TypeMirror t2erasure = types.erasure(targ2);
 
         return !types.isSubtype(t1erasure, t2erasure) && !types.isSubtype(t2erasure, t1erasure);
-    }
-
-    public CodeBlock emitFullCast(TypeMirror t, TypeMirror t2, CodeBlock input) {
-        if (types.isAssignable(t, t2)) {
-            // no need for casting
-            return input;
-        } else {
-            final TypeMirror captured = captureAll(t2);
-
-            if (types.isAssignable(captured, t2)) {
-                // emit a simple unchecked cast
-                return literal("(($T) $L)", captured, input);
-            } else {
-                // emit cast via the helper method
-                // TODO: warn user
-                return literal("($T.unsafeCast($L))", ClassName.get(AidlUtil.class), input);
-            }
-        }
     }
 
     private final TypeVisitor<DeclaredType, TypeMirror> BOUND_REFINER = new SharedParentRefiner();
