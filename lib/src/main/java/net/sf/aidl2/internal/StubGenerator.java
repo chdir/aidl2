@@ -205,7 +205,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                                     final TypeMirror actualReturn = captureAll(requiredReturn);
 
                                     delegateCall.addStatement("$T returnValue = $L",
-                                            actualReturn, forceCasts(param.type, actualReturn, callCode));
+                                            actualReturn, emitCasts(param.type, actualReturn, callCode));
                                 } catch (CodegenException cde) {
                                     throw new ElementException(cde, method.element.element);
                                 }

@@ -7,7 +7,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -199,10 +202,19 @@ public class Util {
         }, null);
     }
 
-    public static boolean isProperClass(TypeMirror declared) {
+    public static boolean isProperDeclared(TypeMirror declared) {
         return declared != null
                 && declared.getKind() == TypeKind.DECLARED
                 && getQualifiedName((DeclaredType) declared) != null;
+    }
+
+    public static boolean isProperClass(TypeMirror declared) {
+        return isProperDeclared(declared) &&
+                ((DeclaredType) declared).asElement().getKind().isClass();
+    }
+
+    public static boolean isFinal(Element element) {
+        return element.getModifiers().contains(Modifier.FINAL);
     }
 
     public static String appendSuffix(Object original, String suffix) {

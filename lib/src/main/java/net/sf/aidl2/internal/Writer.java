@@ -14,7 +14,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Type;
 import java.util.Iterator;
 
 import javax.lang.model.element.ExecutableElement;
@@ -520,7 +519,7 @@ public final class Writer extends AptHelper {
         } else {
             final TypeMirror captured = captureAll(type);
 
-            if (!Util.isProperClass(captured)) {
+            if (!Util.isProperDeclared(captured)) {
                 throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
             }
 
@@ -556,9 +555,9 @@ public final class Writer extends AptHelper {
 
             if (nullable && elementStrategy.needNullHandling) {
                 getNullableStrategy(elementStrategy)
-                        .write(block, element, type);
+                        .write(block, element, requestedType);
             } else {
-                elementStrategy.write(block, element, type);
+                elementStrategy.write(block, element, requestedType);
             }
 
             block.endControlFlow();

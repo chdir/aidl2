@@ -13,8 +13,6 @@ import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.util.JavaVersion;
 import net.sf.aidl2.internal.util.Util;
 
-import java.util.AbstractList;
-import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,13 +31,13 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.NoType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
@@ -47,10 +45,11 @@ import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.TypeKindVisitor6;
 import javax.lang.model.util.Types;
 
-import static net.sf.aidl2.internal.util.Util.isProperClass;
+import static net.sf.aidl2.internal.util.Util.isProperDeclared;
 import static net.sf.aidl2.internal.util.Util.isTypeOf;
 import static net.sf.aidl2.internal.util.Util.literal;
 
@@ -123,6 +122,13 @@ public abstract class AptHelper implements ProcessingEnvironment {
     }
 
     public CodeBlock emitCasts(TypeMirror t, TypeMirror t2, CodeBlock input) {
+        // It is hard and sometimes not even possible to tell if intersection cast is needed,
+        // much less to handle those casts. This should do for Java versions >= 8 and avoid
+        // redundant casts when no intersection types are involved
+        if (isTricky(t) || isTricky(t2)) {
+            return literal("$T.unsafeCast($L)", ClassName.get(AidlUtil.class), input);
+        }
+
         if (types.isAssignable(t, t2)) {
             // no need for casting
             return input;
@@ -132,11 +138,8 @@ public abstract class AptHelper implements ProcessingEnvironment {
             if (types.isAssignable(captured, t2)) {
                 // There is still a possibility, that javac refuses to perform a cast
                 // (e.g. between collections of incompatible generic types).
-                // As such, use the generic-involving casts only when generic arguments are same
-                if (isProperClass(t) && isProperClass(captured)) {
-                    if (typeArgsEqual((DeclaredType) t, (DeclaredType) captured)) {
-                        return literal("($T) $L", captured, input);
-                    }
+                if (castAllowed(t, captured)) {
+                    return literal("($T) $L", captured, input);
                 }
             }
 
@@ -154,23 +157,6 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
     }
 
-    private boolean typeArgsEqual(DeclaredType t, DeclaredType t2) {
-        final List<? extends TypeMirror> tArgs = t.getTypeArguments();
-        final List<? extends TypeMirror> t2Args = t2.getTypeArguments();
-
-        if (tArgs.size() != t2Args.size()) {
-            return false;
-        }
-
-        for (int i = 0; i < tArgs.size(); ++i) {
-            if (!types.isSameType(tArgs.get(i), t2Args.get(i))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private boolean isTricky(TypeMirror t) {
         if (t == null) return false;
 
@@ -180,36 +166,144 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         switch (kind) {
             case DECLARED:
-                return !isProperClass(t);
+                return !isProperDeclared(t);
             case ARRAY:
                 return false;
             default:
                 final TypeMirror simplified = types.capture(t);
 
-                return simplified.getKind() != TypeKind.DECLARED || !isProperClass(simplified);
+                return simplified.getKind() != TypeKind.DECLARED || !isProperDeclared(simplified);
         }
     }
 
-    public CodeBlock forceCasts(TypeMirror t, TypeMirror t2, CodeBlock input) {
-        if (types.isSameType(t, t2) && types.isAssignable(t, t2)) {
-            return input;
+    public boolean castAllowed(TypeMirror Source, TypeMirror Target) {
+        // according to Java type system wildcards clearly belong in upper plane of existence,
+        // furthermore letting them appear here is a *totally* unexpected condition
+        TypeMirror invalid = null;
+
+        if (Source.getKind() == TypeKind.WILDCARD) {
+            invalid = Source;
+        } else if (Target.getKind() == TypeKind.WILDCARD) {
+            invalid = Target;
         }
 
-        // avoid redundant casts when no intersections are involved
-        if (!isTricky(t) && !isTricky(t2)) {
-            return emitCasts(t, t2, input);
+        if (invalid != null) {
+            getBaseEnvironment().getLogger().log(
+                    "Wildcard type " + invalid + " is not supposed to appear in neither top-level, " +
+                    "nor element-level casting context. Consider reporting a bug.");
+
+            return false;
         }
 
-        final TypeMirror captured = captureAll(t2);
-
-        if (types.isAssignable(captured, t2)) {
-            // emit a simple unchecked cast
-            return literal("($T) $L", captured, input);
-        } else {
-            // emit cast via the helper method
-            // TODO: warn user
-            return literal("$T.unsafeCast($L)", ClassName.get(AidlUtil.class), input);
+        // do not proceed with analysis, let the (potentially failed) cast be generated instead
+        if (Util.isProperClass(Source) && Util.isProperClass(Target)) {
+            return true;
         }
+
+        // freaking type arguments weren't supposed to get this far!
+        if (!isProperDeclared(Source) || !isProperDeclared(Target)) {
+            return false;
+        }
+
+        final DeclaredType S = (DeclaredType) Source;
+        final DeclaredType T = (DeclaredType) Target;
+
+        if (Util.isFinal(S.asElement())) {
+            return true;
+        }
+
+        final Collection<? extends TypeMirror> parentsOfS = getSupertypes(S);
+        final Collection<? extends TypeMirror> parentsOfT = getSupertypes(T);
+
+        for (TypeMirror parentOfS : parentsOfS) {
+            if (!isProperDeclared(parentOfS)) {
+                // TODO: WHAT?! maybe a system for issuing warnings in cases like this should be made...
+                continue;
+            }
+
+            final TypeMirror erased = types.erasure(parentOfS);
+
+            for (TypeMirror parentOfT : parentsOfT) {
+                if (types.isSameType(erased, types.erasure(parentOfT))) {
+                    if (!isProperDeclared(parentOfT)) {
+                        continue;
+                    }
+
+                    if (distinct((DeclaredType) parentOfT, (DeclaredType) parentOfS)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public Collection<? extends TypeMirror> getSupertypes(DeclaredType s) {
+        final Set<TypeMirror> superTypes = new HashSet<>(3);
+
+        new SimpleTypeVisitor6<Void, Void>() {
+            @Override
+            public Void visitUnknown(TypeMirror typeMirror, Void unused) {
+                return defaultAction(typeMirror, unused);
+            }
+
+            @Override
+            protected Void defaultAction(TypeMirror typeMirror, Void unused) {
+                superTypes.add(typeMirror);
+
+                for (TypeMirror parent : (types.directSupertypes(typeMirror))) {
+                    if (!types.isSameType(parent, typeMirror)) {
+                        visit(parent);
+                    }
+                }
+
+                return null;
+            }
+        }.visit(s);
+
+        return superTypes;
+    }
+
+    public boolean distinct(DeclaredType t1, DeclaredType t2) {
+        final Name n1 = Util.getQualifiedName(t1);
+
+        assert n1 != null;
+
+        if (!n1.equals(Util.getQualifiedName(t2))) {
+            return true;
+        }
+
+        final List<? extends TypeMirror> t1els = t1.getTypeArguments();
+        final List<? extends TypeMirror> t2els = t1.getTypeArguments();
+
+        for (int i = 0; i < t1els.size(); ++i) {
+            if (!typeArgsDistinct(t1els.get(i), t2els.get(i))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean typeArgsDistinct(TypeMirror targ1, TypeMirror targ2) {
+        final TypeKind type1Kind = targ1.getKind();
+        final TypeKind type2Kind = targ2.getKind();
+
+        switch (type1Kind) {
+            case WILDCARD:
+            case TYPEVAR:
+                break;
+            default:
+                if (type2Kind != TypeKind.WILDCARD && type2Kind != TypeKind.TYPEVAR) {
+                    return !types.isSameType(targ1, targ2);
+                }
+        }
+
+        final TypeMirror t1erasure = types.erasure(targ1);
+        final TypeMirror t2erasure = types.erasure(targ2);
+
+        return !types.isSubtype(t1erasure, t2erasure) && !types.isSubtype(t2erasure, t1erasure);
     }
 
     public CodeBlock emitFullCast(TypeMirror t, TypeMirror t2, CodeBlock input) {
@@ -713,7 +807,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         @Override
         public DeclaredType visitDeclared(DeclaredType type, TypeMirror ignored) {
-            if (isProperClass(type) && types.isSubtype(type, theCollection)) {
+            if (isProperDeclared(type) && types.isSubtype(type, theCollection)) {
                 input.add(type);
 
                 return null;
@@ -785,7 +879,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         final TypeMirror erased = types.erasure(capturedType);
 
         if (JavaVersion.atLeast(JavaVersion.JAVA_1_7)) {
-            if (Util.isProperClass(capturedType)) {
+            if (Util.isProperDeclared(capturedType)) {
                 Collection<? extends TypeMirror> args = ((DeclaredType) capturedType).getTypeArguments();
 
                 if (!args.isEmpty()) {
@@ -801,7 +895,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         final TypeMirror erased = types.erasure(capturedType);
 
         if (JavaVersion.atLeast(JavaVersion.JAVA_1_7)) {
-            if (Util.isProperClass(capturedType)) {
+            if (Util.isProperDeclared(capturedType)) {
                 Collection<? extends TypeMirror> args = ((DeclaredType) capturedType).getTypeArguments();
 
                 if (!args.isEmpty()) {
@@ -846,13 +940,13 @@ public abstract class AptHelper implements ProcessingEnvironment {
             default:
                 final TypeMirror refined = types.capture(type);
 
-                if (Util.isProperClass(refined)) {
+                if (Util.isProperDeclared(refined)) {
                     return captureAllArgs((DeclaredType) refined, encountered);
                 }
 
                 final TypeMirror erasedArg = types.erasure(type);
 
-                if (!Util.isProperClass(erasedArg)) {
+                if (!Util.isProperDeclared(erasedArg)) {
                     return theObject;
                 }
 
@@ -864,7 +958,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
                 final TypeMirror refinedParent = types.capture(declaredParent);
 
-                if (Util.isProperClass(refinedParent)) {
+                if (Util.isProperDeclared(refinedParent)) {
                     return captureAllArgs((DeclaredType) refinedParent, encountered);
                 }
 
@@ -877,7 +971,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         for (TypeMirror encounteredType : encountered) {
             if (types.isSameType(erased, encounteredType)) {
-                return Util.isProperClass(erased) ? (DeclaredType) erased : theObject;
+                return Util.isProperDeclared(erased) ? (DeclaredType) erased : theObject;
             }
         }
 

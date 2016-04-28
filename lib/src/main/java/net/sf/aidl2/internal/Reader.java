@@ -1,8 +1,5 @@
 package net.sf.aidl2.internal;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
@@ -23,8 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -621,7 +616,7 @@ public final class Reader extends AptHelper {
 
         final TypeMirror captured = captureAll(type);
 
-        if (!Util.isProperClass(captured)) {
+        if (!Util.isProperDeclared(captured)) {
             throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
         }
 
