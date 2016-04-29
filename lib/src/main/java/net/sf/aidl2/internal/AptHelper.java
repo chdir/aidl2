@@ -16,6 +16,7 @@ import net.sf.aidl2.internal.util.Util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -82,6 +83,8 @@ public abstract class AptHelper implements ProcessingEnvironment {
     protected final TypeInvocation<ExecutableElement, ExecutableType> onTransact;
     protected final TypeInvocation<ExecutableElement, ExecutableType> asBinder;
 
+    private final Comparator<? super TypeMirror> specificityComparator;
+
     public AptHelper(AidlProcessor.Environment environment) {
         this.environment = environment;
 
@@ -109,6 +112,34 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         listBound = types.getWildcardType(null, arrayList);
         setBound = types.getWildcardType(null, hashSet);
+
+        specificityComparator = (left, right) -> {
+            if (types.isSameType(left, right)) {
+                return 0;
+            }
+
+            boolean leftIsSubtypeOfRight = types.isAssignable(left, right);
+
+            boolean rightIsSubtypeOfLeft = types.isAssignable(right, left);
+
+            // move least concrete types towards the end of list
+            if (leftIsSubtypeOfRight) {
+                if (!rightIsSubtypeOfLeft) {
+                    return +1;
+                }
+            } else {
+                if (rightIsSubtypeOfLeft) {
+                    return -1;
+                }
+            }
+
+            // move raw types towards end of list
+            if (isRaw(left)) {
+                return +1;
+            }
+
+            return 0;
+        };
     }
 
     public boolean isSubsignature(TypeInvocation<?, ExecutableType> m1, TypeInvocation<?, ExecutableType> m2) {
@@ -572,33 +603,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
             throw new IllegalStateException("The type " + type + " appears to be subtype of Collection, but the exact type parameter can not be determined");
         }
 
-        Collections.sort(parents, (left, right) -> {
-            if (types.isSameType(left, right)) {
-                return 0;
-            }
-
-            boolean leftIsSubtypeOfRight = types.isAssignable(left, right);
-
-            boolean rightIsSubtypeOfLeft = types.isAssignable(right, left);
-
-            // move least concrete types towards the end of list
-            if (leftIsSubtypeOfRight) {
-                if (!rightIsSubtypeOfLeft) {
-                    return +1;
-                }
-            } else {
-                if (rightIsSubtypeOfLeft) {
-                    return -1;
-                }
-            }
-
-            // move raw types towards end of list
-            if (isRaw(left)) {
-                return +1;
-            }
-
-            return 0;
-        });
+        Collections.sort(parents, specificityComparator);
 
         return parents.get(0);
     }
@@ -906,6 +911,14 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
 
         return literal("new $T()", erased);
+    }
+
+    public TypeMirror jokeLub(TypeMirror requested, TypeMirror returned) {
+        if (types.isAssignable(requested, returned) && !isTricky(requested)) {
+            return requested;
+        }
+
+        return returned;
     }
 
     /**

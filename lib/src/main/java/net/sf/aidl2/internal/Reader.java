@@ -27,6 +27,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -193,7 +194,7 @@ public final class Reader extends AptHelper {
                         }
                     }
 
-                    return getUnknownParcelableStrategy();
+                    return getUnknownParcelableStrategy(type);
                 }
 
                 // Or IInterface reading strategy
@@ -322,12 +323,12 @@ public final class Reader extends AptHelper {
                 return literal(tmpInterface);
             };
 
-            return Strategy.createNullSafe(strategy, captured);
+            return Strategy.createNullSafe(strategy, jokeLub(captured, theIInterface));
         } else {
             strategy = block -> literal("$T.asInterface($N.readStrongBinder(), $T.class)",
                     ClassName.get(InterfaceLoader.class), parcelName, raw);
 
-            return Strategy.createNullSafe(strategy, type);
+            return Strategy.createNullSafe(strategy, jokeLub(type, theIInterface));
         }
     }
 
@@ -370,7 +371,7 @@ public final class Reader extends AptHelper {
             block.endControlFlow();
 
             return literal(xtrnlzbl);
-        }, capturedType);
+        }, jokeLub(capturedType, externalizable));
     }
 
     private Strategy getArrayStrategy(ArrayType arrayType) throws CodegenException {
@@ -401,7 +402,7 @@ public final class Reader extends AptHelper {
                         }
                     }
 
-                    return getSpecialArrayStrategy(getUnknownParcelableStrategy(), component);
+                    return getSpecialArrayStrategy(getUnknownParcelableStrategy(component), component);
                 }
 
                 final Strategy specialStrategy = getStrategy(component);
@@ -489,7 +490,7 @@ public final class Reader extends AptHelper {
             throw new CodegenException("The type of Parcelable CREATOR can not be determined");
         }
 
-        TypeMirror instantiated = type;
+        TypeMirror instantiated = jokeLub(type, parcelable);
 
         // make special exception for Creator<? super Parcelable>, otherwise let the lack of cast
         // trigger an error to notify user of improper CREATOR declaration
@@ -560,6 +561,8 @@ public final class Reader extends AptHelper {
 
     private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
         // allow upper-bound wildcards to be used
+        // not using captureAll() on purpose since any nested types with meaningful type args
+        // (e.g. Collections) are going to be handled by recursive application of this method
         final TypeMirror noWildcards = types.capture(type);
 
         final DeclaredType base = getCollectionInterface(noWildcards);
@@ -568,6 +571,8 @@ public final class Reader extends AptHelper {
                 collectionAdd.refine(types, base);
 
         final TypeMirror elementType = specificAddMethod.type.getParameterTypes().get(0);
+
+        final boolean elementIsNullable = Util.isNullable(elementType, nullable);
 
         Strategy elementStrategy = getStrategy(elementType);
 
@@ -593,40 +598,7 @@ public final class Reader extends AptHelper {
             }
         }
 
-        boolean failedElementTypeCheck = elementStrategy == null;
-
-        // thankfully, Java does not support multiple inheritance for classes
-        final TypeMirror concreteParent = findConcreteParent(type, theCollection);
-
-        if (concreteParent == null) {
-            if (hasBound(type, listBound)) {
-                final TypeMirror lt = types.getDeclaredType((TypeElement) arrayList.asElement(), elementType);
-
-                return getCapacityAwareCollectionStrategy(captureAll(lt), captureAll(elementType), elementStrategy);
-            }
-
-            if (hasBound(type, setBound)) {
-                final TypeMirror st = types.getDeclaredType((TypeElement) hashSet.asElement(), elementType);
-
-                return getCapacityAwareCollectionStrategy(captureAll(st), captureAll(elementType), elementStrategy);
-            }
-
-            throw new CodegenException("Unsupported abstract collection type: " + type + ". Allowed types: java.util.List, java.util.Set");
-        }
-
-        final TypeMirror captured = captureAll(type);
-
-        if (!Util.isProperDeclared(captured)) {
-            throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
-        }
-
-        final TypeElement te = (TypeElement) ((DeclaredType) captured).asElement();
-
-        if (!hasPublicDefaultConstructor(te)) {
-            throw new CodegenException("Type " + type + " does not have default public constructor, can not instantiate");
-        }
-
-        if (failedElementTypeCheck) {
+        if (elementStrategy == null) {
             final String errMsg = "Unsupported collection element type: " + elementType + ".\n" +
                     "Must be one of:\n" +
                     "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
@@ -636,11 +608,79 @@ public final class Reader extends AptHelper {
             throw new CodegenException(errMsg);
         }
 
-        if (hasPublicCapacityConstructor(te)) {
-            return getCapacityAwareCollectionStrategy(captured, elementType, elementStrategy);
+        // thankfully, Java does not support multiple inheritance for classes
+        final TypeMirror concreteParent = findConcreteParent(type, theCollection);
+
+        if (concreteParent == null) {
+            if (hasBound(type, listBound)) {
+                final TypeMirror lt = types.getDeclaredType((TypeElement) arrayList.asElement(), elementType);
+
+                final TypeMirror t = captureAll(lt);
+
+                return getCapacityAwareCollectionStrategy(t, t, captureAll(elementType), elementStrategy, elementIsNullable);
+            }
+
+            if (hasBound(type, setBound)) {
+                final TypeMirror st = types.getDeclaredType((TypeElement) hashSet.asElement(), elementType);
+
+                final TypeMirror t = captureAll(st);
+
+                return getCapacityAwareCollectionStrategy(t, t, captureAll(elementType), elementStrategy, elementIsNullable);
+            }
+
+            throw new CodegenException("Unsupported abstract collection type: " + type + ". Allowed types: java.util.List, java.util.Set");
         }
 
-        return getSimpleCollectionStrategy(captured, elementType, elementStrategy);
+        TypeMirror captured = captureAll(type);
+
+        if (!Util.isProperDeclared(captured)) {
+            throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
+        }
+
+        final TypeElement capturedTypeElement = (TypeElement) types.asElement(captured);
+
+        if (!hasPublicDefaultConstructor(capturedTypeElement)) {
+            throw new CodegenException("Type " + type + " does not have default public constructor, can not instantiate");
+        }
+
+        final TypeMirror newBase;
+        final TypeMirror newElement;
+
+        // if the capture was lossy and resulting type can not be assigned to target type anyway
+        // (typical situation when intersections are involved), consider if sacrificing that type
+        // may avoid extra cast during assignment
+        // TODO: always avoid casting collection element even at expense of casting collection itself?
+        if (!types.isAssignable(captured, type)) {
+            final TypeInvocation<ExecutableElement, ExecutableType> capturedAddMethod =
+                    collectionAdd.refine(types, (DeclaredType) captured);
+
+            final TypeMirror capturedAdd = capturedAddMethod.type.getParameterTypes().get(0);
+
+            if (!types.isAssignable(elementStrategy.returnType, capturedAdd)) {
+                // yay! extra cast avoided!
+                newElement = captureAll(elementStrategy.returnType);
+
+                final List<? extends TypeParameterElement> params = capturedTypeElement.getTypeParameters();
+
+                if (params.size() == 1 && types.isSameType(params.get(0).asType(), capturedAdd)) {
+                    newBase = types.getDeclaredType(capturedTypeElement, newElement);
+                } else {
+                    newBase = types.getDeclaredType(collectionElement, newElement);
+                }
+            } else {
+                newBase = captured;
+                newElement = elementType;
+            }
+        } else {
+            newBase = captured;
+            newElement = elementType;
+        }
+
+        if (hasPublicCapacityConstructor(capturedTypeElement)) {
+            return getCapacityAwareCollectionStrategy(newBase, captured, newElement, elementStrategy, elementIsNullable);
+        }
+
+        return getSimpleCollectionStrategy(newBase, captured, newElement, elementStrategy, elementIsNullable);
     }
 
     private boolean hasPublicCapacityConstructor(TypeElement clazz) {
@@ -661,24 +701,27 @@ public final class Reader extends AptHelper {
         return false;
     }
 
-    private Strategy getSimpleCollectionStrategy(TypeMirror captured, TypeMirror elementType, Strategy strategy) {
+    private Strategy getSimpleCollectionStrategy(
+            TypeMirror base,
+            TypeMirror captured,
+            TypeMirror elementType,
+            Strategy strategy,
+            boolean elementIsNullable) {
         return Strategy.createNullSafe(init -> {
             final String collection = allocator.newName(selfName + "Collection");
             final String size = allocator.newName(selfName + "Size");
             final String i = allocator.newName("j");
 
-            init.addStatement("final $T $N", captured, collection);
+            init.addStatement("final $T $N", base, collection);
             init.addStatement("final int $N = $N.readInt()", size, parcelName);
             init.beginControlFlow("if ($N < 0)", size);
             init.addStatement("$N = null", collection);
             init.nextControlFlow("else");
             init.addStatement("$N = $L", collection, emitDefaultConstructorCall(captured));
 
-            final boolean nullable1 = Util.isNullable(elementType, nullable);
-
             final Strategy strategyToUse;
 
-            if (nullable1 && strategy.needNullHandling) {
+            if (elementIsNullable && strategy.needNullHandling) {
                 strategyToUse = getNullableStrategy(elementType, strategy);
             } else {
                 strategyToUse = strategy;
@@ -693,30 +736,30 @@ public final class Reader extends AptHelper {
             init.endControlFlow();
 
             return literal(collection);
-        }, captured);
+        }, base);
     }
 
     private Strategy getCapacityAwareCollectionStrategy(
+            TypeMirror base,
             TypeMirror captured,
             TypeMirror elementType,
-            Strategy strategy) {
+            Strategy strategy,
+            boolean elementIsNullable) {
         return Strategy.createNullSafe(init -> {
             final String collection = allocator.newName(selfName + "Collection");
             final String size = allocator.newName(selfName + "Size");
             final String i = allocator.newName("j");
 
-            init.addStatement("final $T $N", captured, collection);
+            init.addStatement("final $T $N", base, collection);
             init.addStatement("final int $N = $N.readInt()", size, parcelName);
             init.beginControlFlow("if ($N < 0)", size);
             init.addStatement("$N = null", collection);
             init.nextControlFlow("else");
             init.addStatement("$N = $L", collection, emitCapacityConstructorCall(captured, size));
 
-            final boolean nullable1 = Util.isNullable(elementType, nullable);
-
             final Strategy strategyToUse;
 
-            if (nullable1 && strategy.needNullHandling) {
+            if (elementIsNullable && strategy.needNullHandling) {
                 strategyToUse = getNullableStrategy(elementType, strategy);
             } else {
                 strategyToUse = strategy;
@@ -731,7 +774,7 @@ public final class Reader extends AptHelper {
             init.endControlFlow();
 
             return literal(collection);
-        }, captured);
+        }, base);
     }
 
     // Always nullable by design
@@ -745,7 +788,7 @@ public final class Reader extends AptHelper {
             public CodeBlock read(CodeBlock.Builder unused) {
                 return block;
             }
-        }, type);
+        }, jokeLub(type, serializable));
 
         return SERIALIZABLE_STRATEGY;
     }
@@ -762,7 +805,7 @@ public final class Reader extends AptHelper {
                 public CodeBlock read(CodeBlock.Builder unused) {
                     return block;
                 }
-            }, type);
+            }, jokeLub(type, externalizable));
         }
 
         return EXTERNALIZABLE_STRATEGY;
@@ -771,7 +814,7 @@ public final class Reader extends AptHelper {
     // Always nullable by design
     private Strategy UNKNOWN_PARCELABLE_STRATEGY;
 
-    private Strategy getUnknownParcelableStrategy() {
+    private Strategy getUnknownParcelableStrategy(TypeMirror type) {
         if (UNKNOWN_PARCELABLE_STRATEGY == null) {
             UNKNOWN_PARCELABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
                 private final CodeBlock block = literal("$L.readParcelable(getClass().getClassLoader())", parcelName);
@@ -780,7 +823,7 @@ public final class Reader extends AptHelper {
                 public CodeBlock read(CodeBlock.Builder unused) {
                     return block;
                 }
-            }, parcelable);
+            }, jokeLub(type, parcelable));
         }
 
         return UNKNOWN_PARCELABLE_STRATEGY;
