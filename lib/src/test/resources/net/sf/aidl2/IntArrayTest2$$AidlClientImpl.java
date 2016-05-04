@@ -34,7 +34,7 @@ public final class IntArrayTest2$$AidlClientImpl implements IntArrayTest2 {
         try {
             data.writeInterfaceToken(IntArrayTest2$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(IntArrayTest2$$AidlServerImpl.TRANSACT_methodWithIntArrayReturn, data, reply, 0);
+            delegate.transact(IntArrayTest2$$AidlServerImpl.TRANSACT_methodWithIntArrayReturn, data, reply, 0);
             reply.readException();
 
             return reply.createIntArray();

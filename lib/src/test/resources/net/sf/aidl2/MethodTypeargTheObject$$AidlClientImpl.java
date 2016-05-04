@@ -38,7 +38,7 @@ public final class MethodTypeargTheObject$$AidlClientImpl implements MethodTypea
 
             data.writeValue(object);
 
-            this.delegate.transact(MethodTypeargTheObject$$AidlServerImpl.TRANSACT_methodWithObjectParameter, data, reply, 0);
+            delegate.transact(MethodTypeargTheObject$$AidlServerImpl.TRANSACT_methodWithObjectParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

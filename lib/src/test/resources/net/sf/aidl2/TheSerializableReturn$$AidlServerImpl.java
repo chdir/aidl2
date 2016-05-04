@@ -37,7 +37,7 @@ public final class TheSerializableReturn$$AidlServerImpl extends Binder {
             case TRANSACT_methodReturningParcelable: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Serializable returnValue = this.delegate.methodReturningParcelable();
+                final Serializable returnValue = delegate.methodReturningParcelable();
                 reply.writeNoException();
                 reply.writeSerializable(returnValue);
 

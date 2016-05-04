@@ -36,7 +36,7 @@ public final class DoubleTest$$AidlClientImpl implements DoubleTest {
 
             data.writeDouble(parameter);
 
-            this.delegate.transact(DoubleTest$$AidlServerImpl.TRANSACT_methodWithDoubleParameter, data, reply, 0);
+            delegate.transact(DoubleTest$$AidlServerImpl.TRANSACT_methodWithDoubleParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

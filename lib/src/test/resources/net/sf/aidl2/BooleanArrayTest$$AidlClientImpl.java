@@ -63,7 +63,7 @@ public final class BooleanArrayTest$$AidlClientImpl<B extends Boolean> implement
                 }
             }
 
-            this.delegate.transact(BooleanArrayTest$$AidlServerImpl.TRANSACT_methodWithBiCharArrayReturn, data, reply, 0);
+            delegate.transact(BooleanArrayTest$$AidlServerImpl.TRANSACT_methodWithBiCharArrayReturn, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

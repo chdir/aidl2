@@ -34,7 +34,7 @@ public final class InsecureAidl2$$AidlServerImpl extends Binder {
     protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
         switch(code) {
             case TRANSACT_insecureMethod: {
-                this.delegate.insecureMethod();
+                delegate.insecureMethod();
                 reply.writeNoException();
                 return true;
             }

@@ -36,7 +36,7 @@ public final class ByteArrayTest$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithByteArrayReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                byte[] returnValue = this.delegate.methodWithByteArrayReturn();
+                final byte[] returnValue = delegate.methodWithByteArrayReturn();
                 reply.writeNoException();
                 reply.writeByteArray(returnValue);
 

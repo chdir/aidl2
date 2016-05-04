@@ -36,7 +36,7 @@ public final class ExtendingInterface$$AidlClientImpl implements ExtendingInterf
         try {
             data.writeInterfaceToken(ExtendingInterface$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(ExtendingInterface$$AidlServerImpl.TRANSACT_call, data, reply, 0);
+            delegate.transact(ExtendingInterface$$AidlServerImpl.TRANSACT_call, data, reply, 0);
             reply.readException();
 
             return AidlUtil.readSafeSerializable(reply);

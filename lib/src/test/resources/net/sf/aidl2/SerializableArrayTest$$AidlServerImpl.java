@@ -39,7 +39,7 @@ public final class SerializableArrayTest$$AidlServerImpl extends Binder {
 
                 final File[] files = AidlUtil.readSafeSerializable(data);
 
-                this.delegate.methodWithSerializableArrayParameter(files);
+                delegate.methodWithSerializableArrayParameter(files);
                 reply.writeNoException();
 
                 return true;

@@ -36,7 +36,7 @@ public final class VoidTest$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithVoidReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                this.delegate.methodWithVoidReturn();
+                delegate.methodWithVoidReturn();
                 reply.writeNoException();
 
                 return true;

@@ -39,7 +39,7 @@ public final class TheObjectReturn$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithObjectReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Object returnValue = this.delegate.methodWithObjectReturn();
+                final Object returnValue = delegate.methodWithObjectReturn();
                 reply.writeNoException();
 
                 reply.writeValue(returnValue);

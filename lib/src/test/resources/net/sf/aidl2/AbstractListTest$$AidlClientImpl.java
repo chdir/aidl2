@@ -56,7 +56,7 @@ public final class AbstractListTest$$AidlClientImpl implements AbstractListTest 
                 }
             }
 
-            this.delegate.transact(AbstractListTest$$AidlServerImpl.TRANSACT_methodWithListReturnAndCollectionParam, data, reply, 0);
+            delegate.transact(AbstractListTest$$AidlServerImpl.TRANSACT_methodWithListReturnAndCollectionParam, data, reply, 0);
             reply.readException();
 
             final ArrayList<Binder> returnValueCollection;

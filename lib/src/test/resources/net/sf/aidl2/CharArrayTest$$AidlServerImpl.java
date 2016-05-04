@@ -36,7 +36,7 @@ public final class CharArrayTest$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithBiCharArrayReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                char[][] returnValue = this.delegate.methodWithBiCharArrayReturn();
+                final char[][] returnValue = delegate.methodWithBiCharArrayReturn();
                 reply.writeNoException();
 
                 if (returnValue == null) {

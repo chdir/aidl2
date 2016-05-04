@@ -41,7 +41,7 @@ public final class MethodTypeargTheObject$$AidlServerImpl extends Binder {
 
                 final Object object = data.readValue(getClass().getClassLoader());
 
-                this.delegate.methodWithObjectParameter(AidlUtil.unsafeCast(object));
+                delegate.methodWithObjectParameter(AidlUtil.unsafeCast(object));
                 reply.writeNoException();
 
                 return true;

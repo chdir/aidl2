@@ -15,6 +15,4 @@ public interface AbstractListTest extends IInterface {
     List<Binder> methodWithListReturnAndCollectionParam(Collection<Integer> ints) throws RemoteException;
 
     Collection<AbstractListTest> methodWithCollectionReturn(AbstractList<SizeF> abstrList) throws RemoteException;
-
-    AbstractList<List<Date>> methodWithAbstractListReturn(List<SizeF[][]> sizes) throws RemoteException;
 }

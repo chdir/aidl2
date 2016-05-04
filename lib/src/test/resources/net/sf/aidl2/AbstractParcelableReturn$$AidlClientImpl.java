@@ -35,7 +35,7 @@ public final class AbstractParcelableReturn$$AidlClientImpl implements AbstractP
         try {
             data.writeInterfaceToken(AbstractParcelableReturn$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(AbstractParcelableReturn$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
+            delegate.transact(AbstractParcelableReturn$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
             reply.readException();
 
             return reply.readParcelable(getClass().getClassLoader());

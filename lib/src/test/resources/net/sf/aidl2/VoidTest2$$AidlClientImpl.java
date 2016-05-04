@@ -35,7 +35,7 @@ public final class VoidTest2$$AidlClientImpl implements VoidTest2 {
         try {
             data.writeInterfaceToken(VoidTest2$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(VoidTest2$$AidlServerImpl.TRANSACT_methodWithVoidParameter, data, reply, 0);
+            delegate.transact(VoidTest2$$AidlServerImpl.TRANSACT_methodWithVoidParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

@@ -35,7 +35,7 @@ public final class StringArrayTest$$AidlClientImpl implements StringArrayTest {
         try {
             data.writeInterfaceToken(StringArrayTest$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(StringArrayTest$$AidlServerImpl.TRANSACT_methodWithStringReturn, data, reply, 0);
+            delegate.transact(StringArrayTest$$AidlServerImpl.TRANSACT_methodWithStringReturn, data, reply, 0);
             reply.readException();
 
             final String[] returnValueArray;

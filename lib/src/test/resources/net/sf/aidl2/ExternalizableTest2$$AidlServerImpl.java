@@ -39,7 +39,7 @@ public final class ExternalizableTest2$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithExternalizableReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Externalizable returnValue = this.delegate.methodWithExternalizableReturn();
+                final Externalizable returnValue = delegate.methodWithExternalizableReturn();
                 reply.writeNoException();
 
                 if (returnValue == null) {

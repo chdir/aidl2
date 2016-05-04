@@ -32,7 +32,7 @@ public final class InsecureAidl2$$AidlClientImpl implements InsecureAidl2 {
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
         try {
-            this.delegate.transact(InsecureAidl2$$AidlServerImpl.TRANSACT_insecureMethod, data, reply, 0);
+            delegate.transact(InsecureAidl2$$AidlServerImpl.TRANSACT_insecureMethod, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

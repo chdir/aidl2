@@ -39,7 +39,7 @@ public final class VoidTest3$$AidlServerImpl extends Binder {
 
                 final Void[] voidVararg = null;
 
-                this.delegate.methodWithBiCharArrayReturn(voidVararg);
+                delegate.methodWithBiCharArrayReturn(voidVararg);
                 reply.writeNoException();
 
                 return true;

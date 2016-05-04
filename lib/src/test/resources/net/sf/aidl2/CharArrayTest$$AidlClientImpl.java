@@ -34,7 +34,7 @@ public final class CharArrayTest$$AidlClientImpl implements CharArrayTest {
         try {
             data.writeInterfaceToken(CharArrayTest$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(CharArrayTest$$AidlServerImpl.TRANSACT_methodWithBiCharArrayReturn, data, reply, 0);
+            delegate.transact(CharArrayTest$$AidlServerImpl.TRANSACT_methodWithBiCharArrayReturn, data, reply, 0);
             reply.readException();
 
             final char[][] returnValueArray;

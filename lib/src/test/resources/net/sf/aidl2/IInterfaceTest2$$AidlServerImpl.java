@@ -36,7 +36,7 @@ public final class IInterfaceTest2$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithCallbackReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                RemoteApi returnValue = this.delegate.methodWithCallbackReturn();
+                final RemoteApi returnValue = delegate.methodWithCallbackReturn();
                 reply.writeNoException();
 
                 reply.writeStrongBinder(returnValue == null ? null : returnValue.asBinder());

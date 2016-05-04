@@ -35,7 +35,7 @@ public final class SomeSerializableReturn$$AidlClientImpl implements SomeSeriali
         try {
             data.writeInterfaceToken(SomeSerializableReturn$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(SomeSerializableReturn$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
+            delegate.transact(SomeSerializableReturn$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
             reply.readException();
 
             return AidlUtil.readSafeSerializable(reply);

@@ -36,7 +36,7 @@ public final class FloatArrayTest$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithFloatArrayReturnValue: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                float[] returnValue = this.delegate.methodWithFloatArrayReturnValue();
+                final float[] returnValue = delegate.methodWithFloatArrayReturnValue();
                 reply.writeNoException();
 
                 reply.writeFloatArray(returnValue);

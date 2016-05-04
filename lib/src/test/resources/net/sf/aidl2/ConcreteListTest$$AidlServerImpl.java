@@ -59,7 +59,7 @@ public final class ConcreteListTest$$AidlServerImpl extends Binder {
                     }
                 }
 
-                ArrayList<? super String> returnValue = this.delegate.methodWithLinkedListParamAndArrayListReturn(AidlUtil.unsafeCast(objectListCollection));
+                final ArrayList<? super String> returnValue = delegate.methodWithLinkedListParamAndArrayListReturn(AidlUtil.unsafeCast(objectListCollection));
                 reply.writeNoException();
 
                 if (returnValue == null) {

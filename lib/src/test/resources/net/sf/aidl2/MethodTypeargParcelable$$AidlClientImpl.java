@@ -38,7 +38,7 @@ public final class MethodTypeargParcelable$$AidlClientImpl implements MethodType
 
             data.writeParcelable(parcelable, 0);
 
-            this.delegate.transact(MethodTypeargParcelable$$AidlServerImpl.TRANSACT_methodWithParcelableParam, data, reply, 0);
+            delegate.transact(MethodTypeargParcelable$$AidlServerImpl.TRANSACT_methodWithParcelableParam, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

@@ -34,7 +34,7 @@ public final class IntTest2$$AidlClientImpl implements IntTest2 {
         try {
             data.writeInterfaceToken(IntTest2$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(IntTest2$$AidlServerImpl.TRANSACT_methodWithIntReturn, data, reply, 0);
+            delegate.transact(IntTest2$$AidlServerImpl.TRANSACT_methodWithIntReturn, data, reply, 0);
             reply.readException();
 
             return reply.readInt();

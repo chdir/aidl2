@@ -34,7 +34,7 @@ public final class CustomDescriptor$$AidlClientImpl implements CustomDescriptor 
         try {
             data.writeInterfaceToken(CustomDescriptor$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(CustomDescriptor$$AidlServerImpl.TRANSACT_method, data, reply, 0);
+            delegate.transact(CustomDescriptor$$AidlServerImpl.TRANSACT_method, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

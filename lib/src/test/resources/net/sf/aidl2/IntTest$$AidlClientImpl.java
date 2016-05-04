@@ -36,7 +36,7 @@ public final class IntTest$$AidlClientImpl implements IntTest {
 
       data.writeInt(parameter);
 
-      this.delegate.transact(IntTest$$AidlServerImpl.TRANSACT_methodWithIntParameter, data, reply, 0);
+      delegate.transact(IntTest$$AidlServerImpl.TRANSACT_methodWithIntParameter, data, reply, 0);
       reply.readException();
     } finally {
       data.recycle();

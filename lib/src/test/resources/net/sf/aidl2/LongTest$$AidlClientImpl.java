@@ -42,7 +42,7 @@ public final class LongTest$$AidlClientImpl implements LongTest {
                 data.writeLong(longParameter);
             }
 
-            this.delegate.transact(LongTest$$AidlServerImpl.TRANSACT_methodWithLongParameter, data, reply, 0);
+            delegate.transact(LongTest$$AidlServerImpl.TRANSACT_methodWithLongParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

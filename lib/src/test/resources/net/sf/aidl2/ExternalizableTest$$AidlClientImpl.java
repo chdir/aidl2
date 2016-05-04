@@ -53,7 +53,7 @@ public final class ExternalizableTest$$AidlClientImpl implements ExternalizableT
                 }
             }
 
-            this.delegate.transact(ExternalizableTest$$AidlServerImpl.TRANSACT_methodWithExternalizableParameter, data, reply, 0);
+            delegate.transact(ExternalizableTest$$AidlServerImpl.TRANSACT_methodWithExternalizableParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

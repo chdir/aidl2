@@ -36,7 +36,7 @@ public final class IntTest2$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithIntReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                int returnValue = this.delegate.methodWithIntReturn();
+                final int returnValue = delegate.methodWithIntReturn();
                 reply.writeNoException();
                 reply.writeInt(returnValue);
 

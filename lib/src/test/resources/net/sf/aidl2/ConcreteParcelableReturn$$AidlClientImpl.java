@@ -34,7 +34,7 @@ public final class ConcreteParcelableReturn$$AidlClientImpl implements ConcreteP
         try {
             data.writeInterfaceToken(ConcreteParcelableReturn$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(ConcreteParcelableReturn$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
+            delegate.transact(ConcreteParcelableReturn$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
             reply.readException();
 
             final SimpleParcelable returnValueTmp;

@@ -74,7 +74,7 @@ public final class BooleanArrayTest$$AidlServerImpl extends Binder {
                     }
                 }
 
-                this.delegate.methodWithBiCharArrayReturn(AidlUtil.unsafeCast(booleanArrayParamArray));
+                delegate.methodWithBiCharArrayReturn(AidlUtil.unsafeCast(booleanArrayParamArray));
                 reply.writeNoException();
 
                 return true;

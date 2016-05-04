@@ -36,7 +36,7 @@ public final class AsyncMethod$$AidlServerImpl extends Binder {
             case TRANSACT_oneWay: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                this.delegate.oneWay();
+                delegate.oneWay();
                 return true;
             }
         }

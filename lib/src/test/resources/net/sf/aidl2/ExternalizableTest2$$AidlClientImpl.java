@@ -36,7 +36,7 @@ public final class ExternalizableTest2$$AidlClientImpl implements Externalizable
         try {
             data.writeInterfaceToken(ExternalizableTest2$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(ExternalizableTest2$$AidlServerImpl.TRANSACT_methodWithExternalizableReturn, data, reply, 0);
+            delegate.transact(ExternalizableTest2$$AidlServerImpl.TRANSACT_methodWithExternalizableReturn, data, reply, 0);
             reply.readException();
 
             final SomeExternalizable returnValueTmp;

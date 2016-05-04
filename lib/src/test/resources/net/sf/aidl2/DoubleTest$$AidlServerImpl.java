@@ -38,7 +38,7 @@ public final class DoubleTest$$AidlServerImpl extends Binder {
 
                 final double parameter = data.readDouble();
 
-                this.delegate.methodWithDoubleParameter(parameter);
+                delegate.methodWithDoubleParameter(parameter);
                 reply.writeNoException();
 
                 return true;

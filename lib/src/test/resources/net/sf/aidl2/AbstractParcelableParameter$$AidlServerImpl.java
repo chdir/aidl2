@@ -39,7 +39,7 @@ public final class AbstractParcelableParameter$$AidlServerImpl extends Binder {
 
                 final Parcelable parcelableParameter = data.readParcelable(getClass().getClassLoader());
 
-                this.delegate.methodWithParcelableParameter(parcelableParameter);
+                delegate.methodWithParcelableParameter(parcelableParameter);
                 reply.writeNoException();
                 return true;
             }

@@ -41,7 +41,7 @@ public final class ConcreteParcelableParameter$$AidlClientImpl implements Concre
                 parcelableParameter.writeToParcel(data, 0);
             }
 
-            this.delegate.transact(ConcreteParcelableParameter$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
+            delegate.transact(ConcreteParcelableParameter$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

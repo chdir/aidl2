@@ -34,7 +34,7 @@ public final class FloatArrayTest$$AidlClientImpl implements FloatArrayTest {
         try {
             data.writeInterfaceToken(FloatArrayTest$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(FloatArrayTest$$AidlServerImpl.TRANSACT_methodWithFloatArrayReturnValue, data, reply, 0);
+            delegate.transact(FloatArrayTest$$AidlServerImpl.TRANSACT_methodWithFloatArrayReturnValue, data, reply, 0);
             reply.readException();
 
             return reply.createFloatArray();

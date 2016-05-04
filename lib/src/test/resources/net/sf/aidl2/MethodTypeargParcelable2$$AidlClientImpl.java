@@ -35,10 +35,10 @@ public final class MethodTypeargParcelable2$$AidlClientImpl implements MethodTyp
         try {
             data.writeInterfaceToken(MethodTypeargParcelable2$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(MethodTypeargParcelable2$$AidlServerImpl.TRANSACT_methodWithParcelableParam, data, reply, 0);
+            delegate.transact(MethodTypeargParcelable2$$AidlServerImpl.TRANSACT_methodWithParcelableParam, data, reply, 0);
             reply.readException();
 
-            return AidlUtil.unsafeCast(reply.readParcelable(getClass().getClassLoader()));
+            return reply.readParcelable(getClass().getClassLoader());
         } finally {
             data.recycle();
             reply.recycle();

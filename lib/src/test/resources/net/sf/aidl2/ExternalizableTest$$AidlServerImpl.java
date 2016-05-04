@@ -56,7 +56,7 @@ public final class ExternalizableTest$$AidlServerImpl extends Binder {
                     externalizableTmp = externalizableExternalizable;
                 }
 
-                this.delegate.methodWithExternalizableParameter(externalizableTmp);
+                delegate.methodWithExternalizableParameter(externalizableTmp);
                 reply.writeNoException();
 
                 return true;

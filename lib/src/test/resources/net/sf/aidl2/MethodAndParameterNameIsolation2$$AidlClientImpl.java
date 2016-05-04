@@ -37,7 +37,7 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeString(theStringVariable);
 
-            this.delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_bigDeal, data, reply, 0);
+            delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_bigDeal, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();
@@ -56,7 +56,7 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeString(anotherString);
 
-            this.delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_bigDeal, data, reply, 0);
+            delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_bigDeal, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();
@@ -77,7 +77,7 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeSerializable(cunningType);
 
-            this.delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_bigDeal, data, reply, 0);
+            delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_bigDeal, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();
@@ -100,7 +100,7 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeStrongBinder(MethodAndParamNameIsolation2 == null ? null : MethodAndParamNameIsolation2.asBinder());
 
-            this.delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_cunningType, data, reply, 0);
+            delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_cunningType, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();
@@ -125,7 +125,7 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeSerializable(RemoteException);
 
-            this.delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_cunningType, data, reply, 0);
+            delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_cunningType, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

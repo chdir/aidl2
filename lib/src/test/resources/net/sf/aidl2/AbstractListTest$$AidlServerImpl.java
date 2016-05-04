@@ -65,7 +65,7 @@ public final class AbstractListTest$$AidlServerImpl extends Binder {
                     }
                 }
 
-                List<Binder> returnValue = this.delegate.methodWithListReturnAndCollectionParam(intsCollection);
+                final List<Binder> returnValue = delegate.methodWithListReturnAndCollectionParam(intsCollection);
                 reply.writeNoException();
 
                 if (returnValue == null) {
@@ -98,7 +98,7 @@ public final class AbstractListTest$$AidlServerImpl extends Binder {
                     }
                 }
 
-                Collection<AbstractListTest> returnValue = this.delegate.methodWithCollectionReturn(abstrListCollection);
+                final Collection<AbstractListTest> returnValue = delegate.methodWithCollectionReturn(abstrListCollection);
                 reply.writeNoException();
 
                 if (returnValue == null) {
@@ -151,7 +151,7 @@ public final class AbstractListTest$$AidlServerImpl extends Binder {
                     }
                 }
 
-                AbstractList<List<Date>> returnValue = this.delegate.methodWithAbstractListReturn(sizesCollection);
+                final AbstractList<List<Date>> returnValue = delegate.methodWithAbstractListReturn(sizesCollection);
                 reply.writeNoException();
 
                 if (returnValue == null) {

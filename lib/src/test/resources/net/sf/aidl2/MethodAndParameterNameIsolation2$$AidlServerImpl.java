@@ -46,7 +46,7 @@ public final class MethodAndParamNameIsolation2$$AidlServerImpl extends Binder {
 
                 final String theStringVariable = data.readString();
 
-                this.delegate.bigDeal(theStringVariable);
+                delegate.bigDeal(theStringVariable);
                 reply.writeNoException();
 
                 return true;
@@ -57,7 +57,7 @@ public final class MethodAndParamNameIsolation2$$AidlServerImpl extends Binder {
 
                 final String anotherString = data.readString();
 
-                this.delegate.bigDeal(theStringVariable, anotherString);
+                delegate.bigDeal(theStringVariable, anotherString);
                 reply.writeNoException();
 
                 return true;
@@ -70,7 +70,7 @@ public final class MethodAndParamNameIsolation2$$AidlServerImpl extends Binder {
 
                 final cunningType cunningType = AidlUtil.readSafeSerializable(data);
 
-                this.delegate.bigDeal(theStringVariable, anotherString, cunningType);
+                delegate.bigDeal(theStringVariable, anotherString, cunningType);
                 reply.writeNoException();
 
                 return true;
@@ -86,7 +86,7 @@ public final class MethodAndParamNameIsolation2$$AidlServerImpl extends Binder {
                 final IBinder MethodAndParamNameIsolation2Binder = data.readStrongBinder();
                 final MethodAndParamNameIsolation2 iMethodAndParamNameIsolation2 = MethodAndParamNameIsolation2Binder == null ? null : InterfaceLoader.asInterface(MethodAndParamNameIsolation2Binder, MethodAndParamNameIsolation2.class);
 
-                this.delegate.cunningType(theStringVariable, anotherString, cunningType, iMethodAndParamNameIsolation2);
+                delegate.cunningType(theStringVariable, anotherString, cunningType, iMethodAndParamNameIsolation2);
                 reply.writeNoException();
 
                 return true;
@@ -104,7 +104,7 @@ public final class MethodAndParamNameIsolation2$$AidlServerImpl extends Binder {
 
                 final RemoteException[] RemoteException = AidlUtil.readSafeSerializable(data);
 
-                this.delegate.cunningType(theStringVariable, anotherString, cunningType, iMethodAndParamNameIsolation2, RemoteException);
+                delegate.cunningType(theStringVariable, anotherString, cunningType, iMethodAndParamNameIsolation2, RemoteException);
                 reply.writeNoException();
 
                 return true;

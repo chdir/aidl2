@@ -190,7 +190,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                         if (param.isReturn()) {
                             if (isVoid(param.type)) {
                                 try {
-                                    delegateCall.addStatement("this.delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
+                                    delegateCall.addStatement("delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
 
                                     if (param.type.getKind() != TypeKind.VOID) {
                                         writeOutParameter(paramsWrite, paramMarshaller, returnParcel.name);
@@ -202,11 +202,11 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                                 try {
                                     TypeMirror requiredReturn = writeOutParameter(paramsWrite, paramMarshaller, returnParcel.name);
 
-                                    final CodeBlock callCode = Util.literal("this.delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
+                                    final CodeBlock callCode = Util.literal("delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
 
                                     final TypeMirror actualReturn = captureAll(requiredReturn);
 
-                                    delegateCall.addStatement("$T returnValue = $L",
+                                    delegateCall.addStatement("final $T returnValue = $L",
                                             actualReturn, emitCasts(param.type, actualReturn, callCode));
                                 } catch (CodegenException cde) {
                                     throw new ElementException(cde, method.element.element);

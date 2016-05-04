@@ -36,7 +36,7 @@ public final class IInterfaceTest$$AidlClientImpl implements IInterfaceTest {
 
             data.writeStrongBinder(api == null ? null : api.asBinder());
 
-            this.delegate.transact(IInterfaceTest$$AidlServerImpl.TRANSACT_methodWithCallbackParameter, data, reply, 0);
+            delegate.transact(IInterfaceTest$$AidlServerImpl.TRANSACT_methodWithCallbackParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

@@ -36,7 +36,7 @@ public final class StringArrayTest$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithStringReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                String[] returnValue = this.delegate.methodWithStringReturn();
+                final String[] returnValue = delegate.methodWithStringReturn();
                 reply.writeNoException();
 
                 if (returnValue == null) {

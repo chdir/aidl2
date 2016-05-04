@@ -34,7 +34,7 @@ public final class ByteArrayTest$$AidlClientImpl implements ByteArrayTest {
         try {
             data.writeInterfaceToken(ByteArrayTest$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(ByteArrayTest$$AidlServerImpl.TRANSACT_methodWithByteArrayReturn, data, reply, 0);
+            delegate.transact(ByteArrayTest$$AidlServerImpl.TRANSACT_methodWithByteArrayReturn, data, reply, 0);
             reply.readException();
 
             return reply.createByteArray();

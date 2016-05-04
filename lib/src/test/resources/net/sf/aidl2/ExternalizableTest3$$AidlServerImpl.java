@@ -37,7 +37,7 @@ public final class ExternalizableTest3$$AidlServerImpl extends Binder {
             case TRANSACT_methodReturningTheExternalizable: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Externalizable returnValue = this.delegate.methodReturningTheExternalizable();
+                final Externalizable returnValue = delegate.methodReturningTheExternalizable();
                 reply.writeNoException();
 
                 AidlUtil.writeExternalizable(reply, returnValue);

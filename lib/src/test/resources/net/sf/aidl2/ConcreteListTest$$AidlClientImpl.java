@@ -54,7 +54,7 @@ public final class ConcreteListTest$$AidlClientImpl<X extends LinkedList<Object>
                 }
             }
 
-            this.delegate.transact(ConcreteListTest$$AidlServerImpl.TRANSACT_methodWithLinkedListParamAndArrayListReturn, data, reply, 0);
+            delegate.transact(ConcreteListTest$$AidlServerImpl.TRANSACT_methodWithLinkedListParamAndArrayListReturn, data, reply, 0);
             reply.readException();
 
             final ArrayList<Object> returnValueCollection;
@@ -90,7 +90,7 @@ public final class ConcreteListTest$$AidlClientImpl<X extends LinkedList<Object>
                 }
             }
 
-            this.delegate.transact(ConcreteListTest$$AidlServerImpl.TRANSACT_methodWithVectorParamAndStackReturn, data, reply, 0);
+            delegate.transact(ConcreteListTest$$AidlServerImpl.TRANSACT_methodWithVectorParamAndStackReturn, data, reply, 0);
             reply.readException();
 
             final Stack<CharSequence> returnValueCollection;

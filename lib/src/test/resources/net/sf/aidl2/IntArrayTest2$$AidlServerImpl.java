@@ -36,7 +36,7 @@ public final class IntArrayTest2$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithIntArrayReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                int[] returnValue = this.delegate.methodWithIntArrayReturn();
+                final int[] returnValue = delegate.methodWithIntArrayReturn();
                 reply.writeNoException();
                 reply.writeIntArray(returnValue);
 

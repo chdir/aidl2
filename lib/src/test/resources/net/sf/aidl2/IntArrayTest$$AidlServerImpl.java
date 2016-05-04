@@ -38,7 +38,7 @@ public final class IntArrayTest$$AidlServerImpl extends Binder {
 
                 final int[] array = data.createIntArray();
 
-                this.delegate.methodWithIntArrayParam(array);
+                delegate.methodWithIntArrayParam(array);
                 reply.writeNoException();
                 return true;
             }

@@ -37,7 +37,7 @@ public final class TheObjectReturn$$AidlClientImpl implements TheObjectReturn {
         try {
             data.writeInterfaceToken(TheObjectReturn$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(TheObjectReturn$$AidlServerImpl.TRANSACT_methodWithObjectReturn, data, reply, 0);
+            delegate.transact(TheObjectReturn$$AidlServerImpl.TRANSACT_methodWithObjectReturn, data, reply, 0);
             reply.readException();
 
             return reply.readValue(getClass().getClassLoader());

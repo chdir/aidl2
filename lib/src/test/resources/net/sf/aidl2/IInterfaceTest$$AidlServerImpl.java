@@ -39,7 +39,7 @@ public final class IInterfaceTest$$AidlServerImpl extends Binder {
                 final IBinder apiBinder = data.readStrongBinder();
                 final RemoteApi iApi = apiBinder == null ? null : InterfaceLoader.asInterface(apiBinder, RemoteApi.class);
 
-                this.delegate.methodWithCallbackParameter(iApi);
+                delegate.methodWithCallbackParameter(iApi);
                 reply.writeNoException();
 
                 return true;

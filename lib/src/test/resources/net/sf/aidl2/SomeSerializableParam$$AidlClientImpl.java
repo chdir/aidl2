@@ -37,7 +37,7 @@ public final class SomeSerializableParam$$AidlClientImpl implements SomeSerializ
 
             data.writeSerializable(serializable);
 
-            this.delegate.transact(SomeSerializableParam$$AidlServerImpl.TRANSACT_methodWithSerializableParameter, data, reply, 0);
+            delegate.transact(SomeSerializableParam$$AidlServerImpl.TRANSACT_methodWithSerializableParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

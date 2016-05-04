@@ -36,7 +36,7 @@ public final class IntArrayTest$$AidlClientImpl implements IntArrayTest {
 
             data.writeIntArray(array);
 
-            this.delegate.transact(IntArrayTest$$AidlServerImpl.TRANSACT_methodWithIntArrayParam, data, reply, 0);
+            delegate.transact(IntArrayTest$$AidlServerImpl.TRANSACT_methodWithIntArrayParam, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

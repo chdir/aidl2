@@ -44,7 +44,7 @@ public final class LongTest$$AidlServerImpl extends Binder {
                     longParameterTmp = data.readLong();
                 }
 
-                this.delegate.methodWithLongParameter(longParameterTmp);
+                delegate.methodWithLongParameter(longParameterTmp);
                 reply.writeNoException();
 
                 return true;

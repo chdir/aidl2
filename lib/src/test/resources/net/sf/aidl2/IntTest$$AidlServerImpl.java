@@ -38,7 +38,7 @@ public final class IntTest$$AidlServerImpl extends Binder {
 
         final int parameter = data.readInt();
 
-        this.delegate.methodWithIntParameter(parameter);
+        delegate.methodWithIntParameter(parameter);
         reply.writeNoException();
         return true;
       }

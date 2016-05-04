@@ -39,7 +39,7 @@ public final class MethodTypeargParcelable$$AidlServerImpl extends Binder {
 
                 final Parcelable parcelable = data.readParcelable(getClass().getClassLoader());
 
-                this.delegate.methodWithParcelableParam(AidlUtil.unsafeCast(parcelable));
+                delegate.methodWithParcelableParam(AidlUtil.unsafeCast(parcelable));
                 reply.writeNoException();
                 return true;
             }

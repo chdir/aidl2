@@ -151,7 +151,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
 
                 final CodeBlock code = literal("$T.TRANSACT_$L", serverClass, method.element.element.getSimpleName());
 
-                delegateCall.addStatement("this.delegate.transact($L, data, reply, $L)", code, flags);
+                delegateCall.addStatement("delegate.transact($L, data, reply, $L)", code, flags);
 
                 if (!method.oneWay) {
                     delegateCall.addStatement("$N.readException()", reply);

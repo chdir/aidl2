@@ -37,7 +37,7 @@ public final class ExtendingInterface$$AidlServerImpl extends Binder {
             case TRANSACT_call: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Serializable returnValue = this.delegate.call();
+                final Serializable returnValue = delegate.call();
                 reply.writeNoException();
 
                 reply.writeSerializable(returnValue);

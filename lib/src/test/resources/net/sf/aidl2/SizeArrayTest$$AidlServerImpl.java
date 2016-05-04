@@ -37,7 +37,7 @@ public final class SizeArrayTest$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithSizeReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Size[] returnValue = this.delegate.methodWithSizeReturn();
+                final Size[] returnValue = delegate.methodWithSizeReturn();
                 reply.writeNoException();
 
                 if (returnValue == null) {

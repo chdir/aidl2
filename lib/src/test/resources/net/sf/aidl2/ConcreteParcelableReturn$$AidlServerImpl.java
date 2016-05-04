@@ -37,7 +37,7 @@ public final class ConcreteParcelableReturn$$AidlServerImpl extends Binder {
             case TRANSACT_methodReturningParcelable: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Parcelable returnValue = this.delegate.methodReturningParcelable();
+                final Parcelable returnValue = delegate.methodReturningParcelable();
                 reply.writeNoException();
                 if (returnValue == null) {
                     reply.writeByte((byte) -1);

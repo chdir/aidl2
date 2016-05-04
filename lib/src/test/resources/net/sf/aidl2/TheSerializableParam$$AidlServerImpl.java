@@ -39,7 +39,7 @@ public final class TheSerializableParam$$AidlServerImpl extends Binder {
 
                 final Serializable serializable = AidlUtil.readSafeSerializable(data);
 
-                this.delegate.methodWithSerializableParameter(serializable);
+                delegate.methodWithSerializableParameter(serializable);
                 reply.writeNoException();
                 return true;
             }

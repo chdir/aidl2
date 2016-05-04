@@ -39,7 +39,7 @@ public final class BundleTest$$AidlServerImpl extends Binder {
 
                 final Bundle bundle = data.readBundle(getClass().getClassLoader());
 
-                Bundle returnValue = this.delegate.methodWithBundleParameter(bundle);
+                final Bundle returnValue = delegate.methodWithBundleParameter(bundle);
                 reply.writeNoException();
 
                 reply.writeBundle(returnValue);

@@ -43,7 +43,7 @@ public final class ConcreteParcelableParameter$$AidlServerImpl extends Binder {
                     parcelableParameterTmp = SimpleParcelable.CREATOR.createFromParcel(data);
                 }
 
-                this.delegate.methodReturningParcelable(parcelableParameterTmp);
+                delegate.methodReturningParcelable(parcelableParameterTmp);
                 reply.writeNoException();
                 return true;
             }

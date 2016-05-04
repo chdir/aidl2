@@ -39,7 +39,7 @@ public final class VoidTest2$$AidlServerImpl extends Binder {
 
                 final Void ignored = null;
 
-                this.delegate.methodWithVoidParameter(ignored);
+                delegate.methodWithVoidParameter(ignored);
                 reply.writeNoException();
                 return true;
             }

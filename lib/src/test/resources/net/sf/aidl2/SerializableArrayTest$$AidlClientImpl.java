@@ -37,7 +37,7 @@ public final class SerializableArrayTest$$AidlClientImpl implements Serializable
 
             data.writeSerializable(files);
 
-            this.delegate.transact(SerializableArrayTest$$AidlServerImpl.TRANSACT_methodWithSerializableArrayParameter, data, reply, 0);
+            delegate.transact(SerializableArrayTest$$AidlServerImpl.TRANSACT_methodWithSerializableArrayParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

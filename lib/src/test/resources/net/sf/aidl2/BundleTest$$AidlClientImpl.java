@@ -37,7 +37,7 @@ public final class BundleTest$$AidlClientImpl implements BundleTest {
 
             data.writeBundle(bundle);
 
-            this.delegate.transact(BundleTest$$AidlServerImpl.TRANSACT_methodWithBundleParameter, data, reply, 0);
+            delegate.transact(BundleTest$$AidlServerImpl.TRANSACT_methodWithBundleParameter, data, reply, 0);
             reply.readException();
 
             return reply.readBundle(getClass().getClassLoader());

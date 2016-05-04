@@ -35,7 +35,7 @@ public final class SizeArrayTest$$AidlClientImpl implements SizeArrayTest {
         try {
             data.writeInterfaceToken(SizeArrayTest$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(SizeArrayTest$$AidlServerImpl.TRANSACT_methodWithSizeReturn, data, reply, 0);
+            delegate.transact(SizeArrayTest$$AidlServerImpl.TRANSACT_methodWithSizeReturn, data, reply, 0);
             reply.readException();
 
             final Size[] returnValueArray;

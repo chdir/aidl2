@@ -36,7 +36,7 @@ public final class CustomDescriptor$$AidlServerImpl extends Binder {
             case TRANSACT_method: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                this.delegate.method();
+                delegate.method();
                 reply.writeNoException();
                 return true;
             }

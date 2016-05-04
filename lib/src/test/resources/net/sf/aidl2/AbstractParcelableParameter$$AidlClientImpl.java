@@ -37,7 +37,7 @@ public final class AbstractParcelableParameter$$AidlClientImpl implements Abstra
 
             data.writeParcelable(parcelableParameter, 0);
 
-            this.delegate.transact(AbstractParcelableParameter$$AidlServerImpl.TRANSACT_methodWithParcelableParameter, data, reply, 0);
+            delegate.transact(AbstractParcelableParameter$$AidlServerImpl.TRANSACT_methodWithParcelableParameter, data, reply, 0);
             reply.readException();
         } finally {
             data.recycle();

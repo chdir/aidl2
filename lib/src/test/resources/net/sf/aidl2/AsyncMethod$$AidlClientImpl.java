@@ -35,7 +35,7 @@ public final class AsyncMethod$$AidlClientImpl implements AsyncMethod {
         try {
             data.writeInterfaceToken(AsyncMethod$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(AsyncMethod$$AidlServerImpl.TRANSACT_oneWay, data, reply, IBinder.FLAG_ONEWAY);
+            delegate.transact(AsyncMethod$$AidlServerImpl.TRANSACT_oneWay, data, reply, IBinder.FLAG_ONEWAY);
         } finally {
             data.recycle();
         }
