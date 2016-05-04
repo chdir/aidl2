@@ -643,13 +643,13 @@ public final class Reader extends AptHelper {
             throw new CodegenException("Type " + type + " does not have default public constructor, can not instantiate");
         }
 
-        final TypeMirror newBase;
         final TypeMirror newElement;
+
+        TypeMirror newBase = null;
 
         // if the capture was lossy and resulting type can not be assigned to target type anyway
         // (typical situation when intersections are involved), consider if sacrificing that type
-        // may avoid extra cast during assignment
-        // TODO: always avoid casting collection element even at expense of casting collection itself?
+        // may avoid extra cast during element assignment
         if (!types.isAssignable(captured, type)) {
             final TypeInvocation<ExecutableElement, ExecutableType> capturedAddMethod =
                     collectionAdd.refine(types, (DeclaredType) captured);
@@ -662,18 +662,30 @@ public final class Reader extends AptHelper {
 
                 final List<? extends TypeParameterElement> params = capturedTypeElement.getTypeParameters();
 
-                if (params.size() == 1 && types.isSameType(params.get(0).asType(), capturedAdd)) {
-                    newBase = types.getDeclaredType(capturedTypeElement, newElement);
-                } else {
+                // nested types shall not pass
+                if (params.size() == 1 && capturedTypeElement.getNestingKind().ordinal() <= 1) {
+                    final DeclaredType test = (DeclaredType) capturedTypeElement.asType();
+
+                    final TypeMirror testTypeArg = collectionAdd.refine(types, test)
+                            .type.getParameterTypes().get(0);
+
+                    if (types.isSameType(testTypeArg, test.getTypeArguments().get(0))) {
+                        newBase = types.getDeclaredType(capturedTypeElement, newElement);
+                    }
+                }
+
+                if (newBase == null) {
                     newBase = types.getDeclaredType(collectionElement, newElement);
                 }
             } else {
-                newBase = captured;
                 newElement = elementType;
             }
         } else {
-            newBase = captured;
             newElement = elementType;
+        }
+
+        if (newBase == null) {
+            newBase = captured;
         }
 
         if (hasPublicCapacityConstructor(capturedTypeElement)) {

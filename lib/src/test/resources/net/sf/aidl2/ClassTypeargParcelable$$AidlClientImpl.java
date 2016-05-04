@@ -35,10 +35,10 @@ public final class ClassTypeargParcelable$$AidlClientImpl<T extends Parcelable> 
         try {
             data.writeInterfaceToken(ClassTypeargParcelable$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(ClassTypeargParcelable$$AidlServerImpl.TRANSACT_methodWithParcelableReturn, data, reply, 0);
+            delegate.transact(ClassTypeargParcelable$$AidlServerImpl.TRANSACT_methodWithParcelableReturn, data, reply, 0);
             reply.readException();
 
-            return AidlUtil.unsafeCast(reply.readParcelable(getClass().getClassLoader()));
+            return reply.readParcelable(getClass().getClassLoader());
         } finally {
             data.recycle();
             reply.recycle();

@@ -936,7 +936,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
             return type;
         }
 
-        return keepIfSameType(type, captureInner(type, new ArrayList<>()));
+        return keepIfSameType(type, captureInner(type));
     }
 
     // Check if a is the same as b from type system's viewpoint.
@@ -945,7 +945,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return types.isSameType(a, b) ? a : b;
     }
 
-    private TypeMirror captureInner(TypeMirror type, List<TypeMirror> encountered) {
+    private TypeMirror captureInner(TypeMirror type) {
         final TypeKind kind = type.getKind();
 
         switch (kind) {
@@ -955,7 +955,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 final TypeMirror refined = types.capture(type);
 
                 if (Util.isProperDeclared(refined)) {
-                    return captureAllArgs((DeclaredType) refined, encountered);
+                    return captureAllArgs((DeclaredType) refined);
                 }
 
                 final TypeMirror erasedArg = types.erasure(type);
@@ -973,24 +973,14 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 final TypeMirror refinedParent = types.capture(declaredParent);
 
                 if (Util.isProperDeclared(refinedParent)) {
-                    return captureAllArgs((DeclaredType) refinedParent, encountered);
+                    return captureAllArgs((DeclaredType) refinedParent);
                 }
 
                 return erasedArg;
         }
     }
 
-    private DeclaredType captureAllArgs(DeclaredType type, List<TypeMirror> encountered) {
-        final TypeMirror erased = types.erasure(type);
-
-        for (TypeMirror encounteredType : encountered) {
-            if (types.isSameType(erased, encounteredType)) {
-                return Util.isProperDeclared(erased) ? (DeclaredType) erased : theObject;
-            }
-        }
-
-        encountered.add(erased);
-
+    private DeclaredType captureAllArgs(DeclaredType type) {
         final List<? extends TypeMirror> args = type.getTypeArguments();
 
         if (args.isEmpty()) {
@@ -1001,7 +991,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         for (int i = 0; i < args.size(); i++) {
             // clone the encountered types list to
-            argumentCaptures[i] = captureInner(args.get(i), new ArrayList<>(encountered));
+            argumentCaptures[i] = captureInner(args.get(i));
         }
 
         return types.getDeclaredType((TypeElement) type.asElement(), argumentCaptures);
