@@ -12,7 +12,5 @@ import java.util.List;
 
 @AIDL("net.sf.aidl2.AbstractListTest")
 public interface AbstractListTest extends IInterface {
-    List<Binder> methodWithListReturnAndCollectionParam(Collection<Integer> ints) throws RemoteException;
-
     Collection<AbstractListTest> methodWithCollectionReturn(AbstractList<SizeF> abstrList) throws RemoteException;
 }

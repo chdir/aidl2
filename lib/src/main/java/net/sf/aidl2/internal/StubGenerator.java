@@ -200,14 +200,12 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                                 }
                             } else {
                                 try {
-                                    TypeMirror requiredReturn = writeOutParameter(paramsWrite, paramMarshaller, returnParcel.name);
+                                    TypeMirror requiredReturn = writeReturnValue(paramsWrite, paramMarshaller, returnParcel.name);
 
                                     final CodeBlock callCode = Util.literal("delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
 
-                                    final TypeMirror actualReturn = captureAll(requiredReturn);
-
                                     delegateCall.addStatement("final $T returnValue = $L",
-                                            actualReturn, emitCasts(param.type, actualReturn, callCode));
+                                            requiredReturn, emitCasts(param.type, requiredReturn, callCode));
                                 } catch (CodegenException cde) {
                                     throw new ElementException(cde, method.element.element);
                                 }
@@ -300,12 +298,19 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         }
     }
 
-    private TypeMirror writeOutParameter(CodeBlock.Builder code, State writer, String name) throws CodegenException {
-        TypeMirror requiredReturn = writer.buildWriter(name)
+    private void writeOutParameter(CodeBlock.Builder code, State writer, String name) throws CodegenException {
+        writer.buildWriter(name)
                 .write(code, writer.type);
 
         code.add("\n");
+    }
 
-        return requiredReturn;
+    private TypeMirror writeReturnValue(CodeBlock.Builder code, State writer, String name) throws CodegenException {
+        TypeMirror actualReturn = writer.buildWriter(name)
+                .writeReturnValue(code, writer.type);
+
+        code.add("\n");
+
+        return actualReturn;
     }
 }

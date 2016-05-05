@@ -96,7 +96,7 @@ public final class Writer extends AptHelper {
         }
     }
 
-    public TypeMirror write(CodeBlock.Builder paramWriting, TypeMirror type) throws CodegenException {
+    public void write(CodeBlock.Builder paramWriting, TypeMirror type) throws CodegenException {
         Strategy strategy = getStrategy(type);
 
         if (strategy != null) {
@@ -107,15 +107,41 @@ public final class Writer extends AptHelper {
                 strategy.write(paramWriting, name, type);
             }
 
-            return strategy.requiredType;
+            return;
         }
 
         final String errorMsg =
-                "Unsupported type: " + type + ".\n" +
+                "Unsupported parameter type: " + type + ".\n" +
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                 "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
                 "\t• Collection of supported type with public default constructor";
+
+        throw new CodegenException(errorMsg);
+    }
+
+    public TypeMirror writeReturnValue(CodeBlock.Builder retValWriting, TypeMirror type) throws CodegenException {
+        Strategy strategy = getStrategy(type);
+
+        if (strategy != null) {
+            final TypeMirror capture = captureAll(strategy.requiredType);
+
+            if (nullable && strategy.needNullHandling) {
+                getNullableStrategy(strategy)
+                        .write(retValWriting, name, capture);
+            } else {
+                strategy.write(retValWriting, name, capture);
+            }
+
+            return capture;
+        }
+
+        final String errorMsg =
+                "Unsupported return value type: " + type + ".\n" +
+                        "Must be one of:\n" +
+                        "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
+                        "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
+                        "\t• Collection of supported type with public default constructor";
 
         throw new CodegenException(errorMsg);
     }
