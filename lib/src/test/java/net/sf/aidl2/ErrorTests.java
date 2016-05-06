@@ -20,12 +20,12 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("RemoteException")
                 .in(testSource)
                 .onLine(7)
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test
@@ -35,12 +35,12 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("IOException")
                 .in(testSource)
                 .onLine(9)
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test
@@ -50,12 +50,12 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("IInterface")
                 .in(testSource)
                 .onLine(3)
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test
@@ -65,10 +65,10 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("interfaces only")
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test
@@ -78,12 +78,12 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("unchecked")
                 .in(testSource)
                 .onLine(8)
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test
@@ -93,12 +93,12 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("Runnable")
                 .in(testSource)
                 .onLine(8)
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test
@@ -108,12 +108,12 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("Collection")
                 .in(testSource)
                 .onLine(8)
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test
@@ -123,12 +123,12 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorCount(2)
+                .withErrorCount(1)
                 .withErrorContaining("use more specific type")
                 .in(testSource)
                 .onLine(8)
                 .and()
-                .withErrorContaining("bailing out");
+                .withNoteContaining("bailing out");
     }
 
     @Test

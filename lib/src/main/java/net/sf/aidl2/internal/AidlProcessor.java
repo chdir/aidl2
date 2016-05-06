@@ -8,14 +8,12 @@ import net.sf.aidl2.internal.exceptions.ElementException;
 import net.sf.aidl2.internal.exceptions.FaultyAnnotation;
 import net.sf.aidl2.internal.exceptions.FaultyAnnotationValue;
 import net.sf.aidl2.internal.exceptions.FaultyElement;
-import net.sf.aidl2.internal.exceptions.QuietException;
 import net.sf.aidl2.internal.exceptions.ReadableException;
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.internal.exceptions.AnnotationValueException;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
@@ -75,7 +73,7 @@ public final class AidlProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         if (roundEnvironment.errorRaised()) {
             // neither other processors, nor compiler itself must depend on our output - bail early
-            env.getLogger().log(new QuietException("Called with pending errors — bailing out."));
+            env.getLogger().log("Called with pending errors — bailing out.");
 
             cleanup();
         } else {
