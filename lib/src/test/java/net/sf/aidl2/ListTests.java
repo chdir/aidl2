@@ -19,6 +19,21 @@ public class ListTests {
     public LogFileRule logFile = new LogFileRule();
 
     @Test
+    public void abstractListsSimple() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
     public void abstractListNested() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListSimpleNested.java"));
 
@@ -49,28 +64,33 @@ public class ListTests {
     }
 
     @Test
-    public void abstractListsComplex() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest.java"));
+    public void concreteListMethodTypeParam() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListMethodTypeParam.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListMethodTypeParam$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListMethodTypeParam$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError();
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
     }
 
     @Test
-    public void concreteListsComplex() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListTest.java"));
+    public void concreteListClassTypeParam() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError();
+                .compilesWithoutError()
+                .withWarningCount(2)
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
     }
 }

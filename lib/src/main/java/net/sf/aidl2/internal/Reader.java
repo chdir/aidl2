@@ -1,5 +1,7 @@
 package net.sf.aidl2.internal;
 
+import android.text.TextUtils;
+
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
@@ -780,7 +782,7 @@ public final class Reader extends AptHelper {
             final TypeMirror resultType = strategy.returnType;
 
             init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", i, i, size, i);
-            init.addStatement("$N.add($L)", collection, emitCasts(resultType, elementType, strategyToUse.read(init)));
+            init.addStatement("$N.add($L)", collection, emitCasts(resultType, captureAll(elementType), strategyToUse.read(init)));
             init.endControlFlow();
 
             init.endControlFlow();
