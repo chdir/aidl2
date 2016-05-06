@@ -223,7 +223,7 @@ public final class SuperficialValidation extends AptHelper {
             new SimpleAnnotationValueVisitor6<Boolean, TypeMirror>() {
                 @Override
                 protected Boolean defaultAction(Object o, TypeMirror expectedType) {
-                    return Util.isTypeOf(o.getClass(), expectedType);
+                    return Util.isTypeOf(o.getClass(), expectedType) && (!(o instanceof String) || !"<error>".equals(o));
                 }
 
                 @Override

@@ -517,9 +517,12 @@ public final class Writer extends AptHelper {
     }
 
     private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
-        final DeclaredType base = getCollectionInterface(type);
+        // allow upper-bound wildcards to be used
+        // not using captureAll() on purpose since any nested types with meaningful type args
+        // (e.g. Collections) are going to be handled by recursive application of this method
+        final TypeMirror noWildcards = types.capture(type);
 
-        final TypeMirror elementType = getReadableElementType(type);
+        final TypeMirror elementType = getReadableElementType(noWildcards);
 
         final Strategy elementStrategy = getStrategy(elementType);
 
