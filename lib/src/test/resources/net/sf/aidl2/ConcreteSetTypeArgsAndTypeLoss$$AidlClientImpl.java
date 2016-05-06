@@ -52,17 +52,7 @@ public final class ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl<X extends Call
             delegate.transact(ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl.TRANSACT_methodWithCOWArraySetParamAndHashSetReturn, data, reply, 0);
             reply.readException();
 
-            final HashSet<Externalizable> returnValueCollection;
-            final int returnValueSize = reply.readInt();
-            if (returnValueSize < 0) {
-                returnValueCollection = null;
-            } else {
-                returnValueCollection = new HashSet<>(returnValueSize);
-                for (int j = 0; j < returnValueSize; j++) {
-                    returnValueCollection.add(AidlUtil.readSafeExternalizable(reply));
-                }
-            }
-            return (HashSet) returnValueCollection;
+            return AidlUtil.readSafeSerializable(reply);
         } finally {
             data.recycle();
             reply.recycle();

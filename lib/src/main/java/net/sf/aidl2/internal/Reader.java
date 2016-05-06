@@ -595,7 +595,7 @@ public final class Reader extends AptHelper {
                             + concreteParent + " is serializable, but it's element is not. If you want"
                             + " Java serialization to be used anyway, add @SuppressWarnings(\"unchecked\") to the method.");
                 }
-            } else if (elementStrategy == SERIALIZABLE_STRATEGY) {
+            } else if (elementStrategy == SERIALIZABLE_STRATEGY || elementStrategy == EXTERNALIZABLE_STRATEGY) {
                 return getSerializableStrategy(type);
             }
         }
@@ -811,16 +811,14 @@ public final class Reader extends AptHelper {
 
     // Always nullable by design
     private Strategy getUnknownExternalizableStrategy(TypeMirror type) {
-        if (EXTERNALIZABLE_STRATEGY == null) {
-            EXTERNALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
-                private final CodeBlock block = literal("$T.readSafeExternalizable($N)", ClassName.get(AidlUtil.class), parcelName);
+        EXTERNALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
+            private final CodeBlock block = literal("$T.readSafeExternalizable($N)", ClassName.get(AidlUtil.class), parcelName);
 
-                @Override
-                public CodeBlock read(CodeBlock.Builder unused) {
-                    return block;
-                }
-            }, jokeLub(type, externalizable));
-        }
+            @Override
+            public CodeBlock read(CodeBlock.Builder unused) {
+                return block;
+            }
+        }, jokeLub(type, externalizable));
 
         return EXTERNALIZABLE_STRATEGY;
     }

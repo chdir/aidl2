@@ -138,7 +138,8 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorContaining("compilation errors");
+                .withErrorCount(3)
+                .withErrorContaining("compilation errors in the @AIDL-annotated interface");
     }
 
     @Test
@@ -148,6 +149,18 @@ public class ErrorTests {
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
                 .failsToCompile()
-                .withErrorContaining("compilation errors");
+                .withErrorCount(3)
+                .withErrorContaining("compilation errors in the @AIDL-annotated interface");
+    }
+
+    @Test
+    public void failsWhenAnnotationValueDoesNotExist() {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("FaultyAnnotationValueFailure.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(3)
+                .withErrorContaining("compilation errors in the @AIDL-annotated interface");
     }
 }

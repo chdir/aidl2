@@ -255,7 +255,7 @@ public final class Writer extends AptHelper {
     // Always nullable by design
     private Strategy EXTERNALIZABLE_STRATEGY;
 
-    private Strategy getUnknownExternalizableStrategy(TypeMirror t) {
+    private Strategy getUnknownExternalizableStrategy() {
         if (EXTERNALIZABLE_STRATEGY == null) {
             EXTERNALIZABLE_STRATEGY = Strategy.createNullSafe(Writer.this::writeExternalizable, externalizable);
         }
@@ -305,7 +305,7 @@ public final class Writer extends AptHelper {
     private Strategy getExternalizableStrategy(TypeMirror t) {
         final DeclaredType type = findConcreteParent(t, externalizable);
         if (type == null) {
-            return getUnknownExternalizableStrategy(t);
+            return getUnknownExternalizableStrategy();
         }
 
         return Strategy.create((block, name, unused) -> {
@@ -535,8 +535,10 @@ public final class Writer extends AptHelper {
             return null;
         }
 
-        if (elementStrategy == SERIALIZABLE_STRATEGY && types.isAssignable(type, serializable)) {
-            return getSerializableStrategy();
+        if (elementStrategy == SERIALIZABLE_STRATEGY || elementStrategy == EXTERNALIZABLE_STRATEGY) {
+            if (types.isAssignable(type, serializable)) {
+                return getSerializableStrategy();
+            }
         }
 
         final TypeMirror concreteParent = findConcreteParent(type, theCollection);
