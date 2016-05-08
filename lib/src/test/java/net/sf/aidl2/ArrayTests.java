@@ -94,6 +94,24 @@ public class ArrayTests {
     }
 
     @Test
+    public void nonNullSizeArrayParameter() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("NotNullSizeArrayParameter.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("NotNullSizeArrayParameter$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("NotNullSizeArrayParameter$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-processing",
+                })
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
     public void sizeArrayReturnValue() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("SizeArrayTest.java"));
 
@@ -130,11 +148,14 @@ public class ArrayTests {
         JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("BooleanArrayTest$$AidlServerImpl.java"));
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("BooleanArrayTest$$AidlClientImpl.java"));
 
+        // two javac warnings because of using raw delegate
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-rawtypes",
+                })
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
-                .withWarningCount(2)
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }

@@ -79,6 +79,24 @@ public class ParcelableTests {
     }
 
     @Test
+    public void nonNullConcreteParcelableParameter() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("NotNullParcelableParameter.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("NotNullParcelableParameter$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("NotNullParcelableParameter$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-processing",
+                })
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
     public void methodTypeArgumentParamAbstractParcelable() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargParcelable.java"));
 
@@ -117,12 +135,13 @@ public class ParcelableTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("ClassTypeargParcelable$$AidlClientImpl.java"));
 
         // two javac warnings because of using raw delegate
-        // one javac warning because of redundant cast of return value
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-rawtypes",
+                })
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
-                .withWarningCount(2)
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }

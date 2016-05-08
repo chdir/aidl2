@@ -28,7 +28,7 @@ public class ListTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
@@ -85,11 +85,14 @@ public class ListTests {
         JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw$$AidlServerImpl.java"));
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw$$AidlClientImpl.java"));
 
+        // two javac warnings because of using raw delegate
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-rawtypes",
+                })
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
-                .withWarningCount(2)
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }

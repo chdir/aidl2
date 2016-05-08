@@ -25,10 +25,14 @@ public class SetTests {
         JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl.java"));
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl.java"));
 
+        // multiple (~4) raw type warnings due to using raw Callable (maybe remove?) and raw delegate
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-rawtypes",
+                })
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
@@ -40,10 +44,14 @@ public class SetTests {
         JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl.java"));
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl.java"));
 
+        // multiple (~6) raw type warnings due to using raw delegate and generic array type loss
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-rawtypes",
+                })
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }

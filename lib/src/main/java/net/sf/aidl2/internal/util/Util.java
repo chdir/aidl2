@@ -87,8 +87,8 @@ public class Util {
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
             String annotationName = mirror.getAnnotationType().toString();
 
-            final int lastDot = annotationName.lastIndexOf('.');
-            if (lastDot != -1) {
+            final int lastDot = annotationName.lastIndexOf('.') + 1;
+            if (lastDot != 0 && lastDot != annotationName.length()) {
                 annotationName = annotationName.substring(lastDot, annotationName.length());
             }
 

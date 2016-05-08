@@ -44,7 +44,7 @@ public @interface AIDL {
      * 2) Clients never leak received {@link Binder} to untrusted processes.
      *
      * A good example is an application, internally split in several processes, all of which
-     * execute only trusted code. In contrast, do not set this to false, when you expect third party
+     * execute only trusted code. In contrast, do set this to false, when you expect third party
      * code (such as plugins) to communicate with yours via the annotated interface.
      *
      * Default is false.
@@ -52,7 +52,7 @@ public @interface AIDL {
     boolean insecure() default false;
 
     /**
-     * Whether to consider abstrMethod parameters and return values nullable by default.
+     * Whether to consider method parameters and return values nullable by default.
      *
      * Setting this to false will omit some null checks from generated code and may result
      * in NullPointerExceptions within generated code, if the contract is violated.

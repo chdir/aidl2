@@ -85,6 +85,7 @@ public class MiscTests {
     public void compileComplex() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AllTogether.java"));
 
+        // too complex to track warnings :)
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
                 .processedWith(new AidlProcessor())

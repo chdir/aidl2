@@ -29,16 +29,12 @@ class State implements Cloneable {
         this.returnValue = param.isReturn();
         this.name = param.name == null ? "returnValue" : allocator.get(param);
         this.type = param.type;
+        this.nullable = param.nullable;
         return this;
     }
 
     public State external(boolean external) {
         this.external = external;
-        return this;
-    }
-
-    public State nullable(boolean nullable) {
-        this.nullable = nullable;
         return this;
     }
 
