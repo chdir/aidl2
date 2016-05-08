@@ -3,3 +3,10 @@
 * Added support for non-concrete Externalizable types
 * Added IInterface support
 * Allow unchecked Throwables to be declared on interface methods
+
+## Version 0.2.0
+
+* Added support for generic Collection types, abstract and concrete
+* Improved quality of generated code, less casts  etc.
+* Added (actually fixed) nullability annotations support
+* Numerous small bugfixes
