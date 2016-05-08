@@ -3,3 +3,5 @@ Make sure to read about known issues before submitting a bug report:
 http://sf.net/p/aidl2/docs/
 
 Consider making an issue to discuss your proposal before submitting any pull requests.
+
+When making a pull request always add tests.
