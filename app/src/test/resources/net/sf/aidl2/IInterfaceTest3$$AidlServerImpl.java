@@ -37,7 +37,7 @@ public final class IInterfaceTest3$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithOldAidlCallbackReturn: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                Responder returnValue = this.delegate.methodWithOldAidlCallbackReturn();
+                final Responder returnValue = delegate.methodWithOldAidlCallbackReturn();
                 reply.writeNoException();
 
                 reply.writeStrongBinder(returnValue == null ? null : returnValue.asBinder());

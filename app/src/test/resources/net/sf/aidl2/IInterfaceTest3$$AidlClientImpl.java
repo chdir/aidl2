@@ -35,7 +35,7 @@ public final class IInterfaceTest3$$AidlClientImpl implements IInterfaceTest3 {
         try {
             data.writeInterfaceToken(IInterfaceTest3$$AidlServerImpl.DESCRIPTOR);
 
-            this.delegate.transact(IInterfaceTest3$$AidlServerImpl.TRANSACT_methodWithOldAidlCallbackReturn, data, reply, 0);
+            delegate.transact(IInterfaceTest3$$AidlServerImpl.TRANSACT_methodWithOldAidlCallbackReturn, data, reply, 0);
             reply.readException();
 
             return Responder.Stub.asInterface(reply.readStrongBinder());
