@@ -2,7 +2,7 @@ def packageDesc = 'AIDL tool replacement, implemented as Java annotation process
 def packageSite = 'https://github.com/chdir/aidl2'
 def mainLic = 'GPL-2.0+CE'
 def libVcs = 'https://github.com/chdir/aidl2'
-def aidl2ver = '0.1.1'
+def aidl2ver = '0.2.0'
 
 def props = new Properties()
 
@@ -18,7 +18,7 @@ if (props) {
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
 
-    def pomXmlContents = new XmlParser().parseText '''
+    def pomXmlContents = new XmlParser().parseText """
         <dependencies>
             <dependency>
                 <groupId>org.jetbrains</groupId>
@@ -28,8 +28,16 @@ if (props) {
                 <scope>compile</scope>
                 <optional>false</optional>
             </dependency>
+            <dependency>
+                <groupId>net.sf.aidl2</groupId>
+                <artifactId>api</artifactId>
+                <version>$aidl2ver</version>
+                <type>jar</type>
+                <scope>compile</scope>
+                <optional>false</optional>
+            </dependency>
         </dependencies>
-    '''
+    """
 
     publishing {
         publications {
@@ -47,13 +55,20 @@ if (props) {
                     provider.asNode().append(pomXmlContents)
                 }
             }
+            AIDL2API(MavenPublication) {
+                artifact tasks.apiJar
+
+                groupId 'net.sf.aidl2'
+                artifactId 'api'
+                version aidl2ver
+            }
         }
     }
 
     bintray {
         user = props['bintrayUser']
         key = props['bintrayKey']
-        publications = ['AIDL2']
+        publications = ['AIDL2', 'AIDL2API']
 
         pkg {
             repo = 'maven'
@@ -74,9 +89,9 @@ if (props) {
                 vcsTag = "v${name}"
             }
 
-            publish = true
+            publish = false
         }
     }
 
-    tasks.bintrayUpload.dependsOn tasks.proguardMapping, tasks.sourcesJar, tasks.javadocJar
+    tasks.bintrayUpload.dependsOn tasks.proguardMapping, tasks.sourcesJar, tasks.javadocJar, tasks.apiJar
 }

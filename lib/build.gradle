@@ -19,6 +19,9 @@ import com.github.jengelman.gradle.plugins.shadow.transformers.*
 import proguard.gradle.*
 
 shadowJar {
+    exclude 'net/sf/aidl2/AIDL.class'
+    exclude 'net/sf/aidl2/OneWay.class'
+
     transform(DontIncludeResourceTransformer) { it.resource = 'META-INF/maven/com.squareup/javapoet/pom.xml' }
     transform(DontIncludeResourceTransformer) { it.resource = 'META-INF/maven/com.squareup/javapoet/pom.properties' }
 
@@ -29,6 +32,7 @@ shadowJar {
 
 tasks.javadoc.configure {
     exclude '**/internal/**'
+    exclude '**/Linker*'
 
     options.noTimestamp
     options.windowTitle 'AIDL2 API documentation'
@@ -39,6 +43,19 @@ tasks.javadoc.configure {
             ' var l = document.links[i]; if (l.href.indexOf("http") === 0) l.target = "_blank";' +
             '}' +
             '</script>'
+}
+
+task apiJar(type: Jar) {
+    dependsOn tasks.compileJava
+
+    include 'net/sf/aidl2/AIDL.class'
+    include 'net/sf/aidl2/OneWay.class'
+
+    baseName = 'api'
+
+    includeEmptyDirs = false
+
+    from project.sourceSets.main.output
 }
 
 task sourcesJar(type: Jar) {
@@ -62,6 +79,7 @@ task applyProguard(type: ProGuardTask) {
 
     libraryjars "${System.properties.'java.home'}/lib/rt.jar"
     libraryjars configurations.compileOnly
+    libraryjars apiJar.outputs
 
     configuration file('proguard-config.pro')
 
