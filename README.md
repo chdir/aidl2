@@ -12,8 +12,8 @@
 
 ### AIDL2
 
-This is a replacement for Google's aidl generator tool. Instead of parsing highly limited DSL this
-one uses Java annotation processing framework to generate Java implementation, based on Java
+This is a replacement for Google's aidl generator tool. Instead of parsing very limited DSL AIDL2
+ uses Java annotation processing framework to generate Java implementation, based on Java
 interface code. This allows you to extend from other interfaces, annotate your interface classes,
 use generics and other features of Java language.
 
@@ -25,15 +25,12 @@ Traditionally *"aidl"* refers to several related but distinct concepts:
 * .aidl files (which contain AIDL);
 * the [aidl generator][2] which transforms AIDL into client/server IPC interfaces.
 
-Unlike Google's code generator, which is implemented as standalone C++ executable, executed
-by Android build system, AIDL2 is an annotation processor, that is — a plugin for
-Java compiler. It has better error reporting and can be used with plain Java projects
-as long as Android framework classes are on classpath. It works automatically by adding
-jar file to project dependencies.
+Unlike Google's code generator, which is implemented as standalone C++ executable,
+AIDL2 is an annotation processor, that is — a plugin for Java compiler. It works automatically
+by adding jar file to project dependencies.
 
-Better integration with compiler gives aidl2 complete understanding of involved types, which
-makes it possible to support more types without resorting to runtime reflection. In addition
-to types, supported by aidl tool, AIDL2 allows use of
+Better integration with compiler gives aidl2 complete understanding of involved types.
+In addition to types, supported by aidl tool, AIDL2 allows use of
 
 * Generic Collections
 * IInterface subtypes (both from AIDL2 and aidl tool)
@@ -41,11 +38,9 @@ to types, supported by aidl tool, AIDL2 allows use of
 * Multi-dimensional arrays
 * Void — ignored during (de)serialization, always evaluates to null
 
-All generated code is human-readable and well-formatted. Annotating a method with `@SuppresWarnings`
-will carry the annotation over to generated classes (please create an issue, if you'd like for
-other annotations to be transplanted the same way).
+All generated code is human-readable and well-formatted.
 
-You can read more about project features in [project wiki](http://sf.net/p/aidl2/docs/#miscalleous-features).
+You can learn more about project features in [project wiki](http://sf.net/p/aidl2/docs/#miscalleous-features).
 
 ### Current status
 
@@ -55,15 +50,13 @@ avoid any unpleasant surprises.
 
 ### Usage
 
+[![Download](https://api.bintray.com/packages/alexanderr/maven/aidl2/images/download.svg)](https://bintray.com/alexanderr/maven/aidl2/_latestVersion)
+
 Add the library to project:
 
 ```groovy
-repositories {
-  maven { url 'http://dl.bintray.com/alexanderr/maven' }
-}
-
 dependencies {
-  compile 'net.sf.aidl2:compiler:0.0.1'
+  compile 'net.sf.aidl2:compiler:0.2.0'
 }
 ```
 
@@ -108,7 +101,7 @@ public void onServiceConnected(ComponentName name, IBinder serviceBinder) {
 
     Toast.makeText(this, "Received message \"" + callResult + '"', Toast.LENGTH_SHORT).show();
   } catch (RemoteException e) {
-    Toast.makeText(this, "Failed to receive a string " + e.getMessage(), Toast.LENGTH_SHORT).show();
+    Toast.makeText(this, "Service error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
   }
 }
 ```
