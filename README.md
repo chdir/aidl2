@@ -83,34 +83,34 @@ Retrive generated proxy/stub using `InterfaceLoader`.
 Service code:
 
 ```java
-    public IBinder onBind(Intent intent) {
-      RemoteApi serviceApi = new RemoteApi() {
-        public String sayHello() {
-          return "Hello world";
-        }
-
-        public IBinder asBinder() {
-          return InterfaceLoader.asBinder(this, RemoteApi.class);
-        }
-      };
-      return serviceApi.asBinder();
+public IBinder onBind(Intent intent) {
+  RemoteApi serviceApi = new RemoteApi() {
+    public String sayHello() {
+      return "Hello world";
     }
+
+    public IBinder asBinder() {
+      return InterfaceLoader.asBinder(this, RemoteApi.class);
+    }
+  };
+  return serviceApi.asBinder();
+}
 ```
 
 Caller code:
 
 ```java
-    public void onServiceConnected(ComponentName name, IBinder serviceBinder) {
-      try {
-        final RemoteApi serviceApi = InterfaceLoader.asInterface(serviceBinder, RemoteApi.class);
+public void onServiceConnected(ComponentName name, IBinder serviceBinder) {
+  try {
+    final RemoteApi serviceApi = InterfaceLoader.asInterface(serviceBinder, RemoteApi.class);
     
-        final String callResult = serviceApi.sayHello();
+    final String callResult = serviceApi.sayHello();
 
-        Toast.makeText(this, "Received message \"" + callResult + '"', Toast.LENGTH_SHORT).show();
-      } catch (RemoteException e) {
-        Toast.makeText(this, "Failed to receive a string " + e.getMessage(), Toast.LENGTH_SHORT).show();
-      }
-    }
+    Toast.makeText(this, "Received message \"" + callResult + '"', Toast.LENGTH_SHORT).show();
+  } catch (RemoteException e) {
+    Toast.makeText(this, "Failed to receive a string " + e.getMessage(), Toast.LENGTH_SHORT).show();
+  }
+}
 ```
 
 ### Defining an interface
@@ -123,7 +123,7 @@ types:
 ```java
 @AIDL
 public interface RemoteApi extends IInterface {
-    <T extends Runnable> void exampleMethod(T runnableParameter) throws RemoteException;
+  <T extends Runnable> void exampleMethod(T runnableParameter) throws RemoteException;
 }
 ```
 
@@ -132,7 +132,7 @@ will fail to compile with error, because Parcel does not support Runnables.
 ```java
 @AIDL
 public interface RemoteApi extends IInterface {
-    <T extends Runnable & Parcelable> T exampleMethod() throws RemoteException;
+  <T extends Runnable & Parcelable> T exampleMethod() throws RemoteException;
 }
 ```
 
