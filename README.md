@@ -45,13 +45,7 @@ All generated code is human-readable and well-formatted. Annotating a method wit
 will carry the annotation over to generated classes (please create an issue, if you'd like for
 other annotations to be transplanted the same way).
 
-Following features of aidl tool are not (yet?) supported:
-
-* Pure `out` and `inout` parameters
-* Generating C++ code
-
-Aidl2 won't work with Google's Jack and other compilers incompatible with post-Java 5 language.
-It is not tested for compatibility with Eclipse Java compiler, but any feedback is welcome.
+You can read more about project features in [project wiki](http://sf.net/p/aidl2/docs/#miscalleous-features).
 
 ### Current status
 
