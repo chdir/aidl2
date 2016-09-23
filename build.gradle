@@ -11,7 +11,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        classpath 'com.android.tools.build:gradle:2.2.0'
         classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
         classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.5.0-x'
@@ -24,6 +24,10 @@ buildscript {
         resolutionStrategy {
             failOnVersionConflict()
 
+            force 'org.ow2.asm:asm:5.0.4'
+            force 'org.ow2.asm:asm-commons:5.0.4'
+            force 'com.android.tools:annotations:25.2.0'
+            force 'com.google.guava:guava:18.0'
             force 'org.apache.httpcomponents:httpclient:4.2.1'
             force 'org.apache.httpcomponents:httpcore:4.1'
             force 'commons-lang:commons-lang:2.4'
