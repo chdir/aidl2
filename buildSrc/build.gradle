@@ -24,6 +24,8 @@ subprojects {
     resolutionStrategy {
       failOnVersionConflict()
 
+      force 'com.android.tools:annotations:25.2.0'
+      force 'com.google.guava:guava:18.0'
       force 'org.apache.httpcomponents:httpclient:4.2.1'
       force 'org.apache.httpcomponents:httpcore:4.1'
       force 'com.jcraft:jsch:0.1.50'

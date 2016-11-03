@@ -3,8 +3,6 @@ import org.gradle.internal.jvm.Jvm
 evaluationDependsOn(':lib')
 
 apply plugin: 'com.android.application'
-apply plugin: 'me.tatarka.retrolambda'
-apply plugin: 'com.neenbedankt.android-apt'
 
 repositories {
     maven {
@@ -17,15 +15,21 @@ android {
     buildToolsVersion '25.0.0'
 
     defaultConfig {
-        applicationId "net.sf.fakenames.aidl2.demo"
+        applicationId 'net.sf.fakenames.aidl2.demo2'
         minSdkVersion 18
-        targetSdkVersion 23
+        targetSdkVersion 24
         versionCode 1
-        versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        versionName '1.0'
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+
+        jackOptions {
+            enabled = true
+        }
 
         javaCompileOptions {
             annotationProcessorOptions {
+                arguments = [ 'aidl2_log_to_file' : 'true' ]
+
                 includeCompileClasspath = true
             }
         }
@@ -37,14 +41,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-}
-
-apt {
-    arguments {
-        aidl2_log_to_file true
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
     }
 }
 
@@ -74,11 +72,17 @@ android.applicationVariants.all { variant ->
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile 'org.checkerframework:checker-qual:2.1.3'
+    //compile 'org.checkerframework:checker:2.1.3'
+
     testCompile 'junit:junit:4.12'
 
     if (project.properties.uploadInitiated || !project.hasProperty('theTimeHasCometh')) {
+        annotationProcessor project(':lib')
         compile project(':lib')
     } else {
+        annotationProcessor ('net.sf.aidl2:compiler:0.+') { changing = true }
         compile ('net.sf.aidl2:compiler:0.+') { changing = true }
     }
 

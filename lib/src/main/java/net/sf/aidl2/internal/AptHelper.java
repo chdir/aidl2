@@ -945,6 +945,14 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return types.isSameType(a, b) ? a : b;
     }
 
+    static TypeMirror capture(Types t, TypeMirror sourceType) {
+        try {
+            return t.capture(sourceType);
+        } catch (UnsupportedOperationException ignored) {
+            return sourceType;
+        }
+    }
+
     private TypeMirror captureInner(TypeMirror type) {
         final TypeKind kind = type.getKind();
 
@@ -952,7 +960,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
             case ARRAY:
                 return types.erasure(type);
             default:
-                final TypeMirror refined = types.capture(type);
+                final TypeMirror refined = capture(types, type);
 
                 if (Util.isProperDeclared(refined)) {
                     return captureAllArgs((DeclaredType) refined);
@@ -970,7 +978,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
                     return erasedArg;
                 }
 
-                final TypeMirror refinedParent = types.capture(declaredParent);
+                final TypeMirror refinedParent = capture(types, declaredParent);
 
                 if (Util.isProperDeclared(refinedParent)) {
                     return captureAllArgs((DeclaredType) refinedParent);
