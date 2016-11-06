@@ -129,6 +129,18 @@ public class ErrorTests {
                 .onLine(8)
                 .and()
                 .withNoteContaining("bailing out");
+
+        JavaFileObject testSource2 = JavaFileObjects.forResource(IntTests.class.getResource("BaseIInterfaceFailure2.java"));
+
+        assertAbout(javaSource()).that(testSource2)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("use more specific type")
+                .in(testSource2)
+                .onLine(8)
+                .and()
+                .withNoteContaining("bailing out");
     }
 
     @Test
