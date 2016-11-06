@@ -1,7 +1,5 @@
 package net.sf.aidl2.internal;
 
-import android.text.TextUtils;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
@@ -455,7 +453,7 @@ public final class Reader extends AptHelper {
                 }
 
                 String errMsg =
-                        "Passing unchecked objects over IPC may result in unsafe code.\n" +
+                        "Passing weakly-typed objects over IPC may result in unsafe code.\n" +
                         "You have two options:\n" +
                         "\t• Use more specific type\n" +
                         "\t• Add @SuppressWarnings(\"unchecked\") annotation to use Parcel#readValue and Parcel#writeValue for transfer";
