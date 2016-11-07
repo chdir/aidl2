@@ -48,6 +48,7 @@ public final class Reader extends AptHelper {
     private final boolean allowUnchecked;
     private final boolean external;
     private final boolean nullable;
+    private final boolean assumeFinal;
 
     private final DeclaredType parcelable;
     private final DeclaredType externalizable;
@@ -83,6 +84,7 @@ public final class Reader extends AptHelper {
         this.nullable = state.nullable;
         this.external = state.external;
         this.allocator = state.allocator;
+        this.assumeFinal = state.assumeFinal;
 
         this.sizeType = lookup("android.util.Size");
         this.sizeF = lookup("android.util.SizeF");
@@ -208,11 +210,17 @@ public final class Reader extends AptHelper {
 
                 // Or at least Externalizable strategy
                 if (types.isAssignable(type, externalizable)) {
-                    final Strategy strategy = getExternalizableStrategy(type);
+                    final DeclaredType concreteParent = findConcreteParent(type, externalizable);
 
-                    if (strategy != null) {
-                        return strategy;
+                    if (concreteParent != null) {
+                        final Strategy strategy = getExternalizableStrategy(concreteParent);
+
+                        if (strategy != null) {
+                            return strategy;
+                        }
                     }
+
+                    return getUnknownExternalizableStrategy(type);
                 }
 
                 // check for parameters, that resolve to wrapper types...
@@ -318,7 +326,7 @@ public final class Reader extends AptHelper {
                         Character.toUpperCase(selfName.charAt(0)) + selfName.subSequence(1, selfName.length()));
 
                 init.addStatement("final $T $N = $N == null ? null : $T.asInterface($N, $T.class)",
-                        captured, tmpInterface, tmpBinder, ClassName.get(InterfaceLoader.class), tmpBinder, raw);
+                        captured, tmpInterface, tmpBinder, InterfaceLoader.class, tmpBinder, raw);
 
                 return literal(tmpInterface);
             };
@@ -326,21 +334,27 @@ public final class Reader extends AptHelper {
             return Strategy.createNullSafe(strategy, jokeLub(captured, theIInterface));
         } else {
             strategy = block -> literal("$T.asInterface($N.readStrongBinder(), $T.class)",
-                    ClassName.get(InterfaceLoader.class), parcelName, raw);
+                    InterfaceLoader.class, parcelName, raw);
 
             return Strategy.createNullSafe(strategy, jokeLub(type, theIInterface));
         }
     }
 
-    private Strategy getExternalizableStrategy(TypeMirror t) {
-        final DeclaredType type = findConcreteParent(t, externalizable);
-        if (type == null) {
-            return getUnknownExternalizableStrategy(t);
-        }
-
+    private Strategy getExternalizableStrategy(DeclaredType type) throws CodegenException {
         final TypeElement clazz = (TypeElement) type.asElement();
 
+        final boolean trulyFinal = clazz.getModifiers().contains(Modifier.FINAL);
+
         if (!hasDefaultConstructor(clazz)) {
+            if (trulyFinal) {
+                throw new CodegenException("Externalizable class does not have accessible constructor");
+            } else {
+                // TODO no apparent mistake, but should we print the warning anyway?
+                return null;
+            }
+        }
+
+        if (!trulyFinal && !assumeFinal) {
             return null;
         }
 
@@ -470,16 +484,21 @@ public final class Reader extends AptHelper {
     }
 
     private @Nullable Strategy getParcelableStrategy(DeclaredType type) throws CodegenException {
-        final Set<Modifier> modifiers = type.asElement().getModifiers();
-
-        if (!modifiers.contains(Modifier.FINAL)) {
-            return null;
-        }
+        final boolean trulyFinal = type.asElement().getModifiers().contains(Modifier.FINAL);
 
         final VariableElement creator = lookupStaticField(type, "CREATOR", theCreator);
 
         if (creator == null) {
-            throw new CodegenException("Parcelable type does not have CREATOR field");
+            if (trulyFinal) {
+                throw new CodegenException("Parcelable type does not have CREATOR field");
+            } else {
+                // TODO no apparent mistake, but should we print the warning anyway?
+                return null;
+            }
+        }
+
+        if (!trulyFinal && !assumeFinal) {
+            return null;
         }
 
         final TypeMirror rawType = types.erasure(type);
@@ -810,7 +829,7 @@ public final class Reader extends AptHelper {
     // Always nullable by design
     private Strategy getUnknownExternalizableStrategy(TypeMirror type) {
         EXTERNALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
-            private final CodeBlock block = literal("$T.readSafeExternalizable($N)", ClassName.get(AidlUtil.class), parcelName);
+            private final CodeBlock block = literal("$T.readSafeExternalizable($N)", AidlUtil.class, parcelName);
 
             @Override
             public CodeBlock read(CodeBlock.Builder unused) {
@@ -866,7 +885,7 @@ public final class Reader extends AptHelper {
     }
 
     private CodeBlock readSerializable() {
-        return literal("$T.readSafeSerializable($N)", ClassName.get(AidlUtil.class), parcelName);
+        return literal("$T.readSafeSerializable($N)", AidlUtil.class, parcelName);
     }
 
     private CodeBlock readPrimitive(PrimitiveType type) {

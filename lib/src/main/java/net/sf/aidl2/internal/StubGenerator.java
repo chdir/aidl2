@@ -93,7 +93,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         final TypeElement originatingInterface = elements.getTypeElement(interfaceType.toString());
 
         final TypeSpec.Builder implClassSpec = TypeSpec.classBuilder(name)
-                .superclass(ClassName.bestGuess("android.os.Binder"))
+                .superclass(ClassName.get("android.os", "Binder"))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addOriginatingElement(originatingInterface)
                 .addJavadoc(JAVADOC, loaderName)
@@ -116,7 +116,8 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
         if (!model.methods.isEmpty()) {
             final State aidlReader = new State(getBaseEnvironment(), modelAllocator)
-                    .allowUnchecked((model.suppressed & Util.SUPPRESS_UNCHECKED) != 0);
+                    .allowUnchecked((model.suppressed & Util.SUPPRESS_UNCHECKED) != 0)
+                    .assumeFinal(model.assumeFinal);
 
             final MethodSpec.Builder onTransactSpec = onTransact.toBuilder();
 
@@ -136,7 +137,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                 final String transactIdField = aidlReader.allocator.get(method);
 
                 FieldSpec transactId = FieldSpec.builder(int.class, transactIdField, Modifier.FINAL, Modifier.STATIC)
-                        .initializer("$T.FIRST_CALL_TRANSACTION + $L", ClassName.bestGuess("android.os.IBinder"), i)
+                        .initializer("$T.FIRST_CALL_TRANSACTION + $L", ClassName.get("android.os", "IBinder"), i)
                         .build();
 
                 implClassSpec.addField(transactId);

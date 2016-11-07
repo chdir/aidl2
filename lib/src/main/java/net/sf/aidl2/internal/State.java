@@ -12,6 +12,7 @@ class State implements Cloneable {
     boolean allowUnchecked;
     boolean nullable = true;
     boolean returnValue;
+    boolean assumeFinal;
     TypeMirror type;
     CharSequence name;
 
@@ -30,6 +31,11 @@ class State implements Cloneable {
         this.name = param.name == null ? "returnValue" : allocator.get(param);
         this.type = param.type;
         this.nullable = param.nullable;
+        return this;
+    }
+
+    public State assumeFinal(boolean assumeFinal) {
+        this.assumeFinal = assumeFinal;
         return this;
     }
 

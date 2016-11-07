@@ -51,6 +51,7 @@ public final class ExternalizableTest2$$AidlServerImpl extends Binder {
                         ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
                         objectOutputStream = new ObjectOutputStream(arrayOutputStream);
                         returnValue.writeExternal(objectOutputStream);
+                        objectOutputStream.flush();
                         reply.writeByteArray(arrayOutputStream.toByteArray());
                     } catch (Exception e) {
                         throw new IllegalStateException("Failed to serialize net.sf.aidl2.SomeExternalizable", e);

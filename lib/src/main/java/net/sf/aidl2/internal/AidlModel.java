@@ -34,11 +34,11 @@ public final class AidlModel {
     @NotNull
     final TypeName interfaceName;
 
-    final boolean defaultNullable;
-
     final int suppressed;
 
     final boolean insecure;
+
+    final boolean assumeFinal;
 
     @NotNull
     final List<AidlMethodModel> methods;
@@ -50,15 +50,15 @@ public final class AidlModel {
                      @NotNull List<AidlMethodModel> methods,
                      int suppressed,
                      boolean insecure,
-                     boolean defaultNullable,
+                     boolean assumeFinal,
                      @NotNull final Annotation... migrated) {
         this.serverImplName = serverImplName;
         this.clientImplName = clientImplName;
         this.descriptor = descriptor;
         this.interfaceName = interfaceName;
         this.insecure = insecure;
+        this.assumeFinal = assumeFinal;
         this.methods = methods;
-        this.defaultNullable = defaultNullable;
         this.migrated = migrated;
         this.suppressed = suppressed;
     }
@@ -100,7 +100,7 @@ public final class AidlModel {
                 methods,
                 warningsSuppressedOnType,
                 aidl.insecure(),
-                aidl.defaultNullable(),
+                aidl.assumeFinal(),
                 typeTransplanted);
     }
 }

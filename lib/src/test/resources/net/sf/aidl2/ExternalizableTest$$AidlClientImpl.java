@@ -45,6 +45,7 @@ public final class ExternalizableTest$$AidlClientImpl implements ExternalizableT
                     ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
                     objectOutputStream = new ObjectOutputStream(arrayOutputStream);
                     externalizable.writeExternal(objectOutputStream);
+                    objectOutputStream.flush();
                     data.writeByteArray(arrayOutputStream.toByteArray());
                 } catch (Exception e) {
                     throw new IllegalStateException("Failed to serialize net.sf.aidl2.SomeExternalizable", e);

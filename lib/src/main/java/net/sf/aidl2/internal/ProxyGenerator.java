@@ -10,6 +10,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 
+import net.sf.aidl2.InterfaceLoader;
 import net.sf.aidl2.internal.codegen.TypedExpression;
 import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.exceptions.ElementException;
@@ -30,15 +31,13 @@ import javax.lang.model.type.TypeMirror;
 import static net.sf.aidl2.internal.util.Util.literal;
 
 final class ProxyGenerator extends AptHelper implements AidlGenerator {
-    private static final ClassName loaderName = ClassName.bestGuess("InterfaceLoader");
-
     private static final String JAVADOC = "Perform IPC calls according to the interface contract.\n" +
             "\n" +
             "You can create instances of this class, using {@link $T}.\n" +
             "\n" +
             "@deprecated — do not use this class directly in your Java code (see above)\n";
 
-    private final ClassName iBinder = ClassName.bestGuess("android.os.IBinder");
+    private final ClassName iBinder = ClassName.get("android.os", "IBinder");
 
     private final List<AidlModel> models;
 
@@ -79,7 +78,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 .addSuperinterface(TypeName.get(ifType))
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addOriginatingElement(originatingInterface)
-                .addJavadoc(JAVADOC, loaderName)
+                .addJavadoc(JAVADOC, InterfaceLoader.class)
                 .addAnnotation(Deprecated.class)
                 .addField(iBinder, "delegate", Modifier.PRIVATE, Modifier.FINAL)
                 .addMethod(MethodSpec.constructorBuilder()
@@ -104,7 +103,8 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
 
         if (!model.methods.isEmpty()) {
             final State aidlWriter = new State(getBaseEnvironment(), modelAllocator)
-                    .allowUnchecked(isSuppressed(model.suppressed, Util.SUPPRESS_UNCHECKED));
+                    .allowUnchecked(isSuppressed(model.suppressed, Util.SUPPRESS_UNCHECKED))
+                    .assumeFinal(model.assumeFinal);
 
             for (AidlMethodModel method : model.methods) {
                 final State methodWriter = aidlWriter.clone();

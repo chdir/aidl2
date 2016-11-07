@@ -276,7 +276,7 @@ class Logger implements Closeable {
         private static FileObject createLogFile(ProcessingEnvironment pe) throws IOException {
             final Filer filer = pe.getFiler();
 
-            return filer.createResource(StandardLocation.SOURCE_OUTPUT, "", "processor.log");
+            return filer.createResource(StandardLocation.SOURCE_OUTPUT, "", "aidl2.log");
         }
     }
 }

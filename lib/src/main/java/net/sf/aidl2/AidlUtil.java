@@ -39,6 +39,9 @@ public class AidlUtil {
         }
     }
 
+    /**
+     * Write externalizable +
+     */
     public static void writeExternalizable(@NotNull Parcel parcel, @Nullable Externalizable externalizable) {
         if (externalizable == null) {
             parcel.writeString(null);
@@ -54,6 +57,7 @@ public class AidlUtil {
             ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
             objectOutputStream = new ObjectOutputStream(arrayOutputStream);
             objectOutputStream.writeObject(externalizable);
+            objectOutputStream.flush();
             parcel.writeByteArray(arrayOutputStream.toByteArray());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to serialize " + className, e);

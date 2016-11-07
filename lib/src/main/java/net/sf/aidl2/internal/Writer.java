@@ -15,8 +15,10 @@ import java.io.Externalizable;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.Set;
 
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
@@ -35,6 +37,7 @@ public final class Writer extends AptHelper {
 
     private final boolean allowUnchecked;
     private final boolean nullable;
+    private final boolean assumeFinal;
 
     private final CharSequence name;
     private final NameAllocator allocator;
@@ -64,6 +67,7 @@ public final class Writer extends AptHelper {
         super(environment);
 
         this.nullable = state.nullable;
+        this.assumeFinal = state.assumeFinal;
         this.name = state.name;
         this.allocator = state.allocator;
 
@@ -195,7 +199,7 @@ public final class Writer extends AptHelper {
                     return getExternalizableStrategy(type);
                 }
 
-                // check for varargs, that resolve to wrapper types...
+                // check for type args, that resolve to wrapper types...
                 final TypeMirror captured = types.erasure(type);
 
                 if (captured.getKind() == TypeKind.DECLARED) {
@@ -308,6 +312,14 @@ public final class Writer extends AptHelper {
             return getUnknownExternalizableStrategy();
         }
 
+        if (!assumeFinal) {
+            final Set<Modifier> modifiers = type.asElement().getModifiers();
+
+            if (!modifiers.contains(Modifier.FINAL)) {
+                return getUnknownExternalizableStrategy();
+            }
+        }
+
         return Strategy.create((block, name, unused) -> {
             final String oos = allocator.newName("objectOutputStream");
             final String baos = allocator.newName("arrayOutputStream");
@@ -322,6 +334,7 @@ public final class Writer extends AptHelper {
             block.addStatement("$N = new $T($N)", oos, ObjectOutputStream.class, baos);
 
             block.addStatement("$L.writeExternal($N)", name, oos);
+            block.addStatement("$N.flush()", oos);
             block.addStatement("$L.writeByteArray($N.toByteArray())", parcelName, baos);
 
             block.nextControlFlow("catch (Exception $N)", err);
@@ -339,6 +352,14 @@ public final class Writer extends AptHelper {
 
         if (concreteType == null) {
             return getAbstractParcelableStrategy();
+        }
+
+        if (!assumeFinal) {
+            final Set<Modifier> modifiers = concreteType.asElement().getModifiers();
+
+            if (!modifiers.contains(Modifier.FINAL)) {
+                return getAbstractParcelableStrategy();
+            }
         }
 
         final VariableElement creator = lookupStaticField(concreteType, "CREATOR", theCreator);
@@ -578,7 +599,7 @@ public final class Writer extends AptHelper {
                 block.beginControlFlow("for ($T $N : $L)", requestedType, element, name1);
             } else {
                 block.beginControlFlow("for ($T $N : $T.<$T<$T>>unsafeCast($L))",
-                        requestedType, element, ClassName.get(AidlUtil.class), ClassName.get(Iterable.class), requestedType, name1);
+                        requestedType, element, AidlUtil.class, Iterable.class, requestedType, name1);
             }
 
 
@@ -648,7 +669,7 @@ public final class Writer extends AptHelper {
     }
 
     private void writeExternalizable(CodeBlock.Builder block, Object name, TypeMirror ignored) {
-        block.addStatement("$T.writeExternalizable($N, $L)", ClassName.get(AidlUtil.class), parcelName, name);
+        block.addStatement("$T.writeExternalizable($N, $L)", AidlUtil.class, parcelName, name);
     }
 
     private void writeSerializable(CodeBlock.Builder block, Object name, TypeMirror ignored) {

@@ -1,7 +1,6 @@
 package net.sf.aidl2.internal;
 
 import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
@@ -157,7 +156,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         // much less to handle those casts. This should do for Java versions >= 8 and avoid
         // redundant casts when no intersection types are involved
         if (isTricky(t) || isTricky(t2)) {
-            return literal("$T.unsafeCast($L)", ClassName.get(AidlUtil.class), input);
+            return literal("$T.unsafeCast($L)", AidlUtil.class, input);
         }
 
         if (types.isAssignable(t, t2)) {
@@ -184,7 +183,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
             // emit cast via the helper method
             // TODO: warn user
-            return literal("$T.unsafeCast($L)", ClassName.get(AidlUtil.class), input);
+            return literal("$T.unsafeCast($L)", AidlUtil.class, input);
         }
     }
 
