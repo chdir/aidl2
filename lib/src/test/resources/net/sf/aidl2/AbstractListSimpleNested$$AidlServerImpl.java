@@ -77,14 +77,14 @@ public final class AbstractListSimpleNested$$AidlServerImpl extends Binder {
                     }
                 }
 
-                final Collection<Collection<Serializable>> returnValue = (Collection) delegate.methodWithAbstractListReturn(sizesCollection);
+                final Collection<? extends Collection<? extends Serializable>> returnValue = delegate.methodWithAbstractListReturn(sizesCollection);
                 reply.writeNoException();
 
                 if (returnValue == null) {
                     reply.writeInt(-1);
                 } else {
                     reply.writeInt(returnValue.size());
-                    for (Collection<Serializable> returnValueElement : returnValue) {
+                    for (Collection<? extends Serializable> returnValueElement : returnValue) {
                         if (returnValueElement == null) {
                             reply.writeInt(-1);
                         } else {

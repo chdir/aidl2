@@ -17,10 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -135,18 +132,19 @@ public final class Writer extends AptHelper {
         Strategy strategy = getStrategy(type);
 
         if (strategy != null) {
-            // why capture, but use requiredType if we can capture the return type of method?
-            // well,
-            final TypeMirror capture = captureAll(strategy.requiredType);
+            final TypeMirror forSerializationCode = makeDenotable(strategy.requiredType);
 
             if (nullable && strategy.needNullHandling) {
                 getNullableStrategy(strategy)
-                        .write(retValWriting, name, capture);
+                        .write(retValWriting, name, forSerializationCode);
             } else {
-                strategy.write(retValWriting, name, capture);
+                strategy.write(retValWriting, name, forSerializationCode);
             }
 
-            return capture;
+            // TODO: consider readability of picked type (a long wildcard-ridden base type vs specific laconic one)
+
+            // above all try to avoid a cast
+            return removeRedundancy(forSerializationCode, type);
         }
 
         final String errorMsg =

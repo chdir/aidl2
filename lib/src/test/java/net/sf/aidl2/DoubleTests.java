@@ -18,6 +18,13 @@ public class DoubleTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void doubleParameter() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest.java"));
@@ -26,7 +33,7 @@ public class DoubleTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

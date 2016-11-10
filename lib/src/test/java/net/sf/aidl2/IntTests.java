@@ -20,6 +20,13 @@ public class IntTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void intParameter() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("IntTest.java"));
@@ -28,7 +35,7 @@ public class IntTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("IntTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -43,7 +50,7 @@ public class IntTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("IntTest2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -58,7 +65,7 @@ public class IntTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("IntTest3$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

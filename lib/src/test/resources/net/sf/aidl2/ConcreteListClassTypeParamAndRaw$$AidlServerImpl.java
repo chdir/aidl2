@@ -52,7 +52,7 @@ public final class ConcreteListClassTypeParamAndRaw$$AidlServerImpl extends Bind
                     }
                 }
 
-                final Collection<Object> returnValue = (Collection) delegate.methodWithLinkedListParamAndArrayListReturn(AidlUtil.unsafeCast(objectListCollection));
+                final Collection<?> returnValue = delegate.methodWithLinkedListParamAndArrayListReturn(AidlUtil.unsafeCast(objectListCollection));
                 reply.writeNoException();
 
                 if (returnValue == null) {

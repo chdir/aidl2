@@ -204,6 +204,21 @@ public class Util {
                 && getQualifiedName((DeclaredType) declared) != null;
     }
 
+    public static boolean isDenotable(TypeMirror declared) {
+        if (declared == null) {
+            return false;
+        }
+
+        final TypeKind kind = declared.getKind();
+
+        switch (kind) {
+            case DECLARED:
+                return getQualifiedName((DeclaredType) declared) != null;
+            default:
+                return kind.isPrimitive();
+        }
+    }
+
     public static boolean isProperClass(TypeMirror declared) {
         return isProperDeclared(declared) &&
                 ((DeclaredType) declared).asElement().getKind().isClass();

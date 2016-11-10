@@ -18,15 +18,22 @@ public class LongTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
-    public void intParameter() throws Exception {
+    public void longParameter() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("LongTest.java"));
 
         JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("LongTest$$AidlServerImpl.java"));
         JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("LongTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

@@ -52,7 +52,7 @@ public final class ConcreteListMethodTypeParam$$AidlServerImpl extends Binder {
                     }
                 }
 
-                final Collection<CharSequence> returnValue = (Collection) delegate.methodWithVectorParamAndStackReturn(objectListCollection);
+                final Collection<? extends CharSequence> returnValue = delegate.methodWithVectorParamAndStackReturn(objectListCollection);
                 reply.writeNoException();
 
                 if (returnValue == null) {

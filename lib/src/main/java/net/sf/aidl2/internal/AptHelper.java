@@ -28,22 +28,14 @@ import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.TypeVisitor;
-import javax.lang.model.type.WildcardType;
+import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.TypeKindVisitor6;
 import javax.lang.model.util.Types;
 
-import static net.sf.aidl2.internal.util.Util.isProperDeclared;
-import static net.sf.aidl2.internal.util.Util.isTypeOf;
-import static net.sf.aidl2.internal.util.Util.literal;
+import static net.sf.aidl2.internal.util.Util.*;
 
 public abstract class AptHelper implements ProcessingEnvironment {
     private final AidlProcessor.Environment environment;
@@ -135,9 +127,19 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 }
             }
 
+            boolean leftIsRaw = isRaw(left);
+
+            boolean rightIsRaw = isRaw(right);
+
             // move raw types towards end of list
-            if (isRaw(left)) {
-                return +1;
+            if (leftIsRaw) {
+                if (!rightIsRaw) {
+                    return +1;
+                }
+            } else {
+                if (rightIsRaw) {
+                    return -1;
+                }
             }
 
             return 0;
@@ -289,6 +291,21 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
 
         return true;
+    }
+
+    /**
+     * Remove redundant parts from type (namely wildcards), but only if doing so does not hurt assignability
+     * to the second type (assuming an assignment was possible to  to begin with).
+     */
+    protected TypeMirror removeRedundancy(TypeMirror subjectType, TypeMirror goalpost) {
+        final TypeMirror captured = captureAll(subjectType);
+
+        if (types.isAssignable(goalpost, captured)) {
+            // wildcards weren't needed after all
+            return captured;
+        }
+
+        return subjectType;
     }
 
     public Collection<? extends TypeMirror> getSupertypes(TypeMirror s) {
@@ -941,6 +958,93 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
 
         return returned;
+    }
+
+    /**
+     * Convert type to externally denotable form *without* applying erasure or capture conversion
+     * (so type arguments and wildcards are preserved).
+     *
+     * After applying this conversion resulting type will be a proper declared type or array of proper declared elements
+     * and type arguments will consist solely from proper declared types and wildcards, bound by proper declared types.
+     *
+     * All type variables, intersection types etc. are recursively replaced with their first denotable parent.
+     *
+     * This ensures better preservation of type information, compared to {@link #capture} and/or {@link #captureAll}
+     * and does not have unnecessary side affects of erasure or capture conversion.
+     */
+    public TypeMirror makeDenotable(TypeMirror type) {
+        if (type == null || type.getKind().isPrimitive()) {
+            return type;
+        }
+
+        final TypeMirror cleanedUp = substituteForBaseTypes(type);
+
+        if (cleanedUp == null) {
+            return theObject;
+        }
+
+        return keepIfSameType(type, cleanedUp);
+    }
+
+    private TypeMirror substituteForBaseTypes(TypeMirror type) {
+        if (type == null) {
+            return null;
+        }
+
+        switch (type.getKind()) {
+            case ARRAY:
+                return types.getArrayType(makeDenotable(((ArrayType) type).getComponentType()));
+            case WILDCARD:
+                // if an unbound wildcard somehow sneaks here, just use Object
+                TypeMirror extendsBound = ((WildcardType) type).getExtendsBound();
+                return extendsBound == null ? theObject : makeDenotable(extendsBound);
+            default:
+                if (!isDenotable(type)) {
+                    final TypeMirror erased = types.erasure(type);
+
+                    final DeclaredType declaredParent = findDeclaredParent(type, (DeclaredType) erased);
+
+                    if (declaredParent == null || !isDenotable(declaredParent)) {
+                        // we are out of options
+                        return theObject;
+                    }
+
+                    type = declaredParent;
+                }
+
+                return substituteAllTypeArgs((DeclaredType) type);
+        }
+    }
+
+    private TypeMirror substituteAllTypeArgs(DeclaredType type) {
+        final List<? extends TypeMirror> args = type.getTypeArguments();
+
+        if (args.isEmpty()) {
+            return type;
+        }
+
+        final TypeMirror[] refinedArguments = new TypeMirror[args.size()];
+
+        for (int i = 0; i < args.size(); i++) {
+            refinedArguments[i] = substituteForTypeArg(args.get(i));
+        }
+
+        return types.getDeclaredType((TypeElement) type.asElement(), refinedArguments);
+    }
+
+    private TypeMirror substituteForTypeArg(TypeMirror innerType) {
+        if (innerType == null) {
+            return null;
+        }
+
+        switch (innerType.getKind()) {
+            case WILDCARD:
+                TypeMirror extendsBound = ((WildcardType) innerType).getExtendsBound();
+                TypeMirror superBound = ((WildcardType) innerType).getSuperBound();
+                return types.getWildcardType(makeDenotable(extendsBound), makeDenotable(superBound));
+            default:
+                return substituteForBaseTypes(innerType);
+        }
     }
 
     /**

@@ -56,7 +56,7 @@ public final class AbstractListSimpleTypeMismatch$$AidlServerImpl extends Binder
                     }
                 }
 
-                final Collection<IBinder> returnValue = (Collection) delegate.methodWithListReturnAndCollectionParam(intsCollection);
+                final Collection<? extends IBinder> returnValue = delegate.methodWithListReturnAndCollectionParam(intsCollection);
                 reply.writeNoException();
 
                 if (returnValue == null) {
