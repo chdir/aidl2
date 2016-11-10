@@ -25,8 +25,8 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 class Logger implements Closeable {
-    private static final String TAG = "AIDL2 has aborted compilation\n";
-    private static final String TAG2 = "AIDL2 says\n";
+    private static final String TAG = "AIDL2 has aborted compilation: ";
+    private static final String TAG2 = "AIDL2 says: ";
 
     private final Messager messager;
     private final Config cfg;

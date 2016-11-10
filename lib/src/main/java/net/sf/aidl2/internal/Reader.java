@@ -20,8 +20,10 @@ import java.io.ByteArrayInputStream;
 import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -65,6 +67,7 @@ public final class Reader extends AptHelper {
     private final TypeMirror charSequence;
 
     private final TypeMirror intType;
+    private final TypeMirror floatType;
 
     protected final DeclaredType genericCreator;
 
@@ -73,6 +76,7 @@ public final class Reader extends AptHelper {
     private final NameAllocator allocator;
 
     private final TypeInvocation<ExecutableElement, ExecutableType> collectionAdd;
+    private final TypeInvocation<ExecutableElement, ExecutableType> mapPut;
 
     public Reader(AidlProcessor.Environment environment, State state, CharSequence parcelName) {
         super(environment);
@@ -104,8 +108,10 @@ public final class Reader extends AptHelper {
         genericCreator = types.getDeclaredType(creatorType, bound);
 
         collectionAdd = lookupMethod(theCollection, "add", boolean.class, "Object");
+        mapPut = lookupMethod(theMap, "put", "Object", "Object", "Object");
 
         intType = types.getPrimitiveType(TypeKind.INT);
+        floatType = types.getPrimitiveType(TypeKind.FLOAT);
     }
 
     /**
@@ -232,6 +238,15 @@ public final class Reader extends AptHelper {
 
                     if (typeArgWrapperTypeStr != null) {
                         return typeArgWrapperTypeStr;
+                    }
+                }
+
+                // Check for Map subtypes
+                if (types.isAssignable(type, theMap)) {
+                    final Strategy strategy = getMapStrategy(type);
+
+                    if (strategy != null) {
+                        return strategy;
                     }
                 }
 
@@ -578,13 +593,108 @@ public final class Reader extends AptHelper {
         }, types.getArrayType(resultType));
     }
 
+    private Strategy getMapStrategy(TypeMirror mapType) throws CodegenException {
+        // allow upper-bound wildcards to be used
+        // not using captureAll() on purpose since any nested types with meaningful type args
+        // (e.g. Collections) are going to be handled by recursive application of this method
+        final TypeMirror noWildcards = AptHelper.capture(types, mapType);
+
+        final DeclaredType baseMapType = getBaseDeclared(noWildcards, theMap);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> specificPutMethod =
+                mapPut.refine(types, baseMapType);
+
+        final TypeMirror keyType = specificPutMethod.type.getParameterTypes().get(0);
+
+        final TypeMirror valueType = specificPutMethod.type.getParameterTypes().get(1);
+
+        Strategy keyStrategy = getStrategy(keyType);
+
+        Strategy valueStrategy = getStrategy(valueType);
+
+        if (types.isAssignable(mapType, serializable)) {
+            if (!allowUnchecked && (keyStrategy == null || valueStrategy == null)) {
+                final TypeMirror concreteParent = types.erasure(findConcreteParent(mapType, theCollection));
+
+                throw new CodegenException(
+                        "Unable to find serialization strategy for Map type " + mapType + ".\n"
+                        + concreteParent + " is serializable, but either key or value is not. If you want"
+                        + " Java serialization to be used anyway, add @SuppressWarnings(\"unchecked\") to the method.");
+            }
+
+            if (keyStrategy == null) {
+                keyStrategy = getStrategy(theObject);
+            }
+
+            if (valueStrategy == null) {
+                valueStrategy = getStrategy(theObject);
+            }
+
+            if (isSerialStrategy(keyStrategy) && isSerialStrategy(valueStrategy)) {
+                return getSerializableStrategy(mapType);
+            }
+        }
+
+        if (keyStrategy == null || valueStrategy == null) {
+            final String errMsg = "Unsupported map key/value combination: " + keyType + "/" + valueType + ".\n" +
+                    "Must be one of:\n" +
+                    "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
+                    "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
+                    "\t• Collection of supported type with public default constructor";
+
+            throw new CodegenException(errMsg);
+        }
+
+        // thankfully, Java does not support multiple inheritance for classes
+        final TypeMirror concreteParent = findConcreteParent(mapType, theMap);
+
+        if (concreteParent == null) {
+            if (hasBound(mapType, mapBound)) {
+                final TypeMirror lt = types.getDeclaredType((TypeElement) hashMap.asElement(), keyType, valueType);
+
+                final TypeMirror t = captureAll(lt);
+
+                return getSimpleMapStrategy(t, t, captureAll(keyType), captureAll(valueType),
+                        keyStrategy, valueStrategy, true);
+            }
+
+            throw new CodegenException("Unsupported abstract collection type: " + mapType + ". Allowed types: java.util.Map");
+        }
+
+        TypeMirror captured = captureAll(mapType);
+
+        if (!Util.isProperDeclared(captured)) {
+            throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
+        }
+
+        final TypeElement capturedTypeElement = (TypeElement) types.asElement(captured);
+
+        if (!hasPublicDefaultConstructor(capturedTypeElement)) {
+            throw new CodegenException("Type " + captured + " does not have default public constructor, can not instantiate");
+        }
+
+        TypeMirror newBase = captured;
+        TypeMirror newKey = keyType;
+        TypeMirror newValue = valueType;
+
+        if (hasPublicMapCapLoadConstructor(capturedTypeElement)) {
+            return getCapacityMapStrategy(newBase, captured, newKey, newValue, keyStrategy, valueStrategy, true);
+        }
+
+        return getSimpleMapStrategy(newBase, captured, newKey, newValue, keyStrategy, valueStrategy, true);
+    }
+
+    private boolean isSerialStrategy(Strategy strategy) {
+        return strategy == SERIALIZABLE_STRATEGY || strategy == EXTERNALIZABLE_STRATEGY;
+    }
+
     private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
         // allow upper-bound wildcards to be used
         // not using captureAll() on purpose since any nested types with meaningful type args
         // (e.g. Collections) are going to be handled by recursive application of this method
         final TypeMirror noWildcards = AptHelper.capture(types, type);
 
-        final DeclaredType base = getCollectionInterface(noWildcards);
+        final DeclaredType base = getBaseDeclared(noWildcards, theCollection);
 
         final TypeInvocation<ExecutableElement, ExecutableType> specificAddMethod =
                 collectionAdd.refine(types, base);
@@ -659,7 +769,7 @@ public final class Reader extends AptHelper {
         final TypeElement capturedTypeElement = (TypeElement) types.asElement(captured);
 
         if (!hasPublicDefaultConstructor(capturedTypeElement)) {
-            throw new CodegenException("Type " + type + " does not have default public constructor, can not instantiate");
+            throw new CodegenException("Type " + captured + " does not have default public constructor, can not instantiate");
         }
 
         final TypeMirror newElement;
@@ -714,6 +824,41 @@ public final class Reader extends AptHelper {
         return getSimpleCollectionStrategy(newBase, captured, newElement, elementStrategy, elementIsNullable);
     }
 
+    private boolean hasPublicMapCapLoadConstructor(TypeElement clazz) {
+        for (ExecutableElement constructor : ElementFilter.constructorsIn(clazz.getEnclosedElements())) {
+            if (constructor.getParameters().size() == 2
+                    && constructor.getModifiers().contains(Modifier.PUBLIC)) {
+                VariableElement firstParam = constructor.getParameters().get(0);
+
+                if (!types.isAssignable(firstParam.asType(), intType)) {
+                    return false;
+                }
+
+                VariableElement secondParam = constructor.getParameters().get(1);
+
+                if (!types.isAssignable(secondParam.asType(), floatType)) {
+                    return false;
+                }
+
+                final Name packageName = elements.getPackageOf(clazz).getQualifiedName();
+
+                if (packageName.toString().startsWith("java.util")) {
+                    // I, for one, believe in our Su~~ Oracle overlords
+                    return true;
+                }
+
+                if (firstParam.getSimpleName().toString().contains("capacity") &&
+                        firstParam.getSimpleName().toString().contains("load")) {
+                    return true;
+                }
+
+                // user's with fully-optimized JDK builds are out of luck :(
+            }
+        }
+
+        return false;
+    }
+
     private boolean hasPublicCapacityConstructor(TypeElement clazz) {
         for (ExecutableElement constructor : ElementFilter.constructorsIn(clazz.getEnclosedElements())) {
             if (constructor.getParameters().size() == 1
@@ -723,13 +868,116 @@ public final class Reader extends AptHelper {
                 if (types.isAssignable(param.asType(), intType)) {
                     final Name packageName = elements.getPackageOf(clazz).getQualifiedName();
 
+                    // user's with fully-optimized JDK builds are out of luck :(
                     return packageName.toString().startsWith("java.util")
-                            || "capacity".equalsIgnoreCase(param.getSimpleName().toString());
+                            || param.getSimpleName().toString().contains("capacity");
                 }
             }
         }
 
         return false;
+    }
+
+    private Strategy getSimpleMapStrategy(
+            TypeMirror base,
+            TypeMirror captured,
+            TypeMirror keyType,
+            TypeMirror valueType,
+            Strategy keyStrategy,
+            Strategy valueStrategy,
+            boolean elementIsNullable) {
+        return Strategy.createNullSafe(init -> {
+            final String collection = allocator.newName(selfName + "Map");
+            final String size = allocator.newName(selfName + "Size");
+            final String k = allocator.newName("k");
+
+            init.addStatement("final $T $N", base, collection);
+            init.addStatement("final int $N = $N.readInt()", size, parcelName);
+            init.beginControlFlow("if ($N < 0)", size);
+            init.addStatement("$N = null", collection);
+            init.nextControlFlow("else");
+            init.addStatement("$N = $L", collection, emitDefaultConstructorCall(captured));
+
+            final Strategy keyStrategyToUse;
+
+            if (elementIsNullable && keyStrategy.needNullHandling) {
+                keyStrategyToUse = getNullableStrategy(keyType, keyStrategy);
+            } else {
+                keyStrategyToUse = keyStrategy;
+            }
+
+            final Strategy valueStrategyToUse;
+
+            if (elementIsNullable && valueStrategy.needNullHandling) {
+                valueStrategyToUse = getNullableStrategy(valueType, valueStrategy);
+            } else {
+                valueStrategyToUse = valueStrategy;
+            }
+
+            final TypeMirror keyResultType = keyStrategy.returnType;
+            final TypeMirror valueResultType = valueStrategy.returnType;
+
+            init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", k, k, size, k);
+            init.addStatement("$N.put($L, $L)", collection,
+                    emitCasts(keyResultType, captureAll(keyType), keyStrategyToUse.read(init)),
+                    emitCasts(valueResultType, captureAll(valueType), valueStrategyToUse.read(init)));
+            init.endControlFlow();
+
+            init.endControlFlow();
+
+            return literal(collection);
+        }, base);
+    }
+
+    private Strategy getCapacityMapStrategy(
+            TypeMirror base,
+            TypeMirror captured,
+            TypeMirror keyType,
+            TypeMirror valueType,
+            Strategy keyStrategy,
+            Strategy valueStrategy,
+            boolean elementIsNullable) {
+        return Strategy.createNullSafe(init -> {
+            final String collection = allocator.newName(selfName + "Map");
+            final String size = allocator.newName(selfName + "Size");
+            final String k = allocator.newName("k");
+
+            init.addStatement("final $T $N", base, collection);
+            init.addStatement("final int $N = $N.readInt()", size, parcelName);
+            init.beginControlFlow("if ($N < 0)", size);
+            init.addStatement("$N = null", collection);
+            init.nextControlFlow("else");
+            init.addStatement("$N = $L", collection, emitMapConstructorCall(captured, size));
+
+            final Strategy keyStrategyToUse;
+
+            if (elementIsNullable && keyStrategy.needNullHandling) {
+                keyStrategyToUse = getNullableStrategy(keyType, keyStrategy);
+            } else {
+                keyStrategyToUse = keyStrategy;
+            }
+
+            final Strategy valueStrategyToUse;
+
+            if (elementIsNullable && valueStrategy.needNullHandling) {
+                valueStrategyToUse = getNullableStrategy(valueType, valueStrategy);
+            } else {
+                valueStrategyToUse = valueStrategy;
+            }
+
+            final TypeMirror keyResultType = keyStrategy.returnType;
+            final TypeMirror valueResultType = valueStrategy.returnType;
+
+            init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", k, k, size, k);
+            init.addStatement("$N.put($L, $L)", collection,
+                    emitCasts(keyResultType, captureAll(keyType), keyStrategyToUse.read(init)),
+                    emitCasts(valueResultType, captureAll(valueType), valueStrategyToUse.read(init)));
+            init.endControlFlow();
+
+            init.endControlFlow();
+
+            return literal(collection);
+        }, base);
     }
 
     private Strategy getSimpleCollectionStrategy(

@@ -22,15 +22,11 @@ import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.NoType;
-import javax.lang.model.type.PrimitiveType;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleElementVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
+import javax.lang.model.util.SimpleTypeVisitor7;
 
 public class Util {
     public static final int SUPPRESS_UNCHECKED = 0b00000000000000000000000000000001;
@@ -215,6 +211,30 @@ public class Util {
 
     public static boolean isFinal(Element element) {
         return element.getModifiers().contains(Modifier.FINAL);
+    }
+
+    public static boolean isFinal(TypeMirror type) {
+        return type.accept(new SimpleTypeVisitor7<Boolean, Void>() {
+            @Override
+            public Boolean visitUnknown(TypeMirror t, Void aVoid) {
+                return false;
+            }
+
+            @Override
+            protected Boolean defaultAction(TypeMirror e, Void aVoid) {
+                return false;
+            }
+
+            @Override
+            public Boolean visitArray(ArrayType t, Void aVoid) {
+                return true;
+            }
+
+            @Override
+            public Boolean visitDeclared(DeclaredType t, Void aVoid) {
+                return isFinal(t.asElement());
+            }
+        }, null);
     }
 
     public static String appendSuffix(Object original, String suffix) {

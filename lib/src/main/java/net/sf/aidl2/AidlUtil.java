@@ -16,11 +16,17 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public class AidlUtil {
+    /**
+     * Read Serializable object from Parcel without making assumptions about it's runtime type.
+     */
     @SuppressWarnings("unchecked")
     public static @Nullable <X extends Serializable> X readSafeSerializable(@NotNull Parcel parcel) {
         return (X) parcel.readSerializable();
     }
 
+    /**
+     * Read Externalizable object from Parcel without making assumptions about it's runtime type.
+     */
     @SuppressWarnings("unchecked")
     public static @Nullable<X extends Externalizable> X readSafeExternalizable(@NotNull Parcel parcel) {
         final String typeName = parcel.readString();
@@ -40,7 +46,7 @@ public class AidlUtil {
     }
 
     /**
-     * Write externalizable +
+     * Write Externalizable object to Parcel without making assumptions about it's runtime type.
      */
     public static void writeExternalizable(@NotNull Parcel parcel, @Nullable Externalizable externalizable) {
         if (externalizable == null) {
@@ -66,11 +72,17 @@ public class AidlUtil {
         }
     }
 
+    /**
+     * Internal utility method for aiding code generation.
+     */
     @SuppressWarnings("unchecked")
     public static <X> X unsafeCast(Object whatever) {
         return (X) whatever;
     }
 
+    /**
+     * Internal utility method for aiding code generation.
+     */
     public static void shut(Closeable c) {
         if (c != null) {
             try {

@@ -12,15 +12,7 @@ import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.util.JavaVersion;
 import net.sf.aidl2.internal.util.Util;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
@@ -71,13 +63,18 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
     protected final TypeMirror listBound;
     protected final TypeMirror setBound;
+    protected final TypeMirror mapBound;
 
     public DeclaredType hashSet;
     public DeclaredType arrayList;
+    public DeclaredType hashMap;
 
     protected final DeclaredType theCollection;
+    protected final DeclaredType theMap;
+    protected final DeclaredType theEntry;
 
     protected final TypeElement collectionElement;
+    protected final TypeElement mapElement;
 
     protected final TypeInvocation<ExecutableElement, ExecutableType> onTransact;
     protected final TypeInvocation<ExecutableElement, ExecutableType> asBinder;
@@ -98,6 +95,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         this.hashSet = lookup(HashSet.class);
         this.arrayList = lookup(ArrayList.class);
+        this.hashMap = lookup(HashMap.class);
 
         theBinder = lookup("android.os.Binder");
         theIInterface = lookup("android.os.IInterface");
@@ -105,12 +103,17 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         collectionElement = elements.getTypeElement(Collection.class.getName());
         theCollection = types.getDeclaredType(collectionElement);
+        mapElement = elements.getTypeElement(Map.class.getName());
+        theMap = types.getDeclaredType(mapElement);
+
+        theEntry = types.getDeclaredType(elements.getTypeElement(Map.Entry.class.getCanonicalName()));
 
         onTransact = lookupMethod(theBinder, "onTransact", boolean.class, int.class, "Parcel", "Parcel", int.class);
         asBinder = lookupMethod(theIInterface, "asBinder", "IBinder");
 
         listBound = types.getWildcardType(null, arrayList);
         setBound = types.getWildcardType(null, hashSet);
+        mapBound = types.getWildcardType(null, hashMap);
 
         specificityComparator = (left, right) -> {
             if (types.isSameType(left, right)) {
@@ -591,15 +594,17 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return null;
     }
 
-    protected DeclaredType getCollectionInterface(TypeMirror type) {
+    protected DeclaredType getBaseDeclared(TypeMirror type, DeclaredType desirableParent) {
         final ArrayList<DeclaredType> parents = new ArrayList<>(1);
 
-        final CollectionTypeRefiner refiner = new CollectionTypeRefiner(parents);
+        final CollectionTypeRefiner refiner = new CollectionTypeRefiner(parents, desirableParent);
 
         refiner.visit(type);
 
         if (parents.isEmpty()) {
-            throw new IllegalStateException("The type " + type + " appears to be subtype of Collection, but the exact type parameter can not be determined");
+            final CharSequence nam = desirableParent.asElement().getSimpleName();
+
+            throw new IllegalStateException("The type " + type + " appears to be subtype of " + nam + ", but the exact type parameter(s) can not be determined");
         }
 
         Collections.sort(parents, specificityComparator);
@@ -805,19 +810,21 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
     private final class CollectionTypeRefiner extends TypeKindVisitor6<DeclaredType, TypeMirror> {
         private final Collection<DeclaredType> input;
+        private final DeclaredType parentType;
 
-        private CollectionTypeRefiner(Collection<DeclaredType> input) {
+        private CollectionTypeRefiner(Collection<DeclaredType> input, DeclaredType parentType) {
             this.input = input;
+            this.parentType = parentType;
         }
 
         @Override
         public DeclaredType visitDeclared(DeclaredType type, TypeMirror ignored) {
-            if (isProperDeclared(type) && types.isSubtype(type, theCollection)) {
+            if (isProperDeclared(type) && types.isSubtype(type, parentType)) {
                 input.add(type);
 
                 return null;
             } else {
-                return defaultAction(type, theCollection);
+                return defaultAction(type, parentType);
             }
         }
 
@@ -910,6 +917,22 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
 
         return literal("new $T()", erased);
+    }
+
+    public CodeBlock emitMapConstructorCall(TypeMirror capturedType, Object sizeLiteral) {
+        final TypeMirror erased = types.erasure(capturedType);
+
+        if (JavaVersion.atLeast(JavaVersion.JAVA_1_7)) {
+            if (Util.isProperDeclared(capturedType)) {
+                Collection<? extends TypeMirror> args = ((DeclaredType) capturedType).getTypeArguments();
+
+                if (!args.isEmpty()) {
+                    return literal("new $T<>($L, 1f)", erased, sizeLiteral);
+                }
+            }
+        }
+
+        return literal("new $T($L, 1f)", erased, sizeLiteral);
     }
 
     public TypeMirror jokeLub(TypeMirror requested, TypeMirror returned) {

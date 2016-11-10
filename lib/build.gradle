@@ -1,4 +1,8 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLoggingContainer
 import org.gradle.internal.jvm.Jvm
+
+import static org.gradle.api.tasks.testing.logging.TestLogEvent.*;
 
 apply plugin: 'java'
 apply plugin: 'jacoco'
@@ -43,6 +47,12 @@ tasks.javadoc.configure {
             ' var l = document.links[i]; if (l.href.indexOf("http") === 0) l.target = "_blank";' +
             '}' +
             '</script>'
+}
+
+if (project.properties.uploadInitiate || !project.hasProperty('theTimeHasCometh')) {
+    compileJava {
+        options.compilerArgs << '-g:lines,source'
+    }
 }
 
 task apiJar(type: Jar) {
@@ -100,8 +110,25 @@ processResources.dependsOn copyTestResources
 retrolambda {
     exclude 'Test', 'TestReport', 'test', 'testCompile'
     javaVersion JavaVersion.VERSION_1_6
-    jdk System.getenv("JAVA_HOME")
-    oldJdk System.getenv("JAVA7_HOME")
+    jdk System.getenv('JAVA_HOME')
+    oldJdk System.getenv('JAVA7_HOME')
+}
+
+test.testLogging { TestLoggingContainer it ->
+    showExceptions = true
+    showStandardStreams = true
+    showStackTraces = true
+    showCauses = true
+
+    exceptionFormat = TestExceptionFormat.FULL
+
+    it.debug {
+        it.events STARTED, PASSED, SKIPPED, FAILED, STANDARD_OUT, STANDARD_ERROR
+        exceptionFormat = TestExceptionFormat.FULL
+    }
+
+    it.info.events = it.debug.events
+    it.info.exceptionFormat = it.debug.exceptionFormat
 }
 
 jacocoTestReport {

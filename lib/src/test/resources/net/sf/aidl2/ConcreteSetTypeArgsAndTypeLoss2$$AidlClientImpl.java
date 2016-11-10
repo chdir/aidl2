@@ -6,7 +6,6 @@ import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
 import java.lang.Deprecated;
-import java.lang.Iterable;
 import java.lang.Override;
 import java.lang.String;
 import java.util.Collection;
@@ -46,12 +45,12 @@ public final class ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl<H extends Tre
                 data.writeInt(-1);
             } else {
                 data.writeInt(concurrentSkipListSet.size());
-                for (Collection<Collection<IBinder>> concurrentSkipListSetElement : AidlUtil.<Iterable<Collection<Collection<IBinder>>>>unsafeCast(concurrentSkipListSet)) {
+                for (Collection<? extends Collection<? extends IBinder>> concurrentSkipListSetElement : concurrentSkipListSet) {
                     if (concurrentSkipListSetElement == null) {
                         data.writeInt(-1);
                     } else {
                         data.writeInt(concurrentSkipListSetElement.size());
-                        for (Collection<IBinder> concurrentSkipListSetElement_ : concurrentSkipListSetElement) {
+                        for (Collection<? extends IBinder> concurrentSkipListSetElement_ : concurrentSkipListSetElement) {
                             if (concurrentSkipListSetElement_ == null) {
                                 data.writeInt(-1);
                             } else {

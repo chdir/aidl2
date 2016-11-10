@@ -6,6 +6,8 @@ import android.os.RemoteException;
 
 import net.sf.fakenames.aidl2.demo.Responder;
 
+import java.util.*;
+
 public class Service extends android.app.Service {
     @Override
     public IBinder onBind(Intent intent) {

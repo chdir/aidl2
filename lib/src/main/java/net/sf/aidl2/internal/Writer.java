@@ -1,5 +1,8 @@
 package net.sf.aidl2.internal;
 
+import android.graphics.RectF;
+import android.os.Parcel;
+import android.os.Parcelable;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
@@ -14,7 +17,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import javax.lang.model.element.ExecutableElement;
@@ -62,6 +67,7 @@ public final class Writer extends AptHelper {
     private final DeclaredType theIterator;
 
     private final TypeInvocation<ExecutableElement, ExecutableType> collectionIterator;
+    private final TypeInvocation<ExecutableElement, ExecutableType> mapEntrySet;
 
     public Writer(AidlProcessor.Environment environment, State state, CharSequence outParcelName) {
         super(environment);
@@ -92,6 +98,7 @@ public final class Writer extends AptHelper {
         this.theIterator = lookup(Iterator.class);
 
         collectionIterator = lookupMethod(theCollection, "iterator", "Iterator");
+        mapEntrySet = lookupMethod(theMap, "entrySet", Set.class);
 
         if (state.returnValue) {
             flags = Util.literal("$T.PARCELABLE_WRITE_RETURN_VALUE", parcelable);
@@ -128,6 +135,8 @@ public final class Writer extends AptHelper {
         Strategy strategy = getStrategy(type);
 
         if (strategy != null) {
+            // why capture, but use requiredType if we can capture the return type of method?
+            // well,
             final TypeMirror capture = captureAll(strategy.requiredType);
 
             if (nullable && strategy.needNullHandling) {
@@ -207,6 +216,15 @@ public final class Writer extends AptHelper {
 
                     if (typeArgWrapperTypeStr != null) {
                         return typeArgWrapperTypeStr;
+                    }
+                }
+
+                // Check for Map subtypes
+                if (types.isAssignable(type, theMap)) {
+                    final Strategy strategy = getMapStrategy(type);
+
+                    if (strategy != null) {
+                        return strategy;
                     }
                 }
 
@@ -523,13 +541,60 @@ public final class Writer extends AptHelper {
         }, types.getArrayType(resultType));
     }
 
+    private TypeMirror getReadableKeyType(TypeMirror mapType) {
+        final DeclaredType baseMapType = getBaseDeclared(mapType, theMap);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> specificEntrySetMethod =
+                mapEntrySet.refine(types, baseMapType);
+
+        final TypeMirror entryType = getReadableElementType(specificEntrySetMethod.type.getReturnType());
+
+        // allow upper-bound wildcards to be used
+        // not using captureAll() on purpose since any nested types with meaningful type args
+        // (e.g. Collections) are going to be handled by recursive application of this method
+        final TypeMirror capturedEntry = AptHelper.capture(types, entryType);
+
+        final DeclaredType baseEntryType = getBaseDeclared(capturedEntry, theEntry);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> getKeyMethod =
+                lookupMethod(theEntry, "getKey", "Object").refine(types, baseEntryType);
+
+        return getKeyMethod.type.getReturnType();
+    }
+
+    private TypeMirror getReadableValueType(TypeMirror mapType) {
+        final DeclaredType baseMapType = getBaseDeclared(mapType, theMap);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> specificEntrySetMethod =
+                mapEntrySet.refine(types, baseMapType);
+
+        final TypeMirror entryType = getReadableElementType(specificEntrySetMethod.type.getReturnType());
+
+        // allow upper-bound wildcards to be used
+        // not using captureAll() on purpose since any nested types with meaningful type args
+        // (e.g. Collections) are going to be handled by recursive application of this method
+        final TypeMirror capturedEntry = AptHelper.capture(types, entryType);
+
+        final DeclaredType baseEntryType = getBaseDeclared(capturedEntry, theEntry);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> getKeyMethod =
+                lookupMethod(theEntry, "getValue", "Object").refine(types, baseEntryType);
+
+        return getKeyMethod.type.getReturnType();
+    }
+
     private TypeMirror getReadableElementType(TypeMirror type) {
-        final DeclaredType base = getCollectionInterface(type);
+        final DeclaredType base = getBaseDeclared(type, theCollection);
 
         final TypeInvocation<ExecutableElement, ExecutableType> specificIteratorMethod =
                 collectionIterator.refine(types, base);
 
-        final DeclaredType specificIteratorType = (DeclaredType) specificIteratorMethod.type.getReturnType();
+        // allow upper-bound wildcards to be used
+        // not using captureAll() on purpose since any nested types with meaningful type args
+        // (e.g. Collections) are going to be handled by recursive application of this method
+        final TypeMirror capturedIterator = AptHelper.capture(types, specificIteratorMethod.type.getReturnType());
+
+        final DeclaredType specificIteratorType = getBaseDeclared(capturedIterator, theIterator);
 
         final TypeInvocation<ExecutableElement, ExecutableType> nextMethod =
                 lookupMethod(theIterator, "next", "Object").refine(types, specificIteratorType);
@@ -537,13 +602,115 @@ public final class Writer extends AptHelper {
         return nextMethod.type.getReturnType();
     }
 
-    private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
+    private Strategy getMapStrategy(TypeMirror type) throws CodegenException {
         // allow upper-bound wildcards to be used
         // not using captureAll() on purpose since any nested types with meaningful type args
         // (e.g. Collections) are going to be handled by recursive application of this method
-        final TypeMirror noWildcards = AptHelper.capture(types, type);
+        //final TypeMirror noWildcards = AptHelper.capture(types, type);
 
-        final TypeMirror elementType = getReadableElementType(noWildcards);
+        final TypeMirror keyType = getReadableKeyType(type);
+
+        final TypeMirror valueType = getReadableValueType(type);
+
+        final Strategy keyStrategy = getStrategy(keyType);
+
+        final Strategy valueStrategy = getStrategy(valueType);
+
+        if (keyStrategy == null || valueStrategy == null) {
+            return null;
+        }
+
+        if (isSerialStrategy(keyStrategy) && isSerialStrategy(valueStrategy)) {
+            if (types.isAssignable(type, serializable)) {
+                return getSerializableStrategy();
+            }
+        }
+
+        final TypeMirror concreteParent = findConcreteParent(type, theMap);
+
+        if (concreteParent == null) {
+            if (!hasBound(type, mapBound)) {
+                return null;
+            }
+        } else {
+            final TypeMirror captured = captureAll(type);
+
+            if (!Util.isProperDeclared(captured)) {
+                throw new IllegalStateException("Type " + captured + " was expected to be classy, but it is not");
+            }
+
+            final TypeElement te = (TypeElement) ((DeclaredType) captured).asElement();
+
+            if (!hasPublicDefaultConstructor(te)) {
+                return null;
+            }
+        }
+
+        final TypeMirror requestedKeyType = keyStrategy.requiredType;
+        final TypeMirror requestedValueType = valueStrategy.requiredType;
+
+        final TypeMirror outMapType = types.getDeclaredType(mapElement,
+                Util.isFinal(requestedKeyType) ? requestedKeyType : types.getWildcardType(requestedKeyType, null),
+                Util.isFinal(requestedValueType) ? requestedValueType : types.getWildcardType(requestedValueType, null));
+
+        return Strategy.createNullSafe((block, name1, actualType) -> {
+            final String entry = allocator.newName(Util.appendSuffix(name1, "Entry"));
+
+            block.beginControlFlow("if ($L == null)", name1);
+            block.addStatement("$N.writeInt(-1)", parcelName);
+
+            block.nextControlFlow("else");
+            block.addStatement("$N.writeInt($L.size())", parcelName, name1);
+
+            final TypeMirror actualKeyType = getReadableKeyType(actualType);
+            final TypeMirror actualValueType = getReadableValueType(actualType);
+
+            final TypeMirror keyTypeToUse;
+            final TypeMirror valueTypeToUse;
+
+            if (types.isSameType(actualKeyType, requestedKeyType)) {
+                keyTypeToUse = requestedKeyType;
+            } else {
+                keyTypeToUse = types.getWildcardType(requestedKeyType, null);
+            }
+
+            if (types.isSameType(actualValueType, requestedValueType)) {
+                valueTypeToUse = requestedValueType;
+            } else {
+                valueTypeToUse = types.getWildcardType(requestedValueType, null);
+            }
+
+            block.beginControlFlow("for ($T<$T, $T> $N: $L.entrySet())", Map.Entry.class, keyTypeToUse, valueTypeToUse,
+                    entry, name1);
+
+            final boolean nullable = Util.isNullable(requestedKeyType, this.nullable);
+
+            if (nullable && keyStrategy.needNullHandling) {
+                getNullableStrategy(keyStrategy)
+                        .write(block, entry + ".getKey()", requestedKeyType);
+            } else {
+                keyStrategy.write(block, entry + ".getKey()", requestedKeyType);
+            }
+
+            if (nullable && valueStrategy.needNullHandling) {
+                getNullableStrategy(valueStrategy)
+                        .write(block, entry + ".getValue()", requestedValueType);
+            } else {
+                valueStrategy.write(block, entry + ".getValue()", requestedValueType);
+            }
+
+            block.endControlFlow();
+
+            block.endControlFlow();
+        }, outMapType);
+    }
+
+    private boolean isSerialStrategy(Strategy strategy) {
+        return strategy == SERIALIZABLE_STRATEGY || strategy == EXTERNALIZABLE_STRATEGY;
+    }
+
+    private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
+        final TypeMirror elementType = getReadableElementType(type);
 
         final Strategy elementStrategy = getStrategy(elementType);
 
@@ -556,7 +723,7 @@ public final class Writer extends AptHelper {
             return null;
         }
 
-        if (elementStrategy == SERIALIZABLE_STRATEGY || elementStrategy == EXTERNALIZABLE_STRATEGY) {
+        if (isSerialStrategy(elementStrategy)) {
             if (types.isAssignable(type, serializable)) {
                 return getSerializableStrategy();
             }
@@ -584,6 +751,11 @@ public final class Writer extends AptHelper {
 
         final TypeMirror requestedType = elementStrategy.requiredType;
 
+        // if the element's type is final just use it, otherwise be careful to offer only some subtype of it
+        final TypeMirror outType = Util.isFinal(requestedType)
+                ? types.getDeclaredType(collectionElement, requestedType)
+                : types.getDeclaredType(collectionElement, types.getWildcardType(requestedType, null));
+
         return Strategy.createNullSafe((block, name1, actualType) -> {
             final String element = allocator.newName(Util.appendSuffix(name1, "Element"));
 
@@ -602,7 +774,6 @@ public final class Writer extends AptHelper {
                         requestedType, element, AidlUtil.class, Iterable.class, requestedType, name1);
             }
 
-
             final boolean nullable = Util.isNullable(elementType, this.nullable);
 
             if (nullable && elementStrategy.needNullHandling) {
@@ -615,7 +786,7 @@ public final class Writer extends AptHelper {
             block.endControlFlow();
 
             block.endControlFlow();
-        }, types.getDeclaredType(collectionElement, requestedType));
+        }, outType);
     }
 
     private Strategy getPrimitiveArrayStrategy(PrimitiveType component) {

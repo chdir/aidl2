@@ -19,6 +19,7 @@ public final class Config {
     public static Set<String> getOptions() {
         final Set<String> options = new HashSet<>(4, 1f);
         options.add(OPT_LOGFILE);
+        options.add(OPT_PRINT_TRACE);
         options.add(OPT_LIBRARY);
         options.add(OPT_SUPPRESS_ALL);
         options.add(OPT_PKG_NAME);
