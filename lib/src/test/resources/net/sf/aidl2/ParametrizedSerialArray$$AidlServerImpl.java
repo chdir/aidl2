@@ -5,20 +5,26 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
+import java.lang.Deprecated;
+import java.lang.Override;
+import java.lang.String;
 
 /**
  * Handle incoming IPC calls by forwarding them to provided delegate.
  *
  * You can create instances of this class, using {@link InterfaceLoader}.
+ *
+ * @deprecated — do not use this class directly in your Java code (see above)
  */
-public final class AAA$$AidlServerImpl extends Binder {
-  static final String DESCRIPTOR = "net.sf.aidl2.ParametrizedArray";
+@Deprecated
+public final class ParametrizedSerialArray$$AidlServerImpl extends Binder {
+  static final String DESCRIPTOR = "net.sf.aidl2.ParametrizedSerialArray";
 
   static final int TRANSACT_methodWithParametrizedArrayParam = IBinder.FIRST_CALL_TRANSACTION + 0;
 
-  private final ParametrizedArray delegate;
+  private final ParametrizedSerialArray delegate;
 
-  public AAA$$AidlServerImpl(ParametrizedArray delegate) {
+  public ParametrizedSerialArray$$AidlServerImpl(ParametrizedSerialArray delegate) {
     this.delegate = delegate;
 
     this.attachInterface(delegate, DESCRIPTOR);
@@ -30,18 +36,9 @@ public final class AAA$$AidlServerImpl extends Binder {
       case TRANSACT_methodWithParametrizedArrayParam: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
-        final Parametrized<?>[] parametrizedArrayArray;
-        final int parametrizedArrayLength = data.readInt();
-        if (parametrizedArrayLength < 0) {
-          parametrizedArrayArray = null;
-        } else {
-          parametrizedArrayArray = new Parametrized<?>[parametrizedArrayLength];
-          for (int i = 0; i < parametrizedArrayArray.length; i++) {
-            parametrizedArrayArray[i] = data.readParcelable(getClass().getClassLoader());
-          }
-        }
+        final Parametrized2<String>[] parametrizedArray = AidlUtil.readSafeSerializable(data);
 
-        delegate.methodWithParametrizedArrayParam((Parametrized<String>[]) parametrizedArrayArray);
+        delegate.methodWithParametrizedArrayParam(parametrizedArray);
         reply.writeNoException();
 
         return true;

@@ -403,29 +403,37 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return !types.isSubtype(t1erasure, t2erasure) && !types.isSubtype(t2erasure, t1erasure);
     }
 
-    private final TypeVisitor<DeclaredType, TypeMirror> BOUND_REFINER = new SharedParentRefiner();
+    private final TypeVisitor<TypeMirror, TypeMirror> BOUND_REFINER = new SharedParentRefiner();
 
     private final TypeVisitor<TypeMirror, TypeMirror> NESTED_BOUND_REFINER = new NestedTypeArgRefiner();
 
     public TypeMirror gaugeConcreteParent(TypeMirror mirror, TypeMirror returnedType) {
         final TypeKind targetKind = mirror.getKind();
 
-        switch (targetKind) {
-            case ARRAY:
-                return types.erasure(mirror);
-            default:
-                if (targetKind.isPrimitive()) {
-                    return mirror;
-                }
+        if (targetKind.isPrimitive()) {
+            return mirror;
         }
 
-        final DeclaredType foundParent = BOUND_REFINER.visit(mirror, returnedType);
+        final TypeMirror foundParent = BOUND_REFINER.visit(mirror, returnedType);
 
         if (foundParent == null) {
             return theObject;
         }
 
-        return types.getDeclaredType((TypeElement) foundParent.asElement(), substituteAllArgs(foundParent));
+        final TypeKind refinedKind = foundParent.getKind();
+
+        switch (refinedKind) {
+            case ARRAY:
+                // component type is already refined
+                return foundParent;
+            case DECLARED:
+                final DeclaredType asDeclared = (DeclaredType) foundParent;
+
+                return types.getDeclaredType((TypeElement) asDeclared.asElement(), substituteAllArgs(asDeclared));
+            default:
+                // WTF??
+                return foundParent;
+        }
     }
 
     private TypeMirror[] substituteAllArgs(DeclaredType foundParent) {
@@ -541,6 +549,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return null;
     }
 
+    // Note: this is just rough approximation and will fail for some corner-cases (such as NullType)
     public boolean isEffectivelyObject(TypeMirror type) {
         final TypeMirror captured = captureAll(type);
 
@@ -811,9 +820,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
     }
 
-    private final class SharedParentRefiner extends DeclaredTypeRefiner {
+    private final class SharedParentRefiner extends TypeKindVisitor6<TypeMirror, TypeMirror> {
         @Override
-        public DeclaredType visitDeclared(DeclaredType type, TypeMirror desirableParent) {
+        public TypeMirror visitDeclared(DeclaredType type, TypeMirror desirableParent) {
             if (types.isSameType(type, theObject)) {
                 return null;
             }
@@ -834,7 +843,42 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
 
         @Override
-        protected DeclaredType defaultAction(TypeMirror type, TypeMirror desirableParent) {
+        public TypeMirror visitArray(ArrayType type, TypeMirror desirableParent) {
+            if (types.isAssignable(desirableParent, type)) {
+                switch (desirableParent.getKind() ) {
+                    case ARRAY:
+                        TypeMirror selfComponent = type.getComponentType();
+                        TypeMirror targetComponent = ((ArrayType) desirableParent).getComponentType();
+
+                        final TypeMirror resultComponent = visit(selfComponent, targetComponent);
+
+                        if (resultComponent != null) {
+                            return types.getArrayType(resultComponent);
+                        }
+                        break;
+                    case DECLARED:
+                        return defaultAction(type, desirableParent);
+                    default:
+                        // we don't know exact rules, so try to do *something*
+                        return makeDenotable(type);
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        public TypeMirror visitPrimitive(PrimitiveType type, TypeMirror desirableParent) {
+            return types.isAssignable(desirableParent, type) ? type : null;
+        }
+
+        @Override
+        public TypeMirror visitUnknown(TypeMirror t, TypeMirror typeMirror) {
+            return defaultAction(t, typeMirror);
+        }
+
+        @Override
+        protected TypeMirror defaultAction(TypeMirror type, TypeMirror desirableParent) {
             if (isEffectivelyObject(type)) {
                 return null;
             }
@@ -842,7 +886,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
             final List<? extends TypeMirror> superTypes = types.directSupertypes(type);
 
             for (TypeMirror parent : superTypes) {
-                final DeclaredType discovered = visit(parent, desirableParent);
+                final TypeMirror discovered = visit(parent, desirableParent);
 
                 if (discovered != null) {
                     return discovered;
@@ -989,7 +1033,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
     }
 
     /**
-     * Prepare type for using in array declaration by calling {@link #captureAll} on base type
+     * Prepare type for usage in array declaration by calling {@link #captureAll} on base type
      * and substituting all type parameters with wildcards.
      */
     public TypeMirror makeGenericArray(TypeMirror elementType) {
@@ -997,6 +1041,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
             return elementType;
         }
 
+        // only reified runtime type matters
         TypeMirror erased = types.erasure(elementType);
 
         if (isProperDeclared(erased)) {

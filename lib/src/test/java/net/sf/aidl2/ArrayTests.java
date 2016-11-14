@@ -219,4 +219,19 @@ public class ArrayTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void parametrizedSerializableArrayParameter() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ParametrizedSerialArray.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ParametrizedSerialArray$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ParametrizedSerialArray$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
 }

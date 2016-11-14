@@ -663,7 +663,8 @@ public final class Reader extends AptHelper {
     }
 
     private boolean isSerialStrategy(Strategy strategy) {
-        return strategy == SERIALIZABLE_STRATEGY || strategy == EXTERNALIZABLE_STRATEGY;
+        return strategy.getClass() == ExternalizableStrategy.class ||
+                strategy.getClass() == SerializableStrategy.class;
     }
 
     private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
@@ -1034,36 +1035,40 @@ public final class Reader extends AptHelper {
         }, base);
     }
 
-    // Always nullable by design
-    private Strategy SERIALIZABLE_STRATEGY;
-
     private Strategy getSerializableStrategy(TypeMirror type) {
-        SERIALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
-            private final CodeBlock block = readSerializable();
-
-            @Override
-            public CodeBlock read(CodeBlock.Builder unused) {
-                return block;
-            }
-        }, jokeLub(type, serializable));
-
-        return SERIALIZABLE_STRATEGY;
+        return new SerializableStrategy(jokeLub(type, serializable));
     }
 
-    private Strategy EXTERNALIZABLE_STRATEGY;
+    // Always nullable by design
+    private final class SerializableStrategy extends Strategy {
+        private final CodeBlock block = readSerializable();
+
+        private SerializableStrategy(TypeMirror returnTypeRefined) {
+            super(null, returnTypeRefined, false);
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder unused) {
+            return block;
+        }
+    }
+
+    private Strategy getUnknownExternalizableStrategy(TypeMirror type) {
+        return new ExternalizableStrategy(jokeLub(type, externalizable));
+    }
 
     // Always nullable by design
-    private Strategy getUnknownExternalizableStrategy(TypeMirror type) {
-        EXTERNALIZABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
-            private final CodeBlock block = literal("$T.readSafeExternalizable($N)", AidlUtil.class, parcelName);
+    private final class ExternalizableStrategy extends Strategy {
+        private final CodeBlock block = literal("$T.readSafeExternalizable($N)", AidlUtil.class, parcelName);
 
-            @Override
-            public CodeBlock read(CodeBlock.Builder unused) {
-                return block;
-            }
-        }, jokeLub(type, externalizable));
+        private ExternalizableStrategy(TypeMirror returnTypeRefined) {
+            super(null, returnTypeRefined, false);
+        }
 
-        return EXTERNALIZABLE_STRATEGY;
+        @Override
+        public CodeBlock read(CodeBlock.Builder unused) {
+            return block;
+        }
     }
 
     // Always nullable by design
