@@ -27,10 +27,10 @@ public class DoubleTests {
 
     @Test
     public void doubleParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("DoubleTest.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("DoubleTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("DoubleTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
@@ -42,10 +42,10 @@ public class DoubleTests {
 
     @Test
     public void doubleReturn() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("DoubleTest2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("DoubleTest2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("DoubleTest2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())

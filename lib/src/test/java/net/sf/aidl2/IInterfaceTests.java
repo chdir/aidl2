@@ -18,15 +18,22 @@ public class IInterfaceTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void aidl2IInterfaceParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("IInterfaceTest.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("IInterfaceTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("IInterfaceTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -35,13 +42,13 @@ public class IInterfaceTests {
 
     @Test
     public void aidl2IInterfaceReturnValue() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("IInterfaceTest2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("IInterfaceTest2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("IInterfaceTest2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

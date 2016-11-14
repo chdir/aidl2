@@ -20,10 +20,10 @@ public class ListTests {
 
     @Test
     public void abstractListsSimple() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AbstractListTest.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("AbstractListTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("AbstractListTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
@@ -35,10 +35,10 @@ public class ListTests {
 
     @Test
     public void abstractListNested() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListSimpleNested.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AbstractListSimpleNested.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListSimpleNested$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListSimpleNested$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("AbstractListSimpleNested$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("AbstractListSimpleNested$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
@@ -50,10 +50,10 @@ public class ListTests {
 
     @Test
     public void abstractListTypeMismatch() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListSimpleTypeMismatch.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AbstractListSimpleTypeMismatch.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListSimpleTypeMismatch$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("AbstractListSimpleTypeMismatch$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("AbstractListSimpleTypeMismatch$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("AbstractListSimpleTypeMismatch$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
@@ -65,10 +65,10 @@ public class ListTests {
 
     @Test
     public void concreteListMethodTypeParam() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListMethodTypeParam.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteListMethodTypeParam.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListMethodTypeParam$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListMethodTypeParam$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConcreteListMethodTypeParam$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConcreteListMethodTypeParam$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
@@ -80,10 +80,10 @@ public class ListTests {
 
     @Test
     public void concreteListClassTypeParam() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteListClassTypeParamAndRaw.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteListClassTypeParamAndRaw$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConcreteListClassTypeParamAndRaw$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConcreteListClassTypeParamAndRaw$$AidlClientImpl.java"));
 
         // two javac warnings because of using raw delegate
         assertAbout(javaSource()).that(testSource)

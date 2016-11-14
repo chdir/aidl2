@@ -27,10 +27,10 @@ public class LongTests {
 
     @Test
     public void longParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("LongTest.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("LongTest.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("LongTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("LongTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("LongTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("LongTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())

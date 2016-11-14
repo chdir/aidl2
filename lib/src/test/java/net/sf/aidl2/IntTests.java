@@ -44,10 +44,10 @@ public class IntTests {
 
     @Test
     public void intReturnValue() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("IntTest2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IntTest2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("IntTest2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("IntTest2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("IntTest2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("IntTest2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
@@ -59,10 +59,10 @@ public class IntTests {
 
     @Test
     public void intVarargs() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("IntTest3.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IntTest3.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("IntTest3$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("IntTest3$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("IntTest3$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("IntTest3$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())

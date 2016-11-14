@@ -18,17 +18,22 @@ public class ObjectTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void objectReturnValue() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheObjectReturn.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("TheObjectReturn.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheObjectReturn$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheObjectReturn$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("TheObjectReturn$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("TheObjectReturn$$AidlClientImpl.java"));
 
-        // two javac warnings because of using raw delegate
-        // one javac warning because of redundant cast of return value
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -37,15 +42,13 @@ public class ObjectTests {
 
     @Test
     public void methodTypeArgumentParameterObject() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargTheObject.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MethodTypeargTheObject.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargTheObject$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargTheObject$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("MethodTypeargTheObject$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("MethodTypeargTheObject$$AidlClientImpl.java"));
 
-        // two javac warnings because of using raw delegate
-        // one javac warning because of redundant cast of return value
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

@@ -21,15 +21,22 @@ public class MiscTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void asyncMethod() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AsyncMethod.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AsyncMethod.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("AsyncMethod$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("AsyncMethod$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("AsyncMethod$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("AsyncMethod$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -38,13 +45,13 @@ public class MiscTests {
 
     @Test
     public void customDescriptor() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("CustomDescriptor.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("CustomDescriptor.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("CustomDescriptor$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("CustomDescriptor$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("CustomDescriptor$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("CustomDescriptor$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -53,13 +60,13 @@ public class MiscTests {
 
     @Test
     public void insecureAidl() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("InsecureAidl2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("InsecureAidl2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("InsecureAidl2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("InsecureAidl2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("InsecureAidl2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("InsecureAidl2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -68,13 +75,13 @@ public class MiscTests {
 
     @Test
     public void empty() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("Empty.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("Empty.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("Empty$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("Empty$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("Empty$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("Empty$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -83,7 +90,7 @@ public class MiscTests {
 
     @Test
     public void compileComplex() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AllTogether.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AllTogether.java"));
 
         // too complex to track warnings :)
         assertAbout(javaSource()).that(testSource)
@@ -103,16 +110,16 @@ public class MiscTests {
 
     @Test
     public void localNameIsolation() throws Exception {
-        JavaFileObject testSource1 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParamNameIsolation1.java"));
-        JavaFileObject testSource2 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParamNameIsolation2.java"));
+        JavaFileObject testSource1 = JavaFileObjects.forResource(getClass().getResource("MethodAndParamNameIsolation1.java"));
+        JavaFileObject testSource2 = JavaFileObjects.forResource(getClass().getResource("MethodAndParamNameIsolation2.java"));
 
-        JavaFileObject generatedStub1 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation1$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy1 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation1$$AidlClientImpl.java"));
-        JavaFileObject generatedStub2 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy2 = JavaFileObjects.forResource(IntTests.class.getResource("MethodAndParameterNameIsolation2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub1 = JavaFileObjects.forResource(getClass().getResource("MethodAndParameterNameIsolation1$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy1 = JavaFileObjects.forResource(getClass().getResource("MethodAndParameterNameIsolation1$$AidlClientImpl.java"));
+        JavaFileObject generatedStub2 = JavaFileObjects.forResource(getClass().getResource("MethodAndParameterNameIsolation2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy2 = JavaFileObjects.forResource(getClass().getResource("MethodAndParameterNameIsolation2$$AidlClientImpl.java"));
 
         assertAbout(javaSources()).that(Arrays.asList(testSource1, testSource2))
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -121,10 +128,10 @@ public class MiscTests {
 
     @Test
     public void nullabilityInheritance() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("NullabilityInheritance.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NullabilityInheritance.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("NullabilityInheritance$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("NullabilityInheritance$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("NullabilityInheritance$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("NullabilityInheritance$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
@@ -139,10 +146,10 @@ public class MiscTests {
 
     @Test
     public void nonFinalConcreteTypes() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("NonFinalAsAbstract.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NonFinalAsAbstract.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("NonFinalAsAbstract$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("NonFinalAsAbstract$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("NonFinalAsAbstract$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("NonFinalAsAbstract$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
@@ -157,10 +164,10 @@ public class MiscTests {
 
     @Test
     public void assumedFinalConcreteTypes() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("NonFinalAsConcrete.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NonFinalAsConcrete.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("NonFinalAsConcrete$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("NonFinalAsConcrete$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("NonFinalAsConcrete$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("NonFinalAsConcrete$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {

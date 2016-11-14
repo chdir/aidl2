@@ -27,10 +27,10 @@ public class SerializableTests {
 
     @Test
     public void theSerializableReturn() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableReturn.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("TheSerializableReturn.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableReturn$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableReturn$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("TheSerializableReturn$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("TheSerializableReturn$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
@@ -42,10 +42,10 @@ public class SerializableTests {
 
     @Test
     public void theSerializableParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableParam.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("TheSerializableParam.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableParam$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableParam$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("TheSerializableParam$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("TheSerializableParam$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
@@ -57,10 +57,10 @@ public class SerializableTests {
 
     @Test
     public void someSerializableReturn() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableReturn.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("SomeSerializableReturn.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableReturn$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableReturn$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("SomeSerializableReturn$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("SomeSerializableReturn$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
@@ -72,10 +72,10 @@ public class SerializableTests {
 
     @Test
     public void someSerializableParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableParam.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("SomeSerializableParam.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableParam$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableParam$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("SomeSerializableParam$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("SomeSerializableParam$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
