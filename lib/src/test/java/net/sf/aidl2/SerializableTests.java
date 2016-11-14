@@ -18,6 +18,13 @@ public class SerializableTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void theSerializableReturn() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableReturn.java"));
@@ -26,7 +33,7 @@ public class SerializableTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableReturn$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -41,7 +48,7 @@ public class SerializableTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("TheSerializableParam$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -56,7 +63,7 @@ public class SerializableTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableReturn$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -71,7 +78,7 @@ public class SerializableTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("SomeSerializableParam$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

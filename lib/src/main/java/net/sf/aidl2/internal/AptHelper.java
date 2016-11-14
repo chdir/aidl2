@@ -230,6 +230,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return false;
     }
 
+    @SuppressWarnings("SimplifiableIfStatement")
     public boolean castAllowed(TypeMirror Source, TypeMirror Target) {
         // according to Java type system wildcards clearly belong in upper plane of existence,
         // furthermore letting them appear here is a *totally* unexpected condition
@@ -252,6 +253,33 @@ public abstract class AptHelper implements ProcessingEnvironment {
         // do not proceed with analysis, let the (potentially failed) cast be generated instead
         if (Util.isProperClass(Source) && Util.isProperClass(Target)) {
             return true;
+        }
+
+        if (Source.getKind() == TypeKind.TYPEVAR || Target.getKind() == TypeKind.TYPEVAR) {
+            if (Source.getKind() == TypeKind.TYPEVAR) {
+                Source = ((TypeVariable) Source).getUpperBound();
+            }
+
+            if (Target.getKind() == TypeKind.TYPEVAR) {
+                Target = ((TypeVariable) Source).getUpperBound();
+            }
+        }
+
+        // arrays are covariant, so we have easy time with those
+        if (Target.getKind() == TypeKind.ARRAY) {
+            if (Source.getKind() != TypeKind.ARRAY) {
+                // if Source is Object, we are cool, otherwise just let the failed cast happen
+                return true;
+            }
+
+            // again, letting any erroneous casts happen
+            if (Source.getKind().isPrimitive() || Target.getKind().isPrimitive()) {
+                return true;
+            }
+
+            return castAllowed(
+                    ((ArrayType) Source).getComponentType(),
+                    ((ArrayType) Target).getComponentType());
         }
 
         // freaking type arguments weren't supposed to get this far!
@@ -961,6 +989,36 @@ public abstract class AptHelper implements ProcessingEnvironment {
     }
 
     /**
+     * Prepare type for using in array declaration by calling {@link #captureAll} on base type
+     * and substituting all type parameters with wildcards.
+     */
+    public TypeMirror makeGenericArray(TypeMirror elementType) {
+        if (elementType.getKind().isPrimitive()) {
+            return elementType;
+        }
+
+        TypeMirror erased = types.erasure(elementType);
+
+        if (isProperDeclared(erased)) {
+            final DeclaredType notErasedParent = getBaseDeclared(elementType, (DeclaredType) erased);
+
+            if (!isRaw(notErasedParent)) {
+                final TypeElement element = (TypeElement) notErasedParent.asElement();
+
+                final int argCount = element.getTypeParameters().size();
+
+                TypeMirror[] wildcards = new TypeMirror[argCount];
+
+                Arrays.fill(wildcards, types.getWildcardType(null, null));
+
+                return types.getDeclaredType(element, wildcards);
+            }
+        }
+
+        return erased;
+    }
+
+    /**
      * Convert type to externally denotable form *without* applying erasure or capture conversion
      * (so type arguments and wildcards are preserved).
      *
@@ -1084,7 +1142,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         switch (kind) {
             case ARRAY:
-                return types.erasure(type);
+                return types.getArrayType(captureInner(((ArrayType) type).getComponentType()));
             default:
                 final TypeMirror refined = capture(types, type);
 

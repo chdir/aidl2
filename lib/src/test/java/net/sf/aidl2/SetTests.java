@@ -20,10 +20,10 @@ public class SetTests {
 
     @Test
     public void concreteSetComplexDeserialization() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteSetTypeArgsAndTypeLoss.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl.java"));
 
         // multiple (~4) raw type warnings due to using raw Callable (maybe remove?) and raw delegate
         assertAbout(javaSource()).that(testSource)
@@ -39,12 +39,12 @@ public class SetTests {
 
     @Test
     public void concreteSetComplexTypeLoss() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteSetTypeArgsAndTypeLoss2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl.java"));
 
-        // multiple (~6) raw type warnings due to using raw delegate and generic array type loss
+        // couple of raw type warnings due to using raw delegate
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),

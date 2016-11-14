@@ -1,6 +1,5 @@
 package net.sf.aidl2;
 
-import android.os.Binder;
 import android.os.Parcel;
 
 import org.jetbrains.annotations.NotNull;

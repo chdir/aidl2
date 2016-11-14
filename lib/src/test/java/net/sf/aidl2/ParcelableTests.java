@@ -18,15 +18,22 @@ public class ParcelableTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void abstractParcelableParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("AbstractParcelableParameter.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AbstractParcelableParameter.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("AbstractParcelableParameter$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("AbstractParcelableParameter$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("AbstractParcelableParameter$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("AbstractParcelableParameter$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -35,13 +42,13 @@ public class ParcelableTests {
 
     @Test
     public void abstractParcelableReturnValue() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("AbstractParcelableReturn.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AbstractParcelableReturn.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("AbstractParcelableReturn$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("AbstractParcelableReturn$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("AbstractParcelableReturn$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("AbstractParcelableReturn$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -50,13 +57,13 @@ public class ParcelableTests {
 
     @Test
     public void concreteParcelableReturnValue() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("ConcreteParcelableReturn.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableReturn.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("ConcreteParcelableReturn$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("ConcreteParcelableReturn$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableReturn$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableReturn$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -65,13 +72,13 @@ public class ParcelableTests {
 
     @Test
     public void concreteParcelableParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("ConcreteParcelableParameter.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableParameter.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("ConcreteParcelableParameter$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("ConcreteParcelableParameter$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableParameter$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableParameter$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -80,10 +87,10 @@ public class ParcelableTests {
 
     @Test
     public void nonNullConcreteParcelableParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("NotNullParcelableParameter.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NotNullParcelableParameter.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("NotNullParcelableParameter$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("NotNullParcelableParameter$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("NotNullParcelableParameter$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("NotNullParcelableParameter$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
@@ -98,13 +105,13 @@ public class ParcelableTests {
 
     @Test
     public void methodTypeArgumentParamAbstractParcelable() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargParcelable.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MethodTypeargParcelable.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargParcelable$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargParcelable$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("MethodTypeargParcelable$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("MethodTypeargParcelable$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -113,14 +120,13 @@ public class ParcelableTests {
 
     @Test
     public void methodTypeArgumentReturnAbstractParcelable() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargParcelable2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MethodTypeargParcelable2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargParcelable2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("MethodTypeargParcelable2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("MethodTypeargParcelable2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("MethodTypeargParcelable2$$AidlClientImpl.java"));
 
-        // one javac warning because of redundant cast of return value
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -129,10 +135,10 @@ public class ParcelableTests {
 
     @Test
     public void classTypeArgumentReturnAbstractParcelable() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("ClassTypeargParcelable.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ClassTypeargParcelable.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("ClassTypeargParcelable$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("ClassTypeargParcelable$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ClassTypeargParcelable$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ClassTypeargParcelable$$AidlClientImpl.java"));
 
         // two javac warnings because of using raw delegate
         assertAbout(javaSource()).that(testSource)

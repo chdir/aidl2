@@ -123,7 +123,7 @@ public final class Writer extends AptHelper {
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                 "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Collection of supported type with public default constructor";
+                "\t• Map or Collection of supported types with public default constructor";
 
         throw new CodegenException(errorMsg);
     }
@@ -152,7 +152,7 @@ public final class Writer extends AptHelper {
                         "Must be one of:\n" +
                         "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                         "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                        "\t• Collection of supported type with public default constructor";
+                        "\t• Map or Collection of supported types with public default constructor";
 
         throw new CodegenException(errorMsg);
     }
@@ -459,12 +459,10 @@ public final class Writer extends AptHelper {
     }
 
     private Strategy getArrayStrategy(ArrayType arrayType) throws CodegenException {
-        final TypeMirror componentType = arrayType.getComponentType();
-        final TypeKind componentKind = componentType.getKind();
+        final TypeMirror component = arrayType.getComponentType();
+        final TypeKind componentKind = component.getKind();
 
         switch (componentKind) {
-            case ARRAY:
-                return getSpecialArrayStrategy(getArrayStrategy((ArrayType) componentType), componentType);
             case BOOLEAN:
             case INT:
             case SHORT:
@@ -473,29 +471,21 @@ public final class Writer extends AptHelper {
             case LONG:
             case DOUBLE:
             case FLOAT:
-                return getPrimitiveArrayStrategy((PrimitiveType) componentType);
+                return getPrimitiveArrayStrategy((PrimitiveType) component);
             default:
-                if (types.isSubtype(componentType, parcelable)) {
-                    return getSpecialArrayStrategy(getParcelableStrategy(componentType), componentType);
-                }
+                final Strategy strategy = getStrategy(component);
 
-                final Strategy specialStrategy = getStrategy(componentType);
-
-                if (specialStrategy != null) {
-                    if (specialStrategy == SERIALIZABLE_STRATEGY) {
-                        return getSerializableStrategy();
-                    } else {
-                        return getSpecialArrayStrategy(specialStrategy, componentType);
-                    }
+                if (strategy != null) {
+                    return isSerialStrategy(strategy) ? getSerializableStrategy() : getSpecialArrayStrategy(strategy, component);
                 }
         }
 
         final String arrayErrorMsg =
-                "Unsupported array component type: " + componentType + ".\n" +
+                "Unsupported array component type: " + component + ".\n" +
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                 "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Collection of supported type with public default constructor";
+                "\t• Map or Collection of supported types with public default constructor";
 
         throw new CodegenException(arrayErrorMsg);
     }
@@ -505,8 +495,7 @@ public final class Writer extends AptHelper {
             return VOID_STRATEGY;
         }
 
-        // arrays don't support generics — the only thing, that matters, is a raw runtime type
-        final TypeMirror resultType = types.erasure(componentType);
+        final TypeMirror resultType = makeDenotable(componentType);
 
         final TypeMirror requestedType = delegate.requiredType;
 

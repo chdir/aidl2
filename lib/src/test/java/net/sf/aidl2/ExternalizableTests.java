@@ -18,15 +18,22 @@ public class ExternalizableTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void concreteExternalizableParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -35,13 +42,13 @@ public class ExternalizableTests {
 
     @Test
     public void concreteExternalizableReturnValue() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -50,13 +57,13 @@ public class ExternalizableTests {
 
     @Test
     public void abstractExternalizableReturnValue() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest3.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest3.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest3$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(ParcelableTests.class.getResource("ExternalizableTest3$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest3$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ExternalizableTest3$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

@@ -1,17 +1,21 @@
 package net.sf.aidl2.internal.codegen;
 
 import com.squareup.javapoet.CodeBlock;
+import net.sf.aidl2.internal.util.Util;
 
 import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 final class ArrayInitBlock {
     private final TypeMirror componentType;
     private final Object lengthLiteral;
+    private final boolean erased;
 
-    public ArrayInitBlock(TypeMirror component, Object lengthLiteral) {
+    public ArrayInitBlock(TypeMirror component, boolean erased, Object lengthLiteral) {
         this.componentType = component;
         this.lengthLiteral = lengthLiteral;
+        this.erased = erased;
     }
 
     public CodeBlock toBlock() {
@@ -21,7 +25,7 @@ final class ArrayInitBlock {
                         ((ArrayType) componentType).getComponentType();
 
                 final ArrayInitBlock nestedBlock =
-                        new ArrayInitBlock(subComponentType, lengthLiteral);
+                        new ArrayInitBlock(subComponentType, erased, lengthLiteral);
 
                 return CodeBlock.builder()
                         .add(nestedBlock.toBlock())
@@ -29,7 +33,7 @@ final class ArrayInitBlock {
                         .build();
             default:
                 return CodeBlock.builder()
-                        .add("$T[$L]", componentType, lengthLiteral)
+                        .add(erased ? "$T<?>[$L]" : "$T[$L]", componentType, lengthLiteral)
                         .build();
         }
     }

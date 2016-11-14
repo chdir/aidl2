@@ -67,12 +67,12 @@ public final class ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl<H extends Tre
             delegate.transact(ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl.TRANSACT_methodWithCSKLSetParamAndTreeSetArray, data, reply, 0);
             reply.readException();
 
-            final TreeSet[] returnValueArray;
+            final TreeSet<?>[] returnValueArray;
             final int returnValueLength = reply.readInt();
             if (returnValueLength < 0) {
                 returnValueArray = null;
             } else {
-                returnValueArray = new TreeSet[returnValueLength];
+                returnValueArray = new TreeSet<?>[returnValueLength];
                 for (int i = 0; i < returnValueArray.length; i++) {
                     final TreeSet<String> returnValueCollection;
                     final int returnValueSize = reply.readInt();

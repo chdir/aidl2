@@ -3,7 +3,6 @@ package net.sf.aidl2;
 import com.google.testing.compile.JavaFileObjects;
 
 import net.sf.aidl2.internal.AidlProcessor;
-import net.sf.aidl2.internal.Config;
 
 import org.junit.Test;
 
@@ -15,7 +14,7 @@ import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 public class ErrorTests {
     @Test
     public void failsWhenAidlMethodDeclaresNoRemoteException() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("NoExceptionFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NoExceptionFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -30,7 +29,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenAidlMethodDeclaresUnsupportedException() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("UnsupportedExceptionFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("UnsupportedExceptionFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -45,7 +44,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenAidlDoesNotImplementIInterface() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("NotIInterfaceFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NotIInterfaceFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -60,7 +59,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenAidlIsNotInterface() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("AIDLNonInterfaceFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AIDLNonInterfaceFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -73,7 +72,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenRawobjectNoUnchecked() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("RawObjectNotSuppressedFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("RawObjectNotSuppressedFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -88,7 +87,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenTypeNotSupported() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("UnknownTypeFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("UnknownTypeFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -103,7 +102,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenCollectionNoDefaultConstructor() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("WeirdCollectionFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("WeirdCollectionFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -118,7 +117,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenEncounteringIInterface() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("BaseIInterfaceFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("BaseIInterfaceFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -130,7 +129,7 @@ public class ErrorTests {
                 .and()
                 .withNoteContaining("bailing out");
 
-        JavaFileObject testSource2 = JavaFileObjects.forResource(IntTests.class.getResource("BaseIInterfaceFailure2.java"));
+        JavaFileObject testSource2 = JavaFileObjects.forResource(getClass().getResource("BaseIInterfaceFailure2.java"));
 
         assertAbout(javaSource()).that(testSource2)
                 .processedWith(new AidlProcessor())
@@ -145,7 +144,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenReturnTypeDoesNotExist() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("MissingTypeFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MissingTypeFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -156,7 +155,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenParameterTypeDoesNotExist() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("MissingTypeFailure2.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MissingTypeFailure2.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())
@@ -167,7 +166,7 @@ public class ErrorTests {
 
     @Test
     public void failsWhenAnnotationValueDoesNotExist() {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("FaultyAnnotationValueFailure.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("FaultyAnnotationValueFailure.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .processedWith(new AidlProcessor())

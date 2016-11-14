@@ -1,11 +1,9 @@
 package net.sf.aidl2;
 
 import com.google.testing.compile.JavaFileObjects;
-
 import net.sf.aidl2.internal.AidlProcessor;
 import net.sf.aidl2.internal.Config;
 import net.sf.aidl2.tests.LogFileRule;
-
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -14,7 +12,7 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
-public class DoubleTests {
+public class StringTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
@@ -26,11 +24,11 @@ public class DoubleTests {
     }
 
     @Test
-    public void doubleParameter() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest.java"));
+    public void stringParameter() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("StringTest.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("StringTest$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("StringTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
@@ -41,11 +39,11 @@ public class DoubleTests {
     }
 
     @Test
-    public void doubleReturn() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest2.java"));
+    public void stringReturnValue() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("StringTest2.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest2$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(IntTests.class.getResource("DoubleTest2$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("StringTest2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("StringTest2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())

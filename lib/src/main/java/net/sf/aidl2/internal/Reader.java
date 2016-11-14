@@ -39,10 +39,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 
-import static net.sf.aidl2.internal.util.Util.getQualifiedName;
-import static net.sf.aidl2.internal.util.Util.hasDefaultConstructor;
-import static net.sf.aidl2.internal.util.Util.hasPublicDefaultConstructor;
-import static net.sf.aidl2.internal.util.Util.literal;
+import static net.sf.aidl2.internal.util.Util.*;
 
 public final class Reader extends AptHelper {
     private final ClassName textUtils = ClassName.get("android.text", "TextUtils");
@@ -137,7 +134,7 @@ public final class Reader extends AptHelper {
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                 "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Collection of supported type with public default constructor";
+                "\t• Map or Collection of supported types with public default constructor";
 
         throw new CodegenException(errorMsg);
     }
@@ -408,8 +405,6 @@ public final class Reader extends AptHelper {
         final TypeKind componentKind = component.getKind();
 
         switch (componentKind) {
-            case ARRAY:
-                return getSpecialArrayStrategy(getArrayStrategy((ArrayType) component), component);
             case BOOLEAN:
             case INT:
             case SHORT:
@@ -420,24 +415,12 @@ public final class Reader extends AptHelper {
             case FLOAT:
                 return getPrimitiveArrayStrategy((PrimitiveType) component);
             default:
-                if (types.isSubtype(component, parcelable)) {
-                    final DeclaredType concreteParent = findConcreteParent(component, parcelable);
+                final Strategy strategy = getStrategy(component);
 
-                    if (concreteParent != null) {
-                        final Strategy strategy = getParcelableStrategy(concreteParent);
-
-                        if (strategy != null) {
-                            return getSpecialArrayStrategy(strategy, component);
-                        }
-                    }
-
-                    return getSpecialArrayStrategy(getUnknownParcelableStrategy(component), component);
-                }
-
-                final Strategy specialStrategy = getStrategy(component);
-
-                if (specialStrategy != null) {
-                    return getSpecialArrayStrategy(specialStrategy, component);
+                if (strategy != null) {
+                    return isSerialStrategy(strategy)
+                            ? getSerializableStrategy(types.getArrayType(component))
+                            : getSpecialArrayStrategy(strategy, component);
                 }
         }
 
@@ -446,7 +429,7 @@ public final class Reader extends AptHelper {
                 "Must be one of:\n" +
                 "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                 "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Collection of supported type with public default constructor";
+                "\t• Map or Collection of supported types with public default constructor";
 
         throw new CodegenException(arrayErrorMsg);
     }
@@ -544,12 +527,7 @@ public final class Reader extends AptHelper {
             return VOID_STRATEGY;
         }
 
-        if (readingStrategy == SERIALIZABLE_STRATEGY) {
-            return getSerializableStrategy(types.getArrayType(actualComponent));
-        }
-
-        // arrays don't support generics — the only thing, that matters, is a raw runtime type
-        final TypeMirror resultType = types.erasure(actualComponent);
+        final TypeMirror resultType = makeGenericArray(actualComponent);
 
         // required to determine whether we need to make a cast
         final TypeMirror returnedType = readingStrategy.returnType;
@@ -566,7 +544,7 @@ public final class Reader extends AptHelper {
             init.beginControlFlow("if ($N < 0)", length);
             init.addStatement("$N = null", array);
             init.nextControlFlow("else");
-            init.addStatement("$N = new $L", array, Blocks.arrayInit(resultType, length));
+            init.addStatement("$N = new $L", array, Blocks.arrayInit(types, resultType, length));
             //} else {
             //    init.addStatement("final $T[] $N = new $L", resultType, array, Blocks.arrayInit(resultType, literal("$N.readInt()", parcelName)));
             //}
@@ -640,7 +618,7 @@ public final class Reader extends AptHelper {
                     "Must be one of:\n" +
                     "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                     "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                    "\t• Collection of supported type with public default constructor";
+                    "\t• Map or Collection of supported types with public default constructor";
 
             throw new CodegenException(errMsg);
         }
@@ -714,7 +692,7 @@ public final class Reader extends AptHelper {
             if (elementStrategy == null) {
                 if (allowUnchecked) {
                     elementStrategy = getStrategy(theObject);
-                } else {
+                } else if (!isFinal(elementType)) {
                     final TypeMirror concreteParent = types.erasure(findConcreteParent(type, theCollection));
 
                     throw new CodegenException(
@@ -722,7 +700,7 @@ public final class Reader extends AptHelper {
                             + concreteParent + " is serializable, but it's element is not. If you want"
                             + " Java serialization to be used anyway, add @SuppressWarnings(\"unchecked\") to the method.");
                 }
-            } else if (elementStrategy == SERIALIZABLE_STRATEGY || elementStrategy == EXTERNALIZABLE_STRATEGY) {
+            } else if (isSerialStrategy(elementStrategy)) {
                 return getSerializableStrategy(type);
             }
         }
@@ -732,7 +710,7 @@ public final class Reader extends AptHelper {
                     "Must be one of:\n" +
                     "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
                     "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                    "\t• Collection of supported type with public default constructor";
+                    "\t• Map or Collection of supported types with public default constructor";
 
             throw new CodegenException(errMsg);
         }

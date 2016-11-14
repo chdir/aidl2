@@ -6,7 +6,6 @@ import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
 import java.lang.Deprecated;
-import java.lang.Iterable;
 import java.lang.Override;
 import java.lang.String;
 import java.util.ArrayList;
@@ -74,19 +73,19 @@ public final class ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl extends Binde
                     }
                 }
 
-                final TreeSet[] returnValue = delegate.methodWithCSKLSetParamAndTreeSetArray(AidlUtil.unsafeCast(concurrentSkipListSetCollection));
+                final TreeSet<String>[] returnValue = delegate.methodWithCSKLSetParamAndTreeSetArray(AidlUtil.unsafeCast(concurrentSkipListSetCollection));
                 reply.writeNoException();
 
                 if (returnValue == null) {
                     reply.writeInt(-1);
                 } else {
                     reply.writeInt(returnValue.length);
-                    for (TreeSet returnValueComponent : returnValue) {
+                    for (TreeSet<String> returnValueComponent : returnValue) {
                         if (returnValueComponent == null) {
                             reply.writeInt(-1);
                         } else {
                             reply.writeInt(returnValueComponent.size());
-                            for (String returnValueComponentElement : AidlUtil.<Iterable<String>>unsafeCast(returnValueComponent)) {
+                            for (String returnValueComponentElement : returnValueComponent) {
                                 reply.writeString(returnValueComponentElement);
                             }
                         }
