@@ -18,14 +18,16 @@ import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.Element;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 class Logger implements Closeable {
-    private static final String TAG = "AIDL2 has aborted compilation: ";
+    private static final String TAG = "AIDL2 aborted compilation. ";
     private static final String TAG2 = "AIDL2 says: ";
 
     private final Messager messager;
@@ -103,7 +105,10 @@ class Logger implements Closeable {
 
     public void log(FaultyElement... issues) {
         for (FaultyElement issue : issues) {
-            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement());
+            final String message = makeTag(issue.getKind()) + "\"" +
+                    issue.getElement().getSimpleName() + "\" — " + issue.getMessage();
+
+            messager.printMessage(issue.getKind(), message, issue.getElement());
         }
     }
 

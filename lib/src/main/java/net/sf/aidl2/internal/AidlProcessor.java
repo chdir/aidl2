@@ -79,8 +79,6 @@ public final class AidlProcessor extends AbstractProcessor {
         } else {
             try {
                 return getSession().process(set, roundEnvironment);
-            } catch (RuntimeException re) {
-                env.getLogger().log(new ReadableException(emitBugreportRequest(re), re));
             } catch (IOException ioe) {
                 env.getLogger().log(new ReadableException("IO error during processing: " + Logger.messageFor(ioe), ioe));
             } catch (AnnotationValueException e) {
@@ -89,6 +87,8 @@ public final class AidlProcessor extends AbstractProcessor {
                 env.getLogger().log((FaultyAnnotation) e);
             } catch (ElementException e) {
                 env.getLogger().log((FaultyElement) e);
+            } catch (Throwable re) {
+                env.getLogger().log(new ReadableException(emitBugreportRequest(re), re));
             } finally {
                 if (roundEnvironment.processingOver()) {
                     cleanup();

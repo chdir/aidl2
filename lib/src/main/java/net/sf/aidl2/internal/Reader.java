@@ -38,6 +38,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.tools.Diagnostic;
 
 import static net.sf.aidl2.internal.util.Util.*;
 
@@ -129,14 +130,7 @@ public final class Reader extends AptHelper {
             return new TypedExpression(assignment, strategy.returnType);
         }
 
-        final String errorMsg =
-                "Unsupported type: " + type + ".\n" +
-                "Must be one of:\n" +
-                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Map or Collection of supported types with public default constructor";
-
-        throw new CodegenException(errorMsg);
+        throw new CodegenException("Unsupported type: " + type + ".\n" + getHelpText());
     }
 
     private Strategy getNullableStrategy(TypeMirror type, Strategy inner) {
@@ -314,6 +308,9 @@ public final class Reader extends AptHelper {
             }
         }
 
+        getMessager().printMessage(Diagnostic.Kind.WARNING, "Type " + type + " implements IInterface, " +
+                "but has neither @AIDL annotation nor nested class, called 'Stub' — can not deserialize as IInterface");
+
         return null;
     }
 
@@ -361,7 +358,9 @@ public final class Reader extends AptHelper {
             if (trulyFinal) {
                 throw new CodegenException("Externalizable class does not have accessible constructor");
             } else {
-                // TODO no apparent mistake, but should we print the warning anyway?
+                getMessager().printMessage(Diagnostic.Kind.WARNING, "Type " + type + " implements Externalizable, " +
+                        "but can not be deserialize as such (no public default constructor)");
+
                 return null;
             }
         }
@@ -424,14 +423,7 @@ public final class Reader extends AptHelper {
                 }
         }
 
-        final String arrayErrorMsg =
-                "Unsupported array component type: " + component + ".\n" +
-                "Must be one of:\n" +
-                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Map or Collection of supported types with public default constructor";
-
-        throw new CodegenException(arrayErrorMsg);
+        throw new CodegenException("Unsupported array component type: " + component + ".\n" + getHelpText());
     }
 
     @SuppressWarnings("ThrowFromFinallyBlock")
@@ -490,7 +482,9 @@ public final class Reader extends AptHelper {
             if (trulyFinal) {
                 throw new CodegenException("Parcelable type does not have CREATOR field");
             } else {
-                // TODO no apparent mistake, but should we print the warning anyway?
+                getMessager().printMessage(Diagnostic.Kind.WARNING, "Type " + type + " implements Parcelable, " +
+                        "but has no 'CREATOR' field");
+
                 return null;
             }
         }
@@ -614,11 +608,7 @@ public final class Reader extends AptHelper {
         }
 
         if (keyStrategy == null || valueStrategy == null) {
-            final String errMsg = "Unsupported map key/value combination: " + keyType + "/" + valueType + ".\n" +
-                    "Must be one of:\n" +
-                    "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                    "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                    "\t• Map or Collection of supported types with public default constructor";
+            final String errMsg = "Unsupported map key/value combination: " + keyType + "/" + valueType + ".\n" + getHelpText();
 
             throw new CodegenException(errMsg);
         }
@@ -707,13 +697,7 @@ public final class Reader extends AptHelper {
         }
 
         if (elementStrategy == null) {
-            final String errMsg = "Unsupported collection element type: " + elementType + ".\n" +
-                    "Must be one of:\n" +
-                    "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                    "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                    "\t• Map or Collection of supported types with public default constructor";
-
-            throw new CodegenException(errMsg);
+            throw new CodegenException("Unsupported collection element type: " + elementType + ".\n" + getHelpText());
         }
 
         // thankfully, Java does not support multiple inheritance for classes

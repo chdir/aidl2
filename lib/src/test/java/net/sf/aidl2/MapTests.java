@@ -18,10 +18,10 @@ public class MapTests {
 
     @Test
     public void abstractListsSimple() throws Exception {
-        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AbstractListTest.java"));
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("SimpleMap.java"));
 
-        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("AbstractListTest$$AidlServerImpl.java"));
-        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("AbstractListTest$$AidlClientImpl.java"));
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("SimpleMap$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("SimpleMap$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())

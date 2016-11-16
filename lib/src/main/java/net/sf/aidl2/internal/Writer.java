@@ -118,14 +118,7 @@ public final class Writer extends AptHelper {
             return;
         }
 
-        final String errorMsg =
-                "Unsupported parameter type: " + type + ".\n" +
-                "Must be one of:\n" +
-                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Map or Collection of supported types with public default constructor";
-
-        throw new CodegenException(errorMsg);
+        throw new CodegenException("Unsupported parameter type: " + type + ".\n" + getHelpText());
     }
 
     public TypeMirror writeReturnValue(CodeBlock.Builder retValWriting, TypeMirror type) throws CodegenException {
@@ -147,14 +140,7 @@ public final class Writer extends AptHelper {
             return removeRedundancy(forSerializationCode, type);
         }
 
-        final String errorMsg =
-                "Unsupported return value type: " + type + ".\n" +
-                        "Must be one of:\n" +
-                        "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                        "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                        "\t• Map or Collection of supported types with public default constructor";
-
-        throw new CodegenException(errorMsg);
+        throw new CodegenException("Unsupported return value type: " + type + ".\n" + getHelpText());
     }
 
     private Strategy getStrategy(TypeMirror type) throws CodegenException {
@@ -480,14 +466,7 @@ public final class Writer extends AptHelper {
                 }
         }
 
-        final String arrayErrorMsg =
-                "Unsupported array component type: " + component + ".\n" +
-                "Must be one of:\n" +
-                "\t• android.os.Parcelable, android.os.IInterface, java.io.Serializable, java.io.Externalizable\n" +
-                "\t• One of types, natively supported by Parcel or one of primitive type wrappers\n" +
-                "\t• Map or Collection of supported types with public default constructor";
-
-        throw new CodegenException(arrayErrorMsg);
+        throw new CodegenException("Unsupported array component type: " + component + ".\n" + getHelpText());
     }
 
     private Strategy getSpecialArrayStrategy(Strategy delegate, TypeMirror componentType) {

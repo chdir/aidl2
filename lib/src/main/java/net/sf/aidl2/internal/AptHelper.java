@@ -1,14 +1,11 @@
 package net.sf.aidl2.internal;
 
-import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeVariableName;
+import android.os.Parcelable;
+import com.squareup.javapoet.*;
 
 import net.sf.aidl2.AidlUtil;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
+import net.sf.aidl2.internal.util.CowCloneableList;
 import net.sf.aidl2.internal.util.JavaVersion;
 import net.sf.aidl2.internal.util.Util;
 
@@ -230,6 +227,14 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return false;
     }
 
+    protected String getHelpText() {
+        return "Must be one of:\n" +
+                "\t• android.os.Parcelable, java.io.Serializable, java.io.Externalizable\n" +
+                "\t• android.os.IInterface subclass (annotated with @AIDL or produced by aidl tool)\n" +
+                "\t• One of types, natively supported by Parcel, or one of primitive type wrappers\n" +
+                "\t• Map, List, Set and their concrete subclasses with public default constructors";
+    }
+
     @SuppressWarnings("SimplifiableIfStatement")
     public boolean castAllowed(TypeMirror Source, TypeMirror Target) {
         // according to Java type system wildcards clearly belong in upper plane of existence,
@@ -427,6 +432,11 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 // component type is already refined
                 return foundParent;
             case DECLARED:
+                if (isRecursive(foundParent)) {
+                    // abort search to avoid endless recursion
+                    return types.erasure(foundParent);
+                }
+
                 final DeclaredType asDeclared = (DeclaredType) foundParent;
 
                 return types.getDeclaredType((TypeElement) asDeclared.asElement(), substituteAllArgs(asDeclared));
@@ -442,9 +452,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
         final TypeMirror[] result = new TypeMirror[typeArgs.size()];
 
         for (int i = 0; i < typeArgs.size(); ++i) {
-            final TypeMirror refined = NESTED_BOUND_REFINER.visit(typeArgs.get(i), theObject);
+            final TypeMirror refined = NESTED_BOUND_REFINER.visit(typeArgs.get(i), null);
 
-            result[i] = refined == null ? theObject : refined;
+            result[i] = refined == null ? types.getWildcardType(null, null) : refined;
         }
 
         return result;
@@ -733,75 +743,78 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
     private final class NestedTypeArgRefiner extends TypeKindVisitor6<TypeMirror, TypeMirror> {
         @Override
-        public TypeMirror visitDeclared(DeclaredType type, TypeMirror desirableParent) {
+        public TypeMirror visitDeclared(DeclaredType type, TypeMirror unused) {
             if (types.isSameType(type, theObject)) {
                 return null;
             }
 
-            if (types.isAssignable(type, desirableParent)) {
-                final Element element = types.asElement(type);
+            final Element element = types.asElement(type);
 
-                if (element != null) {
-                    final ElementKind elKind = element.getKind();
+            if (element != null) {
+                final ElementKind elKind = element.getKind();
 
-                    if (elKind.isClass() || elKind.isInterface()) {
-                        return type;
-                    }
+                if (elKind.isClass() || elKind.isInterface()) {
+                    return type;
                 }
             }
 
-            return defaultAction(type, desirableParent);
+            return defaultAction(type, null);
         }
 
         @Override
-        public TypeMirror visitWildcard(WildcardType wildcardType, TypeMirror desirableParent) {
+        public TypeMirror visitWildcard(WildcardType wildcardType, TypeMirror unused) {
             TypeMirror extendsBound = wildcardType.getExtendsBound();
 
             if (extendsBound != null) {
-                extendsBound = visit(extendsBound, desirableParent);
+                TypeMirror refined = gaugeConcreteParent(extendsBound, types.getNullType());
+
+                if (refined != null) {
+                    return types.getWildcardType(refined, null);
+                }
             }
 
             TypeMirror superBound = wildcardType.getSuperBound();
 
             if (superBound != null) {
-                superBound = visit(superBound, desirableParent);
-            }
+                TypeMirror refined = gaugeConcreteParent(extendsBound, types.getNullType());
 
-            return types.getWildcardType(extendsBound, superBound);
-        }
-
-        @Override
-        public TypeMirror visitTypeVariable(TypeVariable typeVariable, TypeMirror typeMirror) {
-            TypeMirror upperBound = typeVariable.getUpperBound();
-
-            if (upperBound != null) {
-                upperBound = visit(upperBound, typeMirror);
-
-                if (upperBound != null) {
-                    return types.getWildcardType(upperBound, null);
+                if (refined != null) {
+                    return types.getWildcardType(null, refined);
                 }
             }
 
+            return null;
+        }
+
+        @Override
+        public TypeMirror visitTypeVariable(TypeVariable typeVariable, TypeMirror unused) {
+            TypeMirror upperBound = typeVariable.getUpperBound();
             TypeMirror lowerBound = typeVariable.getLowerBound();
 
-            if (lowerBound != null) {
-                lowerBound = visit(lowerBound, typeMirror);
-
-                if (lowerBound != null) {
-                    return types.getWildcardType(null, lowerBound);
-                }
+            if ((upperBound == null) == (lowerBound == null)) {
+                // if both bounds are null, that's by definition unbounded wildcard
+                // if both aren't null —  it is not denotable, so also requires unbounded wildcard
+                return null;
             }
 
-            return types.getWildcardType(null, null);
+            if (upperBound != null) {
+                TypeMirror refined = BOUND_REFINER.visit(upperBound, types.getNullType());
+
+                return types.getWildcardType(refined, null);
+            } else {
+                TypeMirror refined = BOUND_REFINER.visit(lowerBound, types.getNullType());
+
+                return types.getWildcardType(null, refined);
+            }
         }
 
         @Override
-        public TypeMirror visitUnknown(TypeMirror typeMirror, TypeMirror typeMirror2) {
-            return defaultAction(typeMirror, typeMirror2);
+        public TypeMirror visitUnknown(TypeMirror typeMirror, TypeMirror unused) {
+            return defaultAction(typeMirror, unused);
         }
 
         @Override
-        protected TypeMirror defaultAction(TypeMirror type, TypeMirror desirableParent) {
+        protected TypeMirror defaultAction(TypeMirror type, TypeMirror unused) {
             if (types.isSameType(type, theObject)) {
                 return null;
             }
@@ -809,7 +822,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
             final List<? extends TypeMirror> superTypes = types.directSupertypes(type);
 
             for (TypeMirror parent : superTypes) {
-                final TypeMirror discovered = visit(parent, desirableParent);
+                final TypeMirror discovered = visit(parent, unused);
 
                 if (discovered != null) {
                     return discovered;
@@ -1024,6 +1037,17 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return literal("new $T($L, 1f)", erased, sizeLiteral);
     }
 
+    public static void swap(List<?> list, int i, int j) {
+        // instead of using a raw type here, it's possible to capture
+        // the wildcard but it will require a call to a supplementary
+        // private method
+        swapInner(list, i, j);
+    }
+
+    private static <T> void swapInner(List<T> l, int i, int j) {
+        l.set(i, l.set(j, l.get(i)));
+    }
+
     public TypeMirror jokeLub(TypeMirror requested, TypeMirror returned) {
         if (types.isAssignable(requested, returned) && !isTricky(requested)) {
             return requested;
@@ -1217,7 +1241,81 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
     }
 
+    /**
+     * A recursive type is a type, that contains a self-references in it's type signature (and usually
+     * requires a self-referencing type to be implemented). Example:
+     *
+     * <pre>{@code
+     *
+     *     public interface Recursive<XX extends Callable<XX>> {}
+     *
+     * }<pre/>
+     *
+     * Such types tend to cause stack overflow in some AIDL2 methods, so it is often safer to reject them
+     * from outset push the responsibility for dealing with them onto {@link Types#erasure} and {@link Types#capture}
+     */
+    public boolean isRecursive(TypeMirror suspect) {
+        return isRecursive(suspect, new CowCloneableList<>());
+    }
+
+    private boolean isRecursive(TypeMirror suspect, CowCloneableList<Element> encounteredTypeArgs) {
+        Element element = types.asElement(suspect);
+
+        // type parameters seem to be the only way to create recursive types as of Java 8
+        if (element != null && element.getKind() == ElementKind.TYPE_PARAMETER) {
+            if (encounteredTypeArgs.contains(element)) {
+                return true;
+            } else {
+                encounteredTypeArgs.add(element);
+            }
+        } else if (suspect.getKind() == TypeKind.WILDCARD) {
+            return isRecursive(((WildcardType) suspect).getExtendsBound(), encounteredTypeArgs);
+        }
+
+        if (!Util.isProperDeclared(suspect)) {
+            // This branch is usually reached for type variables and intersection types
+            // find all declared parents and ensure that a nasty type argument didn't sneak it's
+            // way into their type signatures
+            final Collection<? extends TypeMirror> supertypes = getSupertypes(suspect);
+
+            for (TypeMirror parent : supertypes) {
+                if (isProperDeclared(parent) && !types.isSameType(suspect, parent)) {
+                    try (CowCloneableList<Element> forDescent = encounteredTypeArgs.clone()) {
+                        if (isRecursive(parent, forDescent)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        DeclaredType asDeclared = (DeclaredType) suspect;
+
+        List<? extends TypeMirror> typeArgs = asDeclared.getTypeArguments();
+
+        if (typeArgs.size() == 1) {
+            return isRecursive(typeArgs.get(0), encounteredTypeArgs);
+        } else {
+            for (TypeMirror typeArg : typeArgs) {
+                try (CowCloneableList<Element> forDescent = encounteredTypeArgs.clone()) {
+                    if (isRecursive(typeArg, forDescent)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     private DeclaredType captureAllArgs(DeclaredType type) {
+        if (isRecursive(type)) {
+            // abort search to avoid endless recursion
+            return (DeclaredType) types.erasure(type);
+        }
+
         final List<? extends TypeMirror> args = type.getTypeArguments();
 
         if (args.isEmpty()) {
@@ -1233,6 +1331,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
         return types.getDeclaredType((TypeElement) type.asElement(), argumentCaptures);
     }
+
 
     public AidlProcessor.Environment getBaseEnvironment() {
         return environment;

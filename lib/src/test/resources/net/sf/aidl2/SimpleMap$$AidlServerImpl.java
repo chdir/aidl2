@@ -1,9 +1,16 @@
 // AUTO-GENERATED FILE.  DO NOT MODIFY.
 package net.sf.aidl2;
 
-import android.os.*;
+import android.os.Binder;
+import android.os.IBinder;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.RemoteException;
 import android.util.SizeF;
-
+import java.lang.Deprecated;
+import java.lang.Integer;
+import java.lang.Override;
+import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
 
