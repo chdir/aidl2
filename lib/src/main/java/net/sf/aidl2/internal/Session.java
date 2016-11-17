@@ -10,19 +10,14 @@ import net.sf.aidl2.internal.util.Util;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 
 import static javax.tools.Diagnostic.Kind.NOTE;
@@ -110,14 +105,61 @@ final class Session extends AptHelper implements Closeable {
     }
 
     private List<TypeInvocation<ExecutableElement, ExecutableType>> gatherAidl2Methods(DeclaredType element) {
-        final Collection<? extends ExecutableElement> allMethods =
-                ElementFilter.methodsIn(elements.getAllMembers((TypeElement) element.asElement()));
+        TypeElement type = (TypeElement) element.asElement();
+
+        final List<ExecutableElement> allMethods = ElementFilter.methodsIn(elements.getAllMembers(type));
+
+        for (Iterator<ExecutableElement> it = allMethods.iterator(); it.hasNext() ;)
+        {
+            if (!Util.isAIDL2method(it.next())) {
+                it.remove();
+            }
+        }
+
+        allMethods.sort(new Comparator<ExecutableElement>() {
+            private final List<? extends Element> topLevelElements = type.getEnclosedElements();
+
+            @Override
+            public int compare(ExecutableElement e1, ExecutableElement e2) {
+                final int x = topLevelElements.indexOf(e1);
+                final int y = topLevelElements.indexOf(e2);
+
+                if (x != -1 && y != -1) {
+                    return Integer.compare(x, y);
+                }
+
+                if (x != -1) return -1;
+                if (y != -1) return +1;
+
+                // neither of methods are present in top-level class, sort alphanumerically
+                final String nam1 = e1.getSimpleName().toString();
+                final String nam2 = e2.getSimpleName().toString();
+
+                final int nameResult = nam1.compareTo(nam2);
+
+                if (nameResult != 0) {
+                    return nameResult;
+                }
+
+                final List<? extends VariableElement> e1params = e1.getParameters();
+                final List<? extends VariableElement> e2params = e2.getParameters();
+
+                final int x1 = e1params.size();
+                final int y1 = e2params.size();
+
+                final int paramCountResult = Integer.compare(x1, y1);
+
+                if (paramCountResult != 0) {
+                    return paramCountResult;
+                }
+
+                return compareParameters(e1params, e2params);
+            }
+        });
 
         final List<TypeInvocation<ExecutableElement, ExecutableType>> aidl2Methods = new ArrayList<>(allMethods.size());
 
         for (ExecutableElement method : allMethods) {
-            if (!Util.isAIDL2method(method)) continue;
-
             final ExecutableType methodType = (ExecutableType) types.asMemberOf(element, method);
 
             final TypeInvocation<ExecutableElement, ExecutableType> typeInvocation =
@@ -129,6 +171,49 @@ final class Session extends AptHelper implements Closeable {
         }
 
         return aidl2Methods;
+    }
+
+    private int compareParameters(List<? extends VariableElement> e1params, List<? extends VariableElement> e2params) {
+        Iterator<? extends VariableElement> e2paramIter = e2params.iterator();
+
+        for (VariableElement e1param : e1params) {
+            int comparisonResult = compareParameter(e1param, e2paramIter.next());
+
+            if (comparisonResult != 0) {
+                return comparisonResult;
+            }
+        }
+
+        return 0;
+    }
+
+    private int compareParameter(VariableElement v1, VariableElement v2) {
+        TypeMirror fullType1 = v1.asType();
+        TypeMirror fullType2 = v2.asType();
+
+        if (types.isSameType(fullType1, fullType2)) {
+            return 0;
+        }
+
+        final TypeKind kind1 = fullType1.getKind();
+        final TypeKind kind2 = fullType2.getKind();
+
+        if (!kind1.isPrimitive() && !kind2.isPrimitive()) {
+            final TypeMirror erasure1 = types.erasure(fullType1);
+            final TypeMirror erasure2 = types.erasure(fullType2);
+
+            final int erased = erasure1.toString().compareTo(erasure2.toString());
+
+            if (erased != 0) {
+                return erased;
+            }
+        }
+
+        if (kind1 != kind2) {
+            return kind1.compareTo(kind2);
+        }
+
+        return fullType1.toString().compareTo(fullType2.toString());
     }
 
     @Override

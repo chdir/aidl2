@@ -25,10 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.processing.Filer;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
@@ -80,13 +77,13 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
 
         final TypeName serverClass = ClassName.get(pkg.toString(), model.serverImplName.toString());
 
-        final boolean recursiveType = isRecursive(ifType);
+        final boolean useErasure = isRecursive(ifType);
 
         final DeclaredType ifTypeErased = (DeclaredType) types.erasure(ifType);
 
         final TypeSpec.Builder implClassSpec = TypeSpec.classBuilder(name);
 
-        if (recursiveType) {
+        if (useErasure) {
             implClassSpec.addSuperinterface(TypeName.get(ifTypeErased));
         } else {
             implClassSpec.addSuperinterface(TypeName.get(ifType));
@@ -104,7 +101,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                         .addStatement("this.$L = $L", "delegate", "delegate")
                         .build());
 
-        if (!recursiveType) {
+        if (!useErasure) {
             final List<? extends TypeParameterElement> typeArgs = originatingInterface.getTypeParameters();
 
             for (TypeParameterElement superTypeArg : typeArgs) {
@@ -133,7 +130,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 }
 
                 final MethodSpec.Builder methodSpec = override(method.element.element,
-                        recursiveType ? ifTypeErased : ifType);
+                        useErasure ? ifTypeErased : ifType);
 
                 for (AidlParamModel param : method.parameters) {
                     if (param.name != null) {

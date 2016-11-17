@@ -179,4 +179,19 @@ public class MiscTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void methodOrderStabilityAndInheritance() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("TransactionIdOrder.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("TransactionIdOrder$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("TransactionIdOrder$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
 }

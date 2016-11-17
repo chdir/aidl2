@@ -21,9 +21,9 @@ import java.lang.String;
 public final class RecursiveExtendingRecursive$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.RecursiveExtendingRecursive";
 
-  static final int TRANSACT_someMethod = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_call = IBinder.FIRST_CALL_TRANSACTION + 0;
 
-  static final int TRANSACT_call = IBinder.FIRST_CALL_TRANSACTION + 1;
+  static final int TRANSACT_someMethod = IBinder.FIRST_CALL_TRANSACTION + 9001;
 
   private final RecursiveExtendingRecursive delegate;
 
@@ -36,22 +36,22 @@ public final class RecursiveExtendingRecursive$$AidlServerImpl extends Binder {
   @Override
   protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
     switch(code) {
-      case TRANSACT_someMethod: {
-        data.enforceInterface(this.getInterfaceDescriptor());
-
-        final Parcelable returnValue = delegate.someMethod();
-        reply.writeNoException();
-
-        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
-
-        return true;
-      } case TRANSACT_call: {
+      case TRANSACT_call: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
         final RecursiveExtendingRecursive returnValue = delegate.call();
         reply.writeNoException();
 
         reply.writeStrongBinder(returnValue == null ? null : returnValue.asBinder());
+
+        return true;
+      } case TRANSACT_someMethod: {
+        data.enforceInterface(this.getInterfaceDescriptor());
+
+        final Parcelable returnValue = delegate.someMethod();
+        reply.writeNoException();
+
+        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
 
         return true;
       }

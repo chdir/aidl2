@@ -29,23 +29,6 @@ public final class RecursiveExtendingRecursive$$AidlClientImpl implements Recurs
   }
 
   @Override
-  public Parcelable someMethod() throws RemoteException {
-    Parcel data = Parcel.obtain();
-    Parcel reply = Parcel.obtain();
-    try {
-      data.writeInterfaceToken(RecursiveExtendingRecursive$$AidlServerImpl.DESCRIPTOR);
-
-      delegate.transact(RecursiveExtendingRecursive$$AidlServerImpl.TRANSACT_someMethod, data, reply, 0);
-      reply.readException();
-
-      return reply.readParcelable(getClass().getClassLoader());
-    } finally {
-      data.recycle();
-      reply.recycle();
-    }
-  }
-
-  @Override
   public RecursiveExtendingRecursive call() throws RemoteException {
     Parcel data = Parcel.obtain();
     Parcel reply = Parcel.obtain();
@@ -58,6 +41,23 @@ public final class RecursiveExtendingRecursive$$AidlClientImpl implements Recurs
       final IBinder returnValueBinder = reply.readStrongBinder();
       final RecursiveExtendingRecursive iReturnValue = returnValueBinder == null ? null : InterfaceLoader.asInterface(returnValueBinder, RecursiveExtendingRecursive.class);
       return iReturnValue;
+    } finally {
+      data.recycle();
+      reply.recycle();
+    }
+  }
+
+  @Override
+  public Parcelable someMethod() throws RemoteException {
+    Parcel data = Parcel.obtain();
+    Parcel reply = Parcel.obtain();
+    try {
+      data.writeInterfaceToken(RecursiveExtendingRecursive$$AidlServerImpl.DESCRIPTOR);
+
+      delegate.transact(RecursiveExtendingRecursive$$AidlServerImpl.TRANSACT_someMethod, data, reply, 0);
+      reply.readException();
+
+      return reply.readParcelable(getClass().getClassLoader());
     } finally {
       data.recycle();
       reply.recycle();

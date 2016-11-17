@@ -1,5 +1,7 @@
 package net.sf.aidl2.internal;
 
+import android.os.Binder;
+import android.os.IBinder;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.annotation.processing.Filer;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
@@ -129,6 +132,13 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
             final Set<String> allSuppressed = new HashSet<>();
 
+            final Set<? extends Element> directlyContained = new HashSet<>(originatingInterface.getEnclosedElements());
+
+            int sourceBasedMethodsCtr = -1;
+
+            // transaction Ids for methods, defined outside primary @AIDL-annotated interface, are offset by 9000
+            int outsideMethodsCtr = 9000;
+
             for (int i = 0; i < model.methods.size(); i++) {
                 final AidlMethodModel method = model.methods.get(i);
 
@@ -136,8 +146,22 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
                 final String transactIdField = aidlReader.allocator.get(method);
 
+                final int transactionId;
+
+                if (directlyContained.contains(method.element.element)) {
+                    // contained directly in source, use the source code order
+                    transactionId = ++sourceBasedMethodsCtr;
+                } else {
+                    // The method came from outside main interface class (possibly from the parent interface,
+                    // defined in compiled form). We may not have access to source-order for those, and even if
+                    // we did, for greater stability let's count them separately — they may come from libraries
+                    // outside control of the interface author
+                    transactionId = outsideMethodsCtr > sourceBasedMethodsCtr
+                            ? ++outsideMethodsCtr : ++sourceBasedMethodsCtr;
+                }
+
                 FieldSpec transactId = FieldSpec.builder(int.class, transactIdField, Modifier.FINAL, Modifier.STATIC)
-                        .initializer("$T.FIRST_CALL_TRANSACTION + $L", ClassName.get("android.os", "IBinder"), i)
+                        .initializer("$T.FIRST_CALL_TRANSACTION + $L", ClassName.get("android.os", "IBinder"), transactionId)
                         .build();
 
                 implClassSpec.addField(transactId);
