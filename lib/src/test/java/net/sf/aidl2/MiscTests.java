@@ -24,6 +24,7 @@ public class MiscTests {
     private String[] usualArgs() {
         return new String[] {
                 "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Aaidl2_use_versioning=false",
                 "-Xlint:all"
         };
     }
@@ -136,7 +137,8 @@ public class MiscTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                     "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                    "-Xlint:-processing"
+                    "-Xlint:-processing",
+                    "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -154,7 +156,8 @@ public class MiscTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                        "-Xlint:-processing"
+                        "-Xlint:-processing",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -172,7 +175,8 @@ public class MiscTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                        "-Xlint:-processing"
+                        "-Xlint:-processing",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()

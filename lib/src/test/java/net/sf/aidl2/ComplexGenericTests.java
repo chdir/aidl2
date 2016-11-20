@@ -25,7 +25,10 @@ public class ComplexGenericTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("WildcardBoundByTypeVar$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Aaidl2_use_versioning=false",
+                })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -43,7 +46,8 @@ public class ComplexGenericTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                        "-Xlint:-rawtypes"
+                        "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -62,7 +66,8 @@ public class ComplexGenericTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                        "-Xlint:-rawtypes"
+                        "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -82,7 +87,8 @@ public class ComplexGenericTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                        "-Xlint:-rawtypes"
+                        "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -101,7 +107,8 @@ public class ComplexGenericTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                        "-Xlint:-rawtypes"
+                        "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()

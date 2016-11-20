@@ -42,27 +42,21 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
 
     private final ClassName iBinder = ClassName.get("android.os", "IBinder");
 
-    private final List<AidlModel> models;
-
     private final NameAllocator baseAllocator = new NameAllocator();
 
     private final TypeMirror theParcel;
 
-    public ProxyGenerator(AidlProcessor.Environment environment, List<AidlModel> models) {
+    public ProxyGenerator(AidlProcessor.Environment environment) {
         super(environment);
-
-        this.models = models;
 
         theParcel = lookup("android.os.Parcel");
     }
 
-    public void make(Filer filer) throws ElementException, IOException {
-        for (AidlModel model : models) {
-            writeModel(model, filer);
-        }
+    public void make(List<? super JavaFile> results, AidlModel aidlInterfaceDetails) throws ElementException, IOException {
+        results.add(writeModel(aidlInterfaceDetails));
     }
 
-    private void writeModel(AidlModel model, Filer filer) throws IOException, ElementException {
+    private JavaFile writeModel(AidlModel model) throws IOException, ElementException {
         final NameAllocator modelAllocator = baseAllocator.clone();
 
         final String name = model.clientImplName.toString();
@@ -118,7 +112,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 .build());
 
         if (!model.methods.isEmpty()) {
-            final State aidlWriter = new State(getBaseEnvironment(), modelAllocator)
+            final State aidlWriter = new State(getBaseEnvironment(), modelAllocator, model.digest)
                     .allowUnchecked(isSuppressed(model.suppressed, Util.SUPPRESS_UNCHECKED))
                     .assumeFinal(model.assumeFinal);
 
@@ -229,10 +223,9 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
             }
         }
 
-        JavaFile.builder(pkg.toString(), implClassSpec.build())
+        return JavaFile.builder(pkg.toString(), implClassSpec.build())
                 .addFileComment("AUTO-GENERATED FILE.  DO NOT MODIFY.")
-                .build()
-                .writeTo(filer);
+                .build();
     }
 
     private void writeInParam(CodeBlock.Builder code, State writer, String parcel) throws CodegenException {
@@ -248,7 +241,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
         }
     }
 
-    private void readReturnValue(CodeBlock.Builder code, State reader, String name) throws CodegenException {
+    private void readReturnValue(CodeBlock.Builder code, State reader, String name) throws CodegenException, IOException {
         final TypedExpression assignmentCode = reader.buildReader(name)
                 .read(code, reader.type);
 

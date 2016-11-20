@@ -1,11 +1,11 @@
 package net.sf.aidl2.internal;
 
+import com.squareup.javapoet.JavaFile;
 import net.sf.aidl2.internal.exceptions.ElementException;
 
 import java.io.IOException;
-
-import javax.annotation.processing.Filer;
+import java.util.List;
 
 public interface AidlGenerator {
-    void make(Filer filer) throws ElementException, IOException;
+    void make(List<? super JavaFile> results, AidlModel aidlInterfaceDetails) throws ElementException, IOException;
 }

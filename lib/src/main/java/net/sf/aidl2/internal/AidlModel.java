@@ -9,10 +9,12 @@ import net.sf.aidl2.internal.util.Util;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -42,6 +44,11 @@ public final class AidlModel {
 
     @NotNull
     final List<AidlMethodModel> methods;
+
+    final ContractHasher digest = ContractHasher.create();
+
+    // should really be MutableLong, but that's also fine
+    final AtomicLong rpcVersionId = new AtomicLong();
 
     private AidlModel(@NotNull CharSequence serverImplName,
                      @NotNull CharSequence clientImplName,
@@ -102,5 +109,9 @@ public final class AidlModel {
                 aidl.insecure(),
                 aidl.assumeFinal(),
                 typeTransplanted);
+    }
+
+    public void finishGeneration() throws IOException {
+        rpcVersionId.set(digest.computeDigest());
     }
 }

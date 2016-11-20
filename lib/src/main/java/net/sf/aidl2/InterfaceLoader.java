@@ -2,9 +2,7 @@ package net.sf.aidl2;
 
 import android.app.Service;
 import android.content.ServiceConnection;
-import android.os.IBinder;
-import android.os.IInterface;
-import android.os.RemoteException;
+import android.os.*;
 import android.util.Log;
 
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Enumeration;
@@ -130,7 +129,7 @@ public final class InterfaceLoader {
                 warned = true;
             }
 
-            Z tried = (Z) FallbackLocator.loadClientViaFallback(aidlInterface, binder);
+            Z tried = (Z) FallbackLocator.loadClientViaFallback(aidlInterface, interfaceName, binder);
 
             if (tried != null) {
                 if (useVerboseLogging) {
@@ -240,7 +239,7 @@ public final class InterfaceLoader {
             throw new IllegalStateException("Metadata file found, but does not have entry for " + clazz);
         }
 
-        public static IInterface loadClientViaFallback(Class<? extends IInterface> clazz, IBinder client) {
+        public static IInterface loadClientViaFallback(Class<? extends IInterface> clazz, String interfaceName, IBinder client) {
             final String name = clazz.getName();
 
             final String implType = "$$AidlClientImpl";
@@ -269,6 +268,8 @@ public final class InterfaceLoader {
 
                     classes.put(serverImplClassName, constructor);
                 }
+
+                checkVersion(client, interfaceName, constructor.getDeclaringClass());
 
                 return (IInterface) constructor.newInstance(client);
             } catch (NoSuchMethodException ignored) {
@@ -331,6 +332,40 @@ public final class InterfaceLoader {
                 throw e;
             } catch (Exception e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+        private static void checkVersion(IBinder rpc, String interfaceName, Class<?> proxy) throws IllegalAccessException, RemoteException {
+            Field[] fields = proxy.getDeclaredFields();
+
+            for (Field field : fields) {
+                if (field.getType() == long.class) {
+                    field.setAccessible(true);
+
+                    final long localRpcVersion;
+                    final long interfaceRpcVer;
+
+                    localRpcVersion = field.getLong(null);
+
+                    Parcel req = Parcel.obtain();
+                    Parcel resp = Parcel.obtain();
+                    try {
+                        req.writeString(interfaceName);
+
+                        if (!rpc.transact(AidlUtil.VERSION_TRANSACTION, req, resp, 0)) {
+                            throw new VersionMismatch("Failed to get interface version from remote process");
+                        }
+
+                        interfaceRpcVer = resp.readLong();
+                    } finally {
+                        req.recycle();
+                        resp.recycle();
+                    }
+
+                    if (interfaceRpcVer != localRpcVersion) {
+                        throw new VersionMismatch("RPC interface version mismatch: local is " + localRpcVersion + " remote is " + interfaceRpcVer);
+                    }
+                }
             }
         }
     }

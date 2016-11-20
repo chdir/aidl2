@@ -1,5 +1,6 @@
 package net.sf.aidl2;
 
+import android.os.IBinder;
 import android.os.Parcel;
 
 import org.jetbrains.annotations.NotNull;
@@ -15,19 +16,14 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public class AidlUtil {
-    /**
-     * Read Serializable object from Parcel without making assumptions about it's runtime type.
-     */
-    @SuppressWarnings("unchecked")
-    public static @Nullable <X extends Serializable> X readSafeSerializable(@NotNull Parcel parcel) {
-        return (X) parcel.readSerializable();
-    }
+    public static final int VERSION_TRANSACTION = IBinder.LAST_CALL_TRANSACTION;
 
     /**
-     * Read Externalizable object from Parcel without making assumptions about it's runtime type.
+     * Read Serializable/Externalizable object (or array thereof) from Parcel without making assumptions
+     * about their runtime type.
      */
     @SuppressWarnings("unchecked")
-    public static @Nullable<X extends Externalizable> X readSafeExternalizable(@NotNull Parcel parcel) {
+    public static @Nullable<X> X readFromObjectStream(@NotNull Parcel parcel) {
         final String typeName = parcel.readString();
         if (typeName == null) {
             return null;
@@ -45,15 +41,27 @@ public class AidlUtil {
     }
 
     /**
+     * Write Serializable/Externalizable object (or array thereof) to Parcel without making assumptions about
+     * their runtime type.
+     */
+    public static void writeToObjectStream(@NotNull Parcel parcel, @Nullable Serializable serializable) {
+        writeToObjectStreamInner(parcel, serializable);
+    }
+
+    /**
      * Write Externalizable object to Parcel without making assumptions about it's runtime type.
      */
-    public static void writeExternalizable(@NotNull Parcel parcel, @Nullable Externalizable externalizable) {
-        if (externalizable == null) {
+    public static void writeToObjectStream(@NotNull Parcel parcel, @Nullable Externalizable externalizable) {
+        writeToObjectStreamInner(parcel, externalizable);
+    }
+
+    private static void writeToObjectStreamInner(@NotNull Parcel parcel, @Nullable Object serializable) {
+        if (serializable == null) {
             parcel.writeString(null);
             return;
         }
 
-        final String className = externalizable.getClass().getName();
+        final String className = serializable.getClass().getName();
 
         parcel.writeString(className);
 
@@ -61,7 +69,7 @@ public class AidlUtil {
         try {
             ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
             objectOutputStream = new ObjectOutputStream(arrayOutputStream);
-            objectOutputStream.writeObject(externalizable);
+            objectOutputStream.writeObject(serializable);
             objectOutputStream.flush();
             parcel.writeByteArray(arrayOutputStream.toByteArray());
         } catch (Exception e) {

@@ -25,7 +25,8 @@ public class ArrayTests {
     private String[] usualArgs() {
         return new String[] {
                 "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
-                "-Xlint:all"
+                "-Aaidl2_use_versioning=false",
+                "-Xlint:all",
         };
     }
 
@@ -116,6 +117,7 @@ public class ArrayTests {
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
                         "-Xlint:rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutError()
@@ -149,6 +151,7 @@ public class ArrayTests {
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
                         "-Xlint:-processing",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -198,6 +201,7 @@ public class ArrayTests {
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
                         "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()

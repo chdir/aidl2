@@ -54,12 +54,12 @@ public final class NonFinalAsAbstract$$AidlClientImpl implements NonFinalAsAbstr
     try {
       data.writeInterfaceToken(NonFinalAsAbstract$$AidlServerImpl.DESCRIPTOR);
 
-      AidlUtil.writeExternalizable(data, nonFinalExParam);
+      AidlUtil.writeToObjectStream(data, nonFinalExParam);
 
       delegate.transact(NonFinalAsAbstract$$AidlServerImpl.TRANSACT_exMethod, data, reply, 0);
       reply.readException();
 
-      return AidlUtil.readSafeExternalizable(reply);
+      return AidlUtil.readFromObjectStream(reply);
     } finally {
       data.recycle();
       reply.recycle();

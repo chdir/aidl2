@@ -274,7 +274,7 @@ public final class Writer extends AptHelper {
 
     private Strategy getSerializableStrategy() {
         if (SERIALIZABLE_STRATEGY == null) {
-            SERIALIZABLE_STRATEGY = Strategy.createNullSafe(Writer.this::writeSerializable, serializable);
+            SERIALIZABLE_STRATEGY = Strategy.createNullSafe(Writer.this::writeExternalizable, serializable);
         }
 
         return SERIALIZABLE_STRATEGY;
@@ -780,7 +780,7 @@ public final class Writer extends AptHelper {
                     block.addStatement("$L.writeFloatArray($L)", parcelName, name);
                     break;
                 default:
-                    writeSerializable(block, name, types.getArrayType(component));
+                    writeExternalizable(block, name, types.getArrayType(component));
             }
         }, types.getArrayType(component));
     }
@@ -806,11 +806,7 @@ public final class Writer extends AptHelper {
     }
 
     private void writeExternalizable(CodeBlock.Builder block, Object name, TypeMirror ignored) {
-        block.addStatement("$T.writeExternalizable($N, $L)", AidlUtil.class, parcelName, name);
-    }
-
-    private void writeSerializable(CodeBlock.Builder block, Object name, TypeMirror ignored) {
-        block.addStatement("$L.writeSerializable($L)", parcelName, name);
+        block.addStatement("$T.writeToObjectStream($N, $L)", AidlUtil.class, parcelName, name);
     }
 
     private static class Strategy implements WritingStrategy {

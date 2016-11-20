@@ -40,7 +40,7 @@ public final class ExternalizableTest3$$AidlServerImpl extends Binder {
                 final Externalizable returnValue = delegate.methodReturningTheExternalizable();
                 reply.writeNoException();
 
-                AidlUtil.writeExternalizable(reply, returnValue);
+                AidlUtil.writeToObjectStream(reply, returnValue);
 
                 return true;
             }

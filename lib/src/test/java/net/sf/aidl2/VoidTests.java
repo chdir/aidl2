@@ -20,6 +20,14 @@ public class VoidTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Aaidl2_use_versioning=false",
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void voidReturnValue() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("VoidTest.java"));
@@ -28,7 +36,7 @@ public class VoidTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("VoidTest$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -43,7 +51,7 @@ public class VoidTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("VoidTest2$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()
@@ -58,7 +66,7 @@ public class VoidTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("VoidTest3$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

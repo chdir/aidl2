@@ -38,7 +38,7 @@ public final class SomeSerializableReturn$$AidlClientImpl implements SomeSeriali
             delegate.transact(SomeSerializableReturn$$AidlServerImpl.TRANSACT_methodReturningParcelable, data, reply, 0);
             reply.readException();
 
-            return AidlUtil.readSafeSerializable(reply);
+            return AidlUtil.readFromObjectStream(reply);
         } finally {
             data.recycle();
             reply.recycle();

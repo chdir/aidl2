@@ -75,7 +75,7 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeString(anotherString);
 
-            data.writeSerializable(cunningType);
+            AidlUtil.writeToObjectStream(data, cunningType);
 
             delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_bigDeal, data, reply, 0);
             reply.readException();
@@ -96,7 +96,7 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeString(anotherString);
 
-            data.writeSerializable(cunningType);
+            AidlUtil.writeToObjectStream(data, cunningType);
 
             data.writeStrongBinder(MethodAndParamNameIsolation2 == null ? null : MethodAndParamNameIsolation2.asBinder());
 
@@ -119,11 +119,11 @@ public final class MethodAndParamNameIsolation2$$AidlClientImpl implements Metho
 
             data.writeString(anotherString);
 
-            data.writeSerializable(cunningType);
+            AidlUtil.writeToObjectStream(data, cunningType);
 
             data.writeStrongBinder(MethodAndParamNameIsolation2 == null ? null : MethodAndParamNameIsolation2.asBinder());
 
-            data.writeSerializable(RemoteException);
+            AidlUtil.writeToObjectStream(data, RemoteException);
 
             delegate.transact(MethodAndParamNameIsolation2$$AidlServerImpl.TRANSACT_cunningType, data, reply, 0);
             reply.readException();

@@ -52,12 +52,12 @@ public final class NonFinalAsAbstract$$AidlServerImpl extends Binder {
       } case TRANSACT_exMethod: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
-        final SomeNonFinalExternalizable nonFinalExParam = AidlUtil.readSafeExternalizable(data);
+        final SomeNonFinalExternalizable nonFinalExParam = AidlUtil.readFromObjectStream(data);
 
         final Externalizable returnValue = delegate.exMethod(nonFinalExParam);
         reply.writeNoException();
 
-        AidlUtil.writeExternalizable(reply, returnValue);
+        AidlUtil.writeToObjectStream(reply, returnValue);
 
         return true;
       }

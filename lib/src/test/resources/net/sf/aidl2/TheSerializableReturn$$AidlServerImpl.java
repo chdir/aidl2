@@ -39,7 +39,7 @@ public final class TheSerializableReturn$$AidlServerImpl extends Binder {
 
                 final Serializable returnValue = delegate.methodReturningParcelable();
                 reply.writeNoException();
-                reply.writeSerializable(returnValue);
+                AidlUtil.writeToObjectStream(reply, returnValue);
 
                 return true;
             }

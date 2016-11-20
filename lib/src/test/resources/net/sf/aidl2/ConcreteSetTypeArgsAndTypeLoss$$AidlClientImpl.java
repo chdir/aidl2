@@ -52,7 +52,7 @@ public final class ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl<X extends Call
             delegate.transact(ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl.TRANSACT_methodWithCOWArraySetParamAndHashSetReturn, data, reply, 0);
             reply.readException();
 
-            return AidlUtil.readSafeSerializable(reply);
+            return AidlUtil.readFromObjectStream(reply);
         } finally {
             data.recycle();
             reply.recycle();

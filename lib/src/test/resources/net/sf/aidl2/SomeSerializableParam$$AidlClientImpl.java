@@ -35,7 +35,7 @@ public final class SomeSerializableParam$$AidlClientImpl implements SomeSerializ
         try {
             data.writeInterfaceToken(SomeSerializableParam$$AidlServerImpl.DESCRIPTOR);
 
-            data.writeSerializable(serializable);
+            AidlUtil.writeToObjectStream(data, serializable);
 
             delegate.transact(SomeSerializableParam$$AidlServerImpl.TRANSACT_methodWithSerializableParameter, data, reply, 0);
             reply.readException();

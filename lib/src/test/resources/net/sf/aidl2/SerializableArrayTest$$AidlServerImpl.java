@@ -37,7 +37,7 @@ public final class SerializableArrayTest$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithSerializableArrayParameter: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                final File[] files = AidlUtil.readSafeSerializable(data);
+                final File[] files = AidlUtil.readFromObjectStream(data);
 
                 delegate.methodWithSerializableArrayParameter(files);
                 reply.writeNoException();

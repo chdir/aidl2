@@ -1,7 +1,5 @@
 package net.sf.aidl2.internal;
 
-import android.os.Binder;
-import android.os.IBinder;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -13,6 +11,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import net.sf.aidl2.AidlUtil;
 import net.sf.aidl2.internal.codegen.TypedExpression;
 import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.exceptions.ElementException;
@@ -25,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
@@ -32,6 +32,8 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+
+import static net.sf.aidl2.internal.ContractHasher.TRANSACTION_ID;
 
 final class StubGenerator extends AptHelper implements AidlGenerator {
     private static final ClassName loaderName = ClassName.bestGuess("InterfaceLoader");
@@ -44,8 +46,6 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
     private final NameAllocator baseAllocator = new NameAllocator();
 
-    private final List<AidlModel> models;
-
     private final MethodSpec onTransact;
 
     private final ParameterSpec code;
@@ -55,10 +55,8 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
     private final FieldSpec descriptor;
 
-    public StubGenerator(AidlProcessor.Environment environment, List<AidlModel> models) {
+    public StubGenerator(AidlProcessor.Environment environment) {
         super(environment);
-
-        this.models = models;
 
         onTransact = MethodSpec.overriding(super.onTransact.element).build();
 
@@ -80,14 +78,14 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         baseAllocator.newName("returnValue");
     }
 
-    public void make(Filer filer) throws ElementException, IOException {
-        for (AidlModel model : models) {
-            writeModel(model, filer);
-        }
+    public void make(List<? super JavaFile> files, AidlModel model) throws ElementException, IOException {
+        files.add(writeModel(model));
     }
 
-    private void writeModel(AidlModel model, Filer filer) throws IOException, net.sf.aidl2.internal.exceptions.ElementException {
+    private JavaFile writeModel(AidlModel model) throws IOException, net.sf.aidl2.internal.exceptions.ElementException {
         final NameAllocator modelAllocator = baseAllocator.clone();
+
+        final boolean enableVersioning = getBaseEnvironment().getConfig().isVersioningEnabled();
 
         final String name = model.serverImplName.toString();
 
@@ -100,7 +98,18 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addOriginatingElement(originatingInterface)
                 .addJavadoc(JAVADOC, loaderName)
-                .addAnnotation(Deprecated.class)
+                .addAnnotation(Deprecated.class);
+
+        String verField = null;
+        if (enableVersioning) {
+            verField = modelAllocator.newName("rpcVersionId");
+
+            implClassSpec.addField(FieldSpec.builder(long.class, verField, Modifier.STATIC, Modifier.FINAL)
+                    .initializer("$LL", model.rpcVersionId)
+                    .build());
+        }
+
+        implClassSpec
                 .addField(descriptor.toBuilder()
                         .initializer("$S", model.descriptor)
                         .build())
@@ -118,7 +127,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         }
 
         if (!model.methods.isEmpty()) {
-            final State aidlReader = new State(getBaseEnvironment(), modelAllocator)
+            final State aidlReader = new State(getBaseEnvironment(), modelAllocator, model.digest)
                     .allowUnchecked((model.suppressed & Util.SUPPRESS_UNCHECKED) != 0)
                     .assumeFinal(model.assumeFinal);
 
@@ -166,13 +175,18 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
                 implClassSpec.addField(transactId);
 
-                if (i == 0) {
+                if (i == 0 || i == 9001) {
                     onTransactSpec.beginControlFlow("case $N:", transactId);
                 } else {
                     onTransactSpec.nextControlFlow("case $N:", transactId);
                 }
 
                 final State methodReader = aidlReader.clone();
+
+                methodReader.versionCalc().writeInt(TRANSACTION_ID);
+                methodReader.versionCalc().writeInt(transactionId);
+                methodReader.versionCalc().writeBoolean(model.insecure);
+                methodReader.versionCalc().writeBoolean(method.oneWay);
 
                 if ((method.warningsSuppressedOnMethod & Util.SUPPRESS_UNCHECKED) != 0) {
                     methodReader.allowUnchecked(true);
@@ -254,6 +268,16 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                 onTransactSpec.addStatement("return true");
             }
 
+            if (enableVersioning) {
+                onTransactSpec.nextControlFlow("case $T.$N:", AidlUtil.class, "VERSION_TRANSACTION");
+                onTransactSpec.addStatement("$L.enforceInterface(this.getInterfaceDescriptor())", parcel.name);
+                onTransactSpec.addCode("\n");
+                onTransactSpec.addStatement("$N.writeNoException()", returnParcel.name);
+                onTransactSpec.addStatement("$N.writeLong($N)", returnParcel.name, verField);
+                onTransactSpec.addCode("\n");
+                onTransactSpec.addStatement("return true");
+            }
+
             // close last switch case
             onTransactSpec.endControlFlow();
 
@@ -277,10 +301,9 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
         final CharSequence pkg = elements.getPackageOf(originatingInterface).getQualifiedName();
 
-        JavaFile.builder(pkg.toString(), implClassSpec.build())
+        return JavaFile.builder(pkg.toString(), implClassSpec.build())
                 .addFileComment("AUTO-GENERATED FILE.  DO NOT MODIFY.")
-                .build()
-                .writeTo(filer);
+                .build();
     }
 
     private CodeBlock argList(AidlParamModel[] parameters, List<TypedExpression> params) {
@@ -299,7 +322,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
         return Util.literal(String.join(", ", Collections.nCopies(params.size(), "$L")), result.toArray());
     }
 
-    private TypedExpression readInParameter(CodeBlock.Builder code, State reader, String name) throws CodegenException {
+    private TypedExpression readInParameter(CodeBlock.Builder code, State reader, String name) throws CodegenException, IOException {
         final CodeBlock.Builder initializationCode = CodeBlock.builder();
 
         final TypedExpression assignmentCode = reader.buildReader(name)

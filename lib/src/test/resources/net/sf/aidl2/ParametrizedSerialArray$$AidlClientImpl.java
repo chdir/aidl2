@@ -35,7 +35,7 @@ public final class ParametrizedSerialArray$$AidlClientImpl implements Parametriz
     try {
       data.writeInterfaceToken(ParametrizedSerialArray$$AidlServerImpl.DESCRIPTOR);
 
-      data.writeSerializable(parametrizedArray);
+      AidlUtil.writeToObjectStream(data, parametrizedArray);
 
       delegate.transact(ParametrizedSerialArray$$AidlServerImpl.TRANSACT_methodWithParametrizedArrayParam, data, reply, 0);
       reply.readException();

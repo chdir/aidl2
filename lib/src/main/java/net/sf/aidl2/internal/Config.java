@@ -10,6 +10,7 @@ import javax.annotation.processing.Filer;
 
 public final class Config {
     public static final String OPT_LOGFILE = "aidl2_log_to_file";
+    public static final String OPT_VERSIONING = "aidl2_use_versioning";
     public static final String OPT_PRINT_TRACE = "aidl2_verbose";
     public static final String OPT_LIBRARY = "aidl2_library";
     public static final String OPT_SUPPRESS_ALL = "aidl2_dontwarn";
@@ -23,6 +24,7 @@ public final class Config {
         options.add(OPT_LIBRARY);
         options.add(OPT_SUPPRESS_ALL);
         options.add(OPT_PKG_NAME);
+        options.add(OPT_VERSIONING);
         return options;
     }
 
@@ -32,6 +34,7 @@ public final class Config {
     private File logFile;
     private boolean verbose;
     private boolean humorous;
+    private boolean versioningDisabled;
 
     public Config(Map<String, String> options) {
         isLibrary = Boolean.valueOf(options.get(OPT_LIBRARY));
@@ -44,6 +47,8 @@ public final class Config {
         }
         verbose = Boolean.valueOf(options.get(OPT_PRINT_TRACE));
         humorous = !Boolean.valueOf(OPT_DISABLE_EASTER_EGGS);
+        versioningDisabled = options.containsKey(OPT_VERSIONING)
+                && !Boolean.valueOf(options.get(OPT_VERSIONING));
     }
 
     public boolean isLibrary() {
@@ -76,5 +81,9 @@ public final class Config {
 
     public boolean isHumorous() {
         return humorous;
+    }
+
+    public boolean isVersioningEnabled() {
+        return !versioningDisabled;
     }
 }

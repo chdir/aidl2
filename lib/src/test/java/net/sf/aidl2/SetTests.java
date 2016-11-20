@@ -30,6 +30,7 @@ public class SetTests {
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
                         "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -49,6 +50,7 @@ public class SetTests {
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
                         "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()

@@ -35,7 +35,7 @@ public final class SerializableArrayTest$$AidlClientImpl implements Serializable
         try {
             data.writeInterfaceToken(SerializableArrayTest$$AidlServerImpl.DESCRIPTOR);
 
-            data.writeSerializable(files);
+            AidlUtil.writeToObjectStream(data, files);
 
             delegate.transact(SerializableArrayTest$$AidlServerImpl.TRANSACT_methodWithSerializableArrayParameter, data, reply, 0);
             reply.readException();

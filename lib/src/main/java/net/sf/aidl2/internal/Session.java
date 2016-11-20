@@ -1,5 +1,6 @@
 package net.sf.aidl2.internal;
 
+import com.squareup.javapoet.JavaFile;
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.exceptions.AnnotationException;
@@ -97,9 +98,21 @@ final class Session extends AptHelper implements Closeable {
             }
         }
 
-        new StubGenerator(getBaseEnvironment(), producedModels).make(getFiler());
+        final AidlGenerator stubGen = new StubGenerator(getBaseEnvironment());
+        final AidlGenerator proxyGen = new ProxyGenerator(getBaseEnvironment());
+        final List<JavaFile> generatedFiles = new ArrayList<>(2);
 
-        new ProxyGenerator(getBaseEnvironment(), producedModels).make(getFiler());
+        for (AidlModel model : producedModels) {
+            stubGen.make(generatedFiles, model);
+            proxyGen.make(generatedFiles, model);
+            model.finishGeneration();
+
+            for (JavaFile generated : generatedFiles) {
+                generated.writeTo(getFiler());
+            }
+
+            generatedFiles.clear();
+        }
 
         return true;
     }

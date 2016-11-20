@@ -27,7 +27,10 @@ public class AndroidInterfaceTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(AndroidInterfaceTests.class.getResource("IInterfaceTest3$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-Aaidl2_log_to_file=" + logFile.getFile())
+                .withCompilerOptions(new String[] {
+                        "-Aaidl2_log_to_file=" + logFile.getFile(),
+                        "-Aaidl2_use_versioning=false",
+                })
                 .processedWith(getAidl2Processor())
                 .compilesWithoutWarnings()
                 .and()

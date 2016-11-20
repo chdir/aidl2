@@ -21,6 +21,7 @@ public class BundleTests {
     private String[] usualArgs() {
         return new String[] {
                 "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Aaidl2_use_versioning=false",
                 "-Xlint:all"
         };
     }

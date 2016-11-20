@@ -6,6 +6,7 @@ import com.squareup.javapoet.NameAllocator;
 
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
+import net.sf.aidl2.ArgumentKind;
 import net.sf.aidl2.InterfaceLoader;
 import net.sf.aidl2.internal.codegen.Blocks;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
@@ -16,14 +17,8 @@ import net.sf.aidl2.internal.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayInputStream;
-import java.io.Externalizable;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
+import java.io.*;
 import java.util.List;
-import java.util.Map;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -40,6 +35,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 
+import static net.sf.aidl2.internal.ContractHasher.*;
 import static net.sf.aidl2.internal.util.Util.*;
 
 public final class Reader extends AptHelper {
@@ -76,6 +72,8 @@ public final class Reader extends AptHelper {
     private final TypeInvocation<ExecutableElement, ExecutableType> collectionAdd;
     private final TypeInvocation<ExecutableElement, ExecutableType> mapPut;
 
+    private final DataOutputStream versionCalc;
+
     public Reader(AidlProcessor.Environment environment, State state, CharSequence parcelName) {
         super(environment);
 
@@ -87,6 +85,7 @@ public final class Reader extends AptHelper {
         this.external = state.external;
         this.allocator = state.allocator;
         this.assumeFinal = state.assumeFinal;
+        this.versionCalc = state.versionCalc();
 
         this.sizeType = lookup("android.util.Size");
         this.sizeF = lookup("android.util.SizeF");
@@ -115,7 +114,7 @@ public final class Reader extends AptHelper {
     /**
      * Read a single return value from parcel.
      */
-    public TypedExpression read(CodeBlock.Builder block, TypeMirror type) throws CodegenException {
+    public TypedExpression read(CodeBlock.Builder block, TypeMirror type) throws CodegenException, IOException {
         final Strategy strategy = getStrategy(type);
 
         if (strategy != null) {
@@ -126,6 +125,8 @@ public final class Reader extends AptHelper {
             } else {
                 assignment = strategy.read(block);
             }
+
+            strategy.writeState(versionCalc);
 
             return new TypedExpression(assignment, strategy.returnType);
         }
@@ -141,18 +142,40 @@ public final class Reader extends AptHelper {
         // strip generics to prevent them from messing up creation code
         final TypeMirror capturedType = captureAll(type);
 
-        return Strategy.createNullSafe(init -> {
+        return new NullableWrapper(capturedType, inner);
+    }
+
+    private final class NullableWrapper extends Strategy {
+        private final TypeMirror captured;
+        private final Strategy inner;
+
+        private NullableWrapper(TypeMirror captured, Strategy delegate) {
+            super(null, delegate.returnType, delegate.kind, false);
+
+            this.captured = captured;
+            this.inner = delegate;
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder init) throws CodegenException {
             final String tmp = allocator.newName(selfName + "Tmp");
 
-            init.addStatement("final $T $N", capturedType, tmp);
+            init.addStatement("final $T $N", captured, tmp);
             init.beginControlFlow("if ($N.readByte() == -1)", parcelName);
             init.addStatement("$N = null", tmp);
             init.nextControlFlow("else");
-            init.addStatement("$N = $L", tmp, emitCasts(inner.returnType, capturedType, inner.read(init)));
+            init.addStatement("$N = $L", tmp, emitCasts(inner.returnType, captured, inner.read(init)));
             init.endControlFlow();
 
             return literal(tmp);
-        }, type);
+        }
+
+        @Override
+        public void writeState(DataOutputStream versionCalc) throws IOException {
+            versionCalc.write(NULL_CHECK);
+
+            inner.writeState(versionCalc);
+        }
     }
 
     private @Nullable Strategy getStrategy(TypeMirror type) throws CodegenException {
@@ -165,7 +188,7 @@ public final class Reader extends AptHelper {
             case LONG:
             case DOUBLE:
             case FLOAT:
-                return Strategy.createNullSafe($ -> readPrimitive((PrimitiveType) type), type);
+                return createNullSafe($ -> readPrimitive((PrimitiveType) type), type);
             case ARRAY:
                 return getArrayStrategy((ArrayType) type);
             case DECLARED:
@@ -258,7 +281,13 @@ public final class Reader extends AptHelper {
         return null;
     }
 
-    private final Strategy VOID_STRATEGY = Strategy.createNullSafe($ -> literal("null"), types.getNullType());
+    private final Strategy VOID_STRATEGY = new Strategy(
+            $ -> literal("null"),
+            types.getNullType(),
+            ArgumentKind.AUTO, false)
+    {
+        public void writeState(DataOutputStream versionCalc) throws IOException {}
+    };
 
     private Strategy getWrapperTypeStrategy(DeclaredType type) {
         final CharSequence name = getQualifiedName(type);
@@ -276,7 +305,7 @@ public final class Reader extends AptHelper {
                     final PrimitiveType primitiveVariety = types.unboxedType(type);
 
                     if (primitiveVariety != null) {
-                        return Strategy.create($ -> readPrimitive(primitiveVariety), primitiveVariety);
+                        return newStrategy($ -> readPrimitive(primitiveVariety), primitiveVariety);
                     }
                     break;
                 case "java.lang.Void":
@@ -315,8 +344,9 @@ public final class Reader extends AptHelper {
     }
 
     private Strategy getOldIInterfaceStrategy(TypeElement stubClass) {
-        return Strategy.createNullSafe(block -> literal("$T.asInterface($N.readStrongBinder())", stubClass, parcelName),
-                stubClass.getEnclosingElement().asType());
+        final ReadingStrategy s = block -> literal("$T.asInterface($N.readStrongBinder())", stubClass, parcelName);
+
+        return createNullSafe(s, stubClass.getEnclosingElement().asType(), ArgumentKind.BINDER);
     }
 
     private Strategy getInterfaceLoaderStrategy(DeclaredType type, boolean nullable) {
@@ -340,12 +370,12 @@ public final class Reader extends AptHelper {
                 return literal(tmpInterface);
             };
 
-            return Strategy.createNullSafe(strategy, jokeLub(captured, theIInterface));
+            return createNullSafe(strategy, jokeLub(captured, theIInterface), ArgumentKind.BINDER);
         } else {
             strategy = block -> literal("$T.asInterface($N.readStrongBinder(), $T.class)",
                     InterfaceLoader.class, parcelName, raw);
 
-            return Strategy.createNullSafe(strategy, jokeLub(type, theIInterface));
+            return createNullSafe(strategy, jokeLub(type, theIInterface), ArgumentKind.BINDER);
         }
     }
 
@@ -372,7 +402,7 @@ public final class Reader extends AptHelper {
         // strip generics to prevent them from messing up creation code
         final TypeMirror capturedType = captureAll(type);
 
-        return Strategy.create(block -> {
+        return newStrategy(block -> {
             final String ois = allocator.newName("objectInputStream");
             final String xtrnlzbl = allocator.newName(selfName + "Externalizable");
             final String err = allocator.newName("e");
@@ -396,7 +426,7 @@ public final class Reader extends AptHelper {
             block.endControlFlow();
 
             return literal(xtrnlzbl);
-        }, jokeLub(capturedType, externalizable));
+        }, jokeLub(capturedType, externalizable), ArgumentKind.EXTERNALIZABLE);
     }
 
     private Strategy getArrayStrategy(ArrayType arrayType) throws CodegenException {
@@ -429,31 +459,31 @@ public final class Reader extends AptHelper {
     @SuppressWarnings("ThrowFromFinallyBlock")
     private Strategy getBuiltinStrategy(TypeMirror type) throws CodegenException {
         if (types.isAssignable(type, sizeF)) {
-            return Strategy.create($ -> literal("$L.readSizeF()", parcelName), sizeF);
+            return newStrategy($ -> literal("$L.readSizeF()", parcelName), sizeF);
         } else if (types.isAssignable(type, sizeType)) {
-            return Strategy.create($ -> literal("$L.readSize()", parcelName), sizeType);
+            return newStrategy($ -> literal("$L.readSize()", parcelName), sizeType);
         }
         // supported via native methods, always nullable
         else if (types.isAssignable(type, string)) {
-            return Strategy.createNullSafe($ -> literal("$L.readString()", parcelName), string);
+            return createNullSafe($ -> literal("$L.readString()", parcelName), string);
         } else if (types.isAssignable(type, iBinder)) {
-            return Strategy.createNullSafe($ -> literal("$L.readStrongBinder()", parcelName), iBinder);
+            return createNullSafe($ -> literal("$L.readStrongBinder()", parcelName), iBinder);
         }
         // supported via non-standard method, always nullable
         else if (types.isAssignable(type, charSequence)) {
-            return Strategy.createNullSafe($ -> literal("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($L)", textUtils, parcelName), charSequence);
+            return createNullSafe($ -> literal("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($L)", textUtils, parcelName), charSequence);
         }
         // containers, so naturally nullable
         else if (types.isAssignable(type, sparseBoolArray)) {
-            return Strategy.createNullSafe($ -> literal("$L.readSparseBooleanArray()", parcelName), sparseBoolArray);
+            return createNullSafe($ -> literal("$L.readSparseBooleanArray()", parcelName), sparseBoolArray);
         } else if (types.isAssignable(type, bundle)) {
-            return Strategy.createNullSafe($ -> literal("$L.readBundle(getClass().getClassLoader())", parcelName), bundle);
+            return createNullSafe($ -> literal("$L.readBundle(getClass().getClassLoader())", parcelName), bundle);
         } else if (types.isAssignable(type, persistable)) {
-            return Strategy.createNullSafe($ -> literal("$L.readPersistableBundle(getClass().getClassLoader())", parcelName), persistable);
+            return createNullSafe($ -> literal("$L.readPersistableBundle(getClass().getClassLoader())", parcelName), persistable);
         } else {
             if (isEffectivelyObject(type)) {
                 if (allowUnchecked) {
-                    return Strategy.createNullSafe($ -> literal("$N.readValue(getClass().getClassLoader())", parcelName), theObject);
+                    return createNullSafe($ -> literal("$N.readValue(getClass().getClassLoader())", parcelName), theObject);
                 }
 
                 String errMsg =
@@ -512,10 +542,9 @@ public final class Reader extends AptHelper {
             }
         }
 
-        return Strategy.create($ -> literal("$T.CREATOR.createFromParcel($N)", rawType, parcelName), instantiated);
+        return newStrategy($ -> literal("$T.CREATOR.createFromParcel($N)", rawType, parcelName), instantiated);
     }
 
-    // Container, so nullable by design
     private @NotNull  Strategy getSpecialArrayStrategy(Strategy readingStrategy, TypeMirror actualComponent) {
         if (readingStrategy == VOID_STRATEGY) {
             return VOID_STRATEGY;
@@ -523,38 +552,51 @@ public final class Reader extends AptHelper {
 
         final TypeMirror resultType = makeGenericArray(actualComponent);
 
-        // required to determine whether we need to make a cast
-        final TypeMirror returnedType = readingStrategy.returnType;
+        final boolean nullable1 = Util.isNullable(actualComponent, this.nullable);
 
-        return Strategy.createNullSafe(init -> {
+        final Strategy strategyToUse;
+
+        if (nullable1 && readingStrategy.needNullHandling) {
+            strategyToUse = getNullableStrategy(actualComponent, readingStrategy);
+        } else {
+            strategyToUse = readingStrategy;
+        }
+
+        return new SpecialArray(resultType, strategyToUse);
+    }
+
+    // Container, so nullable by design
+    private final class SpecialArray extends Strategy {
+        private final TypeMirror component;
+        private final Strategy strategy;
+
+        private SpecialArray(TypeMirror componentType, Strategy componentStrategy) {
+            super(null, types.getArrayType(componentType), ArgumentKind.SEQUENCE, false);
+
+            this.component = componentType;
+            this.strategy = componentStrategy;
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder init) throws CodegenException {
             final String array = allocator.newName(selfName + "Array");
             final String length = allocator.newName(selfName + "Length");
             final String i = allocator.newName("i");
 
             // TODO: properly propagate nullability both upwards and downwards
             //if (nullable) {
-            init.addStatement("final $T[] $N", resultType, array);
+            init.addStatement("final $T[] $N", component, array);
             init.addStatement("final int $N = $N.readInt()", length, parcelName);
             init.beginControlFlow("if ($N < 0)", length);
             init.addStatement("$N = null", array);
             init.nextControlFlow("else");
-            init.addStatement("$N = new $L", array, Blocks.arrayInit(types, resultType, length));
+            init.addStatement("$N = new $L", array, Blocks.arrayInit(types, component, length));
             //} else {
             //    init.addStatement("final $T[] $N = new $L", resultType, array, Blocks.arrayInit(resultType, literal("$N.readInt()", parcelName)));
             //}
 
-            final boolean nullable1 = Util.isNullable(actualComponent, this.nullable);
-
-            final Strategy strategyToUse;
-
-            if (nullable1 && readingStrategy.needNullHandling) {
-                strategyToUse = getNullableStrategy(actualComponent, readingStrategy);
-            } else {
-                strategyToUse = readingStrategy;
-            }
-
             init.beginControlFlow("for (int $N = 0; $N < $N.length; $N++)", i, i, array, i);
-            init.addStatement("$N[$N] = $L", array, i, emitCasts(returnedType, resultType, strategyToUse.read(init)));
+            init.addStatement("$N[$N] = $L", array, i, emitCasts(strategy.returnType, component, strategy.read(init)));
             init.endControlFlow();
 
             //if (nullable1) {
@@ -562,7 +604,14 @@ public final class Reader extends AptHelper {
             //}
 
             return literal("$N", array);
-        }, types.getArrayType(resultType));
+        }
+
+        @Override
+        public void writeState(DataOutputStream versionCalc) throws IOException {
+            super.writeState(versionCalc);
+
+            strategy.writeState(versionCalc);
+        }
     }
 
     private Strategy getMapStrategy(TypeMirror mapType) throws CodegenException {
@@ -653,8 +702,7 @@ public final class Reader extends AptHelper {
     }
 
     private boolean isSerialStrategy(Strategy strategy) {
-        return strategy.getClass() == ExternalizableStrategy.class ||
-                strategy.getClass() == SerializableStrategy.class;
+        return strategy.getClass() == SerializableStrategy.class;
     }
 
     private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
@@ -849,47 +897,75 @@ public final class Reader extends AptHelper {
             Strategy keyStrategy,
             Strategy valueStrategy,
             boolean elementIsNullable) {
-        return Strategy.createNullSafe(init -> {
+        final Strategy keyStrategyToUse;
+
+        if (elementIsNullable && keyStrategy.needNullHandling) {
+            keyStrategyToUse = getNullableStrategy(keyType, keyStrategy);
+        } else {
+            keyStrategyToUse = keyStrategy;
+        }
+
+        final Strategy valueStrategyToUse;
+
+        if (elementIsNullable && valueStrategy.needNullHandling) {
+            valueStrategyToUse = getNullableStrategy(valueType, valueStrategy);
+        } else {
+            valueStrategyToUse = valueStrategy;
+        }
+
+        return new SimpleMap(base, captured, keyType, valueType, keyStrategyToUse, valueStrategyToUse);
+    }
+
+    private class SimpleMap extends Strategy {
+        final TypeMirror captured;
+        final TypeMirror keyType;
+        final TypeMirror valueType;
+        final Strategy keyStrategy;
+        final Strategy valueStrategy;
+
+        private SimpleMap(TypeMirror type, TypeMirror captured,
+                          TypeMirror keyType, TypeMirror valueType,
+                          Strategy keyStrategy, Strategy valueStrategy) {
+            super(null, type, ArgumentKind.MAP, false);
+
+            this.captured = captured;
+            this.keyType = keyType;
+            this.valueType = valueType;
+            this.keyStrategy = keyStrategy;
+            this.valueStrategy = valueStrategy;
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder init) throws CodegenException {
             final String collection = allocator.newName(selfName + "Map");
             final String size = allocator.newName(selfName + "Size");
             final String k = allocator.newName("k");
 
-            init.addStatement("final $T $N", base, collection);
+            init.addStatement("final $T $N", returnType, collection);
             init.addStatement("final int $N = $N.readInt()", size, parcelName);
             init.beginControlFlow("if ($N < 0)", size);
             init.addStatement("$N = null", collection);
             init.nextControlFlow("else");
             init.addStatement("$N = $L", collection, emitDefaultConstructorCall(captured));
 
-            final Strategy keyStrategyToUse;
-
-            if (elementIsNullable && keyStrategy.needNullHandling) {
-                keyStrategyToUse = getNullableStrategy(keyType, keyStrategy);
-            } else {
-                keyStrategyToUse = keyStrategy;
-            }
-
-            final Strategy valueStrategyToUse;
-
-            if (elementIsNullable && valueStrategy.needNullHandling) {
-                valueStrategyToUse = getNullableStrategy(valueType, valueStrategy);
-            } else {
-                valueStrategyToUse = valueStrategy;
-            }
-
-            final TypeMirror keyResultType = keyStrategy.returnType;
-            final TypeMirror valueResultType = valueStrategy.returnType;
-
             init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", k, k, size, k);
             init.addStatement("$N.put($L, $L)", collection,
-                    emitCasts(keyResultType, captureAll(keyType), keyStrategyToUse.read(init)),
-                    emitCasts(valueResultType, captureAll(valueType), valueStrategyToUse.read(init)));
+                    emitCasts(keyStrategy.returnType, captureAll(keyType), keyStrategy.read(init)),
+                    emitCasts(valueStrategy.returnType, captureAll(valueType), valueStrategy.read(init)));
             init.endControlFlow();
 
             init.endControlFlow();
 
             return literal(collection);
-        }, base);
+        }
+
+        @Override
+        public void writeState(DataOutputStream versionCalc) throws IOException {
+            super.writeState(versionCalc);
+
+            keyStrategy.writeState(versionCalc);
+            valueStrategy.writeState(versionCalc);
+        }
     }
 
     private Strategy getCapacityMapStrategy(
@@ -900,47 +976,55 @@ public final class Reader extends AptHelper {
             Strategy keyStrategy,
             Strategy valueStrategy,
             boolean elementIsNullable) {
-        return Strategy.createNullSafe(init -> {
+        final Strategy keyStrategyToUse;
+
+        if (elementIsNullable && keyStrategy.needNullHandling) {
+            keyStrategyToUse = getNullableStrategy(keyType, keyStrategy);
+        } else {
+            keyStrategyToUse = keyStrategy;
+        }
+
+        final Strategy valueStrategyToUse;
+
+        if (elementIsNullable && valueStrategy.needNullHandling) {
+            valueStrategyToUse = getNullableStrategy(valueType, valueStrategy);
+        } else {
+            valueStrategyToUse = valueStrategy;
+        }
+
+        return new CapacityMap(base, captured, keyType, valueType, keyStrategyToUse, valueStrategyToUse);
+    }
+
+    private class CapacityMap extends SimpleMap {
+        private CapacityMap(TypeMirror type, TypeMirror captured,
+                            TypeMirror keyType, TypeMirror valueType,
+                            Strategy keyStrategy, Strategy valueStrategy) {
+            super(type, captured, keyType, valueType, keyStrategy, valueStrategy);
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder init) throws CodegenException {
             final String collection = allocator.newName(selfName + "Map");
             final String size = allocator.newName(selfName + "Size");
             final String k = allocator.newName("k");
 
-            init.addStatement("final $T $N", base, collection);
+            init.addStatement("final $T $N", returnType, collection);
             init.addStatement("final int $N = $N.readInt()", size, parcelName);
             init.beginControlFlow("if ($N < 0)", size);
             init.addStatement("$N = null", collection);
             init.nextControlFlow("else");
             init.addStatement("$N = $L", collection, emitMapConstructorCall(captured, size));
 
-            final Strategy keyStrategyToUse;
-
-            if (elementIsNullable && keyStrategy.needNullHandling) {
-                keyStrategyToUse = getNullableStrategy(keyType, keyStrategy);
-            } else {
-                keyStrategyToUse = keyStrategy;
-            }
-
-            final Strategy valueStrategyToUse;
-
-            if (elementIsNullable && valueStrategy.needNullHandling) {
-                valueStrategyToUse = getNullableStrategy(valueType, valueStrategy);
-            } else {
-                valueStrategyToUse = valueStrategy;
-            }
-
-            final TypeMirror keyResultType = keyStrategy.returnType;
-            final TypeMirror valueResultType = valueStrategy.returnType;
-
             init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", k, k, size, k);
             init.addStatement("$N.put($L, $L)", collection,
-                    emitCasts(keyResultType, captureAll(keyType), keyStrategyToUse.read(init)),
-                    emitCasts(valueResultType, captureAll(valueType), valueStrategyToUse.read(init)));
+                    emitCasts(keyStrategy.returnType, captureAll(keyType), keyStrategy.read(init)),
+                    emitCasts(valueStrategy.returnType, captureAll(valueType), valueStrategy.read(init)));
             init.endControlFlow();
 
             init.endControlFlow();
 
             return literal(collection);
-        }, base);
+        };
     }
 
     private Strategy getSimpleCollectionStrategy(
@@ -949,36 +1033,59 @@ public final class Reader extends AptHelper {
             TypeMirror elementType,
             Strategy strategy,
             boolean elementIsNullable) {
-        return Strategy.createNullSafe(init -> {
+        Strategy strategyToUse;
+
+        if (elementIsNullable && strategy.needNullHandling) {
+            strategyToUse = getNullableStrategy(elementType, strategy);
+        } else {
+            strategyToUse = strategy;
+        }
+
+        return new SimpleCollection(base, elementType, captured, strategyToUse);
+    }
+
+    private class SimpleCollection extends Strategy {
+        final TypeMirror elementType;
+
+        final TypeMirror captured;
+        final Strategy strategy;
+
+        private SimpleCollection(TypeMirror type, TypeMirror elementType,
+                                 TypeMirror captured, Strategy elementStrategy) {
+            super(null, type, ArgumentKind.SEQUENCE, false);
+
+            this.elementType = elementType;
+
+            this.captured = captured;
+            this.strategy = elementStrategy;
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder init) throws CodegenException {
             final String collection = allocator.newName(selfName + "Collection");
             final String size = allocator.newName(selfName + "Size");
             final String i = allocator.newName("j");
 
-            init.addStatement("final $T $N", base, collection);
+            init.addStatement("final $T $N", returnType, collection);
             init.addStatement("final int $N = $N.readInt()", size, parcelName);
             init.beginControlFlow("if ($N < 0)", size);
             init.addStatement("$N = null", collection);
             init.nextControlFlow("else");
             init.addStatement("$N = $L", collection, emitDefaultConstructorCall(captured));
-
-            final Strategy strategyToUse;
-
-            if (elementIsNullable && strategy.needNullHandling) {
-                strategyToUse = getNullableStrategy(elementType, strategy);
-            } else {
-                strategyToUse = strategy;
-            }
-
-            final TypeMirror resultType = strategy.returnType;
-
             init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", i, i, size, i);
-            init.addStatement("$N.add($L)", collection, emitCasts(resultType, captureAll(elementType), strategyToUse.read(init)));
+            init.addStatement("$N.add($L)", collection, emitCasts(strategy.returnType, captureAll(elementType), strategy.read(init)));
             init.endControlFlow();
-
             init.endControlFlow();
 
             return literal(collection);
-        }, base);
+        }
+
+        @Override
+        public void writeState(DataOutputStream versionCalc) throws IOException {
+            super.writeState(versionCalc);
+
+            strategy.writeState(versionCalc);
+        }
     }
 
     private Strategy getCapacityAwareCollectionStrategy(
@@ -986,121 +1093,139 @@ public final class Reader extends AptHelper {
             TypeMirror captured,
             TypeMirror elementType,
             Strategy strategy,
-            boolean elementIsNullable) {
-        return Strategy.createNullSafe(init -> {
+            boolean elementIsNullable)
+    {
+        final Strategy strategyToUse;
+
+        if (elementIsNullable && strategy.needNullHandling) {
+            strategyToUse = getNullableStrategy(elementType, strategy);
+        } else {
+            strategyToUse = strategy;
+        }
+
+        return new CapacityAwareCollection(base, elementType, captured, strategyToUse);
+    }
+
+    // Always nullable by design
+    private final class CapacityAwareCollection extends SimpleCollection {
+        private CapacityAwareCollection(TypeMirror type, TypeMirror elementType,
+                                        TypeMirror captured, Strategy elementStrategy) {
+            super(type, elementType, captured, elementStrategy);
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder init) throws CodegenException {
             final String collection = allocator.newName(selfName + "Collection");
             final String size = allocator.newName(selfName + "Size");
             final String i = allocator.newName("j");
 
-            init.addStatement("final $T $N", base, collection);
+            init.addStatement("final $T $N", returnType, collection);
             init.addStatement("final int $N = $N.readInt()", size, parcelName);
             init.beginControlFlow("if ($N < 0)", size);
             init.addStatement("$N = null", collection);
             init.nextControlFlow("else");
             init.addStatement("$N = $L", collection, emitCapacityConstructorCall(captured, size));
-
-            final Strategy strategyToUse;
-
-            if (elementIsNullable && strategy.needNullHandling) {
-                strategyToUse = getNullableStrategy(elementType, strategy);
-            } else {
-                strategyToUse = strategy;
-            }
-
-            final TypeMirror resultType = strategy.returnType;
-
             init.beginControlFlow("for (int $N = 0; $N < $N; $N++)", i, i, size, i);
-            init.addStatement("$N.add($L)", collection, emitCasts(resultType, captureAll(elementType), strategyToUse.read(init)));
+            init.addStatement("$N.add($L)", collection, emitCasts(strategy.returnType, captureAll(elementType), strategy.read(init)));
             init.endControlFlow();
 
             init.endControlFlow();
 
             return literal(collection);
-        }, base);
+        }
     }
 
     private Strategy getSerializableStrategy(TypeMirror type) {
         return new SerializableStrategy(jokeLub(type, serializable));
     }
 
-    // Always nullable by design
-    private final class SerializableStrategy extends Strategy {
-        private final CodeBlock block = readSerializable();
-
-        private SerializableStrategy(TypeMirror returnTypeRefined) {
-            super(null, returnTypeRefined, false);
-        }
-
-        @Override
-        public CodeBlock read(CodeBlock.Builder unused) {
-            return block;
-        }
-    }
-
     private Strategy getUnknownExternalizableStrategy(TypeMirror type) {
-        return new ExternalizableStrategy(jokeLub(type, externalizable));
+        return new SerializableStrategy(jokeLub(type, externalizable));
     }
-
-    // Always nullable by design
-    private final class ExternalizableStrategy extends Strategy {
-        private final CodeBlock block = literal("$T.readSafeExternalizable($N)", AidlUtil.class, parcelName);
-
-        private ExternalizableStrategy(TypeMirror returnTypeRefined) {
-            super(null, returnTypeRefined, false);
-        }
-
-        @Override
-        public CodeBlock read(CodeBlock.Builder unused) {
-            return block;
-        }
-    }
-
-    // Always nullable by design
-    private Strategy UNKNOWN_PARCELABLE_STRATEGY;
 
     private Strategy getUnknownParcelableStrategy(TypeMirror type) {
-        if (UNKNOWN_PARCELABLE_STRATEGY == null) {
-            UNKNOWN_PARCELABLE_STRATEGY = Strategy.createNullSafe(new ReadingStrategy() {
-                private final CodeBlock block = literal("$L.readParcelable(getClass().getClassLoader())", parcelName);
+        return new BaseParcelableStrategy(jokeLub(type, parcelable));
+    }
 
-                @Override
-                public CodeBlock read(CodeBlock.Builder unused) {
-                    return block;
-                }
-            }, jokeLub(type, parcelable));
+    // Always nullable by design
+    private final class SerializableStrategy extends Strategy {
+        private final CodeBlock block = literal("$T.readFromObjectStream($N)", AidlUtil.class, parcelName);
+
+        private SerializableStrategy(TypeMirror returnTypeRefined) {
+            super(null, returnTypeRefined, ArgumentKind.SERIALIZABLE, false);
         }
 
-        return UNKNOWN_PARCELABLE_STRATEGY;
+        @Override
+        public CodeBlock read(CodeBlock.Builder unused) {
+            return block;
+        }
+    }
+
+    // Always nullable by design
+    private final class BaseParcelableStrategy extends Strategy {
+        private final CodeBlock block = literal("$L.readParcelable(getClass().getClassLoader())", parcelName);
+
+        private BaseParcelableStrategy(TypeMirror returnTypeRefined) {
+            super(null, returnTypeRefined, ArgumentKind.PARCELABLE, false);
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder unused) {
+            return block;
+        }
     }
 
     // Container, so nullable by design
     private Strategy getPrimitiveArrayStrategy(PrimitiveType component) {
-        return Strategy.createNullSafe(block -> {
-            final TypeKind componentKind = component.getKind();
+        final TypeKind componentKind = component.getKind();
 
-            switch (componentKind) {
-                case BYTE:
-                    return literal("$N.createByteArray()", parcelName);
-                case INT:
-                    return literal("$N.createIntArray()", parcelName);
-                case BOOLEAN:
-                    return literal("$N.createBooleanArray()", parcelName);
-                case CHAR:
-                    return literal("$N.createCharArray()", parcelName);
-                case LONG:
-                    return literal("$N.createLongArray()", parcelName);
-                case DOUBLE:
-                    return literal("$N.createDoubleArray()", parcelName);
-                case FLOAT:
-                    return literal("$N.createFloatArray()", parcelName);
-                default:
-                    return readSerializable();
-            }
-        }, types.getArrayType(component));
+        final CodeBlock block;
+
+        switch (componentKind) {
+            case BYTE:
+                block = literal("$N.createByteArray()", parcelName);
+                break;
+            case INT:
+                block = literal("$N.createIntArray()", parcelName);
+                break;
+            case BOOLEAN:
+                block = literal("$N.createBooleanArray()", parcelName);
+                break;
+            case CHAR:
+                block = literal("$N.createCharArray()", parcelName);
+                break;
+            case LONG:
+                block = literal("$N.createLongArray()", parcelName);
+                break;
+            case DOUBLE:
+                block = literal("$N.createDoubleArray()", parcelName);
+                break;
+            case FLOAT:
+                block = literal("$N.createFloatArray()", parcelName);
+                break;
+            default:
+                return getSerializableStrategy(types.getArrayType(component));
+        }
+
+        return new PrimitiveArrayStrategy(init -> block, types.getArrayType(component));
     }
 
-    private CodeBlock readSerializable() {
-        return literal("$T.readSafeSerializable($N)", AidlUtil.class, parcelName);
+    private final class PrimitiveArrayStrategy extends Strategy {
+        private final TypeKind kind;
+
+        private PrimitiveArrayStrategy(ReadingStrategy delegate, TypeMirror type) {
+            super(delegate, type, ArgumentKind.AUTO, false);
+
+            this.kind = type.getKind();
+        }
+
+        @Override
+        public void writeState(DataOutputStream versionCalc) throws IOException {
+            super.writeState(versionCalc);
+
+            versionCalc.write(PRIMITIVE_ARRAY);
+            versionCalc.write(kind.ordinal());
+        }
     }
 
     private CodeBlock readPrimitive(PrimitiveType type) {
@@ -1124,32 +1249,64 @@ public final class Reader extends AptHelper {
         CodeBlock read(CodeBlock.Builder block) throws CodegenException;
     }
 
-    private static class Strategy implements ReadingStrategy {
+    private class Strategy implements ReadingStrategy {
         private final ReadingStrategy delegate;
         private final boolean needNullHandling;
-        private final TypeMirror returnType;
+        private final ArgumentKind kind;
 
-        private Strategy(ReadingStrategy delegate, TypeMirror returnTypeRefined, boolean needNullHandling) {
+        final TypeMirror returnType;
+
+        private Strategy(ReadingStrategy delegate, TypeMirror returnTypeRefined, ArgumentKind kind, boolean needNullHandling) {
             this.delegate = delegate;
-            this.returnType = returnTypeRefined;
             this.needNullHandling = needNullHandling;
+            this.kind = kind;
+
+            this.returnType = returnTypeRefined;
         }
 
-        public static Strategy create(ReadingStrategy delegate) {
-            return new Strategy(delegate, null, true);
-        }
-
-        public static Strategy create(ReadingStrategy delegate, TypeMirror returnType) {
-            return new Strategy(delegate, returnType, true);
-        }
-
-        public static Strategy createNullSafe(ReadingStrategy delegate, TypeMirror returnType) {
-            return new Strategy(delegate, returnType, false);
+        public void writeState(DataOutputStream versionCalc) throws IOException {
+            versionCalc.writeInt("returnValue".equals(selfName) ? RET_VAL : INPUT_ARGUMENT);
+            versionCalc.writeInt(kind.ordinal());
         }
 
         @Override
         public CodeBlock read(CodeBlock.Builder block) throws CodegenException {
             return delegate.read(block);
         }
+    }
+
+    public Strategy createNullSafe(ReadingStrategy delegate, TypeMirror returnType, ArgumentKind kind) {
+        return new Strategy(delegate, returnType, kind, false);
+    }
+
+    public Strategy newStrategy(ReadingStrategy delegate, TypeMirror returnType, ArgumentKind kind) {
+        return new Strategy(delegate, returnType, kind, true);
+    }
+
+    public Strategy newStrategy(ReadingStrategy delegate, TypeMirror returnType) {
+        return genericAuto(delegate, returnType, true);
+    }
+
+    public Strategy createNullSafe(ReadingStrategy delegate, TypeMirror returnType) {
+        return genericAuto(delegate, returnType, false);
+    }
+
+    private Strategy genericAuto(ReadingStrategy delegate, TypeMirror returnType, boolean nullSafe) {
+        return new Strategy(delegate, returnType, ArgumentKind.AUTO, nullSafe) {
+            @Override
+            public void writeState(DataOutputStream versionCalc) throws IOException {
+                super.writeState(versionCalc);
+
+                if (returnType.getKind().isPrimitive()) {
+                    versionCalc.writeInt(PRIMITIVE);
+                    versionCalc.writeInt(returnType.getKind().ordinal());
+                } else {
+                    final Name qualified = getQualifiedName((DeclaredType) returnType);
+                    versionCalc.writeInt(TYPE_NAME);
+                    versionCalc.writeUTF(qualified == null ? returnType.toString() : qualified.toString());
+                    versionCalc.writeByte(0);
+                }
+            }
+        };
     }
 }

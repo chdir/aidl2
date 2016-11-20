@@ -53,7 +53,7 @@ public final class ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl extends Binder
                 final Serializable returnValue = delegate.methodWithCOWArraySetParamAndHashSetReturn((CopyOnWriteArraySet) objectListCollection);
                 reply.writeNoException();
 
-                reply.writeSerializable(returnValue);
+                AidlUtil.writeToObjectStream(reply, returnValue);
 
                 return true;
             }

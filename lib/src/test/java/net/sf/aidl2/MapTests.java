@@ -16,6 +16,14 @@ public class MapTests {
     @Rule
     public LogFileRule logFile = new LogFileRule();
 
+    private String[] usualArgs() {
+        return new String[] {
+                "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Aaidl2_use_versioning=false",
+                "-Xlint:all"
+        };
+    }
+
     @Test
     public void abstractListsSimple() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("SimpleMap.java"));
@@ -24,7 +32,7 @@ public class MapTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("SimpleMap$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
-                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

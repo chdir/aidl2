@@ -39,7 +39,7 @@ public final class ExtendingInterface$$AidlClientImpl implements ExtendingInterf
             delegate.transact(ExtendingInterface$$AidlServerImpl.TRANSACT_call, data, reply, 0);
             reply.readException();
 
-            return AidlUtil.readSafeSerializable(reply);
+            return AidlUtil.readFromObjectStream(reply);
         } finally {
             data.recycle();
             reply.recycle();

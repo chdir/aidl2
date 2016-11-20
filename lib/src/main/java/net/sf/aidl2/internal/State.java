@@ -1,11 +1,17 @@
 package net.sf.aidl2.internal;
 
 import com.squareup.javapoet.NameAllocator;
+import net.sf.aidl2.internal.util.NullStream;
 
 import javax.lang.model.type.TypeMirror;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 class State implements Cloneable {
-    private final net.sf.aidl2.internal.AidlProcessor.Environment environment;
+    private final AidlProcessor.Environment environment;
 
     NameAllocator allocator;
     boolean external;
@@ -15,10 +21,12 @@ class State implements Cloneable {
     boolean assumeFinal;
     TypeMirror type;
     CharSequence name;
+    ContractHasher digest;
 
-    public State(AidlProcessor.Environment environment, NameAllocator allocator) {
+    public State(AidlProcessor.Environment environment, NameAllocator allocator, ContractHasher digest) {
         this.environment = environment;
         this.allocator = allocator;
+        this.digest = digest;
     }
 
     public State allowUnchecked(boolean allowUnchecked) {
@@ -42,6 +50,10 @@ class State implements Cloneable {
     public State external(boolean external) {
         this.external = external;
         return this;
+    }
+
+    public DataOutputStream versionCalc() {
+        return digest;
     }
 
     @Override

@@ -21,6 +21,7 @@ public class ParcelableTests {
     private String[] usualArgs() {
         return new String[] {
                 "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                "-Aaidl2_use_versioning=false",
                 "-Xlint:all"
         };
     }
@@ -96,6 +97,7 @@ public class ParcelableTests {
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
                         "-Xlint:-processing",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
@@ -145,6 +147,7 @@ public class ParcelableTests {
                 .withCompilerOptions(new String[] {
                         "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
                         "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()

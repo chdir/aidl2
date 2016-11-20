@@ -167,7 +167,7 @@ public final class TransactionIdOrder$$AidlClientImpl implements TransactionIdOr
       reply.recycle();
     }
   }
-  
+
   @Override
   public Parcelable someMethod2() throws RemoteException {
     Parcel data = Parcel.obtain();

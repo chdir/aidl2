@@ -84,7 +84,7 @@ public final class AbstractListSimpleNested$$AidlClientImpl implements AbstractL
                     } else {
                         returnValueCollection_ = new ArrayList<>(returnValueSize_);
                         for (int j_ = 0; j_ < returnValueSize_; j_++) {
-                            returnValueCollection_.add(AidlUtil.readSafeSerializable(reply));
+                            returnValueCollection_.add(AidlUtil.readFromObjectStream(reply));
                         }
                     }
                     returnValueCollection.add(returnValueCollection_);

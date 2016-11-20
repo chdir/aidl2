@@ -90,7 +90,7 @@ public final class AbstractListSimpleNested$$AidlServerImpl extends Binder {
                         } else {
                             reply.writeInt(returnValueElement.size());
                             for (Serializable returnValueElement_ : returnValueElement) {
-                                reply.writeSerializable(returnValueElement_);
+                                AidlUtil.writeToObjectStream(reply, returnValueElement_);
                             }
                         }
                     }

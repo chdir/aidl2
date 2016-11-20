@@ -37,7 +37,7 @@ public final class SomeSerializableParam$$AidlServerImpl extends Binder {
             case TRANSACT_methodWithSerializableParameter: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                final Date serializable = AidlUtil.readSafeSerializable(data);
+                final Date serializable = AidlUtil.readFromObjectStream(data);
 
                 delegate.methodWithSerializableParameter(serializable);
                 reply.writeNoException();

@@ -36,7 +36,7 @@ public final class ParametrizedSerialArray$$AidlServerImpl extends Binder {
       case TRANSACT_methodWithParametrizedArrayParam: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
-        final Parametrized2<String>[] parametrizedArray = AidlUtil.readSafeSerializable(data);
+        final Parametrized2<String>[] parametrizedArray = AidlUtil.readFromObjectStream(data);
 
         delegate.methodWithParametrizedArrayParam(parametrizedArray);
         reply.writeNoException();
