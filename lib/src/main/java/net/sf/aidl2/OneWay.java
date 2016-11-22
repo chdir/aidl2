@@ -7,11 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates, that annotated AIDL2 abstrMethod must be executed asynchronously using Binder's one-way
+ * Indicates, that annotated AIDL2 method must be executed asynchronously using Binder's one-way
  * transaction. Exception reporting is impossible. Supported on void methods only.
  *
- * This annotation has exactly same semantics as "oneway" qualifier
- * of Android Interface Definition Language.
+ * This annotation has exactly same semantics as "oneway" qualifier of Android Interface Definition Language.
  */
 @Documented
 @Target(ElementType.METHOD)

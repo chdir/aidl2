@@ -22,6 +22,33 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Static factory of proxy and stub classes. Offers a convenient way to instantiates implementations,
+ * generated during annotation processing. Together proxy and stub wrap a lower-level IPC channel, represented by
+ * {@link Binder#transact}.
+ *
+ * <br/>
+ *
+ * Proxy is a client-side implementation of IInterface, used by Service clients to perform IPC. It serializes
+ * method arguments, passes them to {@link Binder#transact} method of wrapped Binder object and deserializes
+ * a returned value.
+ *
+ * <br/>
+ *
+ * Stub is a subclass of Binder, that overrides {@link Binder#onTransact} and dispatches interprocess calls to
+ * Service-side implementation of RPC interface. It is commonly returned from {@link Service#onBind} method.
+ *
+ * <br/>
+ *
+ * This class supports short-circuiting between client and Service, located in the same process — in such
+ * case a value, returned from {@link #asInterface} will be a Service-side implementation itself instead of proxy.
+ *
+ * <br/>
+ *
+ * Note, that Android framework purposefully makes semantics of Binder garbage-collections same for IPC and
+ * local use-cases. That is — as long as you hold a reference to client Binder object, a corresponding Binder
+ * instance in remote process will NOT be garbage-collected.
+ */
 public final class InterfaceLoader {
     private static final String PROP_VERBOSE = "net.sf.aidl2.verbose";
 
@@ -94,9 +121,9 @@ public final class InterfaceLoader {
      * @param aidlInterface interface being requested, must have undergone compile-time annotation processing with AIDL2
      * @param <Z> the class of interface, being requested
      *
-     * @return IPC handle for implemented interface, suitable for returning from {@link Service#onBind}
+     * @return implementation of requested IPC interface
      *
-     * @throws RemoteException
+     * @throws RemoteException if IPC has failed for any reason (remote process dead, exceeded transaction size, version mismatch etc.)
      */
     @SuppressWarnings("unchecked")
     public static @NotNull <Z extends IInterface> Z asInterface(@NotNull IBinder binder, @NotNull Class<Z> aidlInterface) throws RemoteException {

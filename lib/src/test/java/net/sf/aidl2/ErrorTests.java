@@ -174,4 +174,34 @@ public class ErrorTests {
                 .withErrorCount(3)
                 .withErrorContaining("compilation errors in the @AIDL-annotated interface");
     }
+
+    @Test
+    public void incorrectTransactionId() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IncorrectTransactionId.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("transaction id")
+                .in(testSource)
+                .onLine(8)
+                .and()
+                .withNoteContaining("bailing out");
+    }
+
+    @Test
+    public void incorrectTransactionId2() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IncorrectTransactionId2.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("transaction id")
+                .in(testSource)
+                .onLine(8)
+                .and()
+                .withNoteContaining("bailing out");
+    }
 }

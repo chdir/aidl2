@@ -141,33 +141,14 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
             final Set<String> allSuppressed = new HashSet<>();
 
-            final Set<? extends Element> directlyContained = new HashSet<>(originatingInterface.getEnclosedElements());
+            boolean first = true;
 
-            int sourceBasedMethodsCtr = -1;
-
-            // transaction Ids for methods, defined outside primary @AIDL-annotated interface, are offset by 9000
-            int outsideMethodsCtr = 9000;
-
-            for (int i = 0; i < model.methods.size(); i++) {
-                final AidlMethodModel method = model.methods.get(i);
-
+            for (AidlMethodModel method : model.methods) {
                 final CharSequence methodName = method.element.element.getSimpleName();
 
                 final String transactIdField = aidlReader.allocator.get(method);
 
-                final int transactionId;
-
-                if (directlyContained.contains(method.element.element)) {
-                    // contained directly in source, use the source code order
-                    transactionId = ++sourceBasedMethodsCtr;
-                } else {
-                    // The method came from outside main interface class (possibly from the parent interface,
-                    // defined in compiled form). We may not have access to source-order for those, and even if
-                    // we did, for greater stability let's count them separately — they may come from libraries
-                    // outside control of the interface author
-                    transactionId = outsideMethodsCtr > sourceBasedMethodsCtr
-                            ? ++outsideMethodsCtr : ++sourceBasedMethodsCtr;
-                }
+                final int transactionId = method.transactionId;
 
                 FieldSpec transactId = FieldSpec.builder(int.class, transactIdField, Modifier.FINAL, Modifier.STATIC)
                         .initializer("$T.FIRST_CALL_TRANSACTION + $L", ClassName.get("android.os", "IBinder"), transactionId)
@@ -175,7 +156,9 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
                 implClassSpec.addField(transactId);
 
-                if (i == 0 || i == 9001) {
+                if (first) {
+                    first = false;
+
                     onTransactSpec.beginControlFlow("case $N:", transactId);
                 } else {
                     onTransactSpec.nextControlFlow("case $N:", transactId);

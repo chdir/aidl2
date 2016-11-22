@@ -5,6 +5,7 @@ import net.sf.aidl2.AIDL;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.exceptions.AnnotationException;
 import net.sf.aidl2.internal.exceptions.AnnotationValueException;
+import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.exceptions.ElementException;
 import net.sf.aidl2.internal.util.Util;
 
@@ -24,6 +25,9 @@ import javax.lang.model.util.ElementFilter;
 import static javax.tools.Diagnostic.Kind.NOTE;
 
 final class Session extends AptHelper implements Closeable {
+    // see https://github.com/chdir/aidl2/wiki/Limits
+    private static final int METHOD_COUNT_CAP = 9000;
+
     private Set<Name> pendingElements = new HashSet<>();
 
     public Session(AidlProcessor.Environment environment) {
@@ -85,7 +89,7 @@ final class Session extends AptHelper implements Closeable {
                     methodValidator.validate(methodEl);
                 }
 
-                producedModels.add(AidlModel.create(iInterface, methods));
+                producedModels.add(AidlModel.create(iInterface, methods, new MethodComparator()));
 
                 pendingElements.remove(qualified);
             } else if (roundEnvironment.processingOver()) {
@@ -117,10 +121,14 @@ final class Session extends AptHelper implements Closeable {
         return true;
     }
 
-    private List<TypeInvocation<ExecutableElement, ExecutableType>> gatherAidl2Methods(DeclaredType element) {
+    private List<TypeInvocation<ExecutableElement, ExecutableType>> gatherAidl2Methods(DeclaredType element) throws ElementException {
         TypeElement type = (TypeElement) element.asElement();
 
         final List<ExecutableElement> allMethods = ElementFilter.methodsIn(elements.getAllMembers(type));
+
+        if (allMethods.size() >= METHOD_COUNT_CAP) {
+            throw new ElementException(type.getSimpleName() + " exceeds maximum number of methods supported by AIDL2", type);
+        }
 
         for (Iterator<ExecutableElement> it = allMethods.iterator(); it.hasNext() ;)
         {
@@ -128,47 +136,6 @@ final class Session extends AptHelper implements Closeable {
                 it.remove();
             }
         }
-
-        allMethods.sort(new Comparator<ExecutableElement>() {
-            private final List<? extends Element> topLevelElements = type.getEnclosedElements();
-
-            @Override
-            public int compare(ExecutableElement e1, ExecutableElement e2) {
-                final int x = topLevelElements.indexOf(e1);
-                final int y = topLevelElements.indexOf(e2);
-
-                if (x != -1 && y != -1) {
-                    return Integer.compare(x, y);
-                }
-
-                if (x != -1) return -1;
-                if (y != -1) return +1;
-
-                // neither of methods are present in top-level class, sort alphanumerically
-                final String nam1 = e1.getSimpleName().toString();
-                final String nam2 = e2.getSimpleName().toString();
-
-                final int nameResult = nam1.compareTo(nam2);
-
-                if (nameResult != 0) {
-                    return nameResult;
-                }
-
-                final List<? extends VariableElement> e1params = e1.getParameters();
-                final List<? extends VariableElement> e2params = e2.getParameters();
-
-                final int x1 = e1params.size();
-                final int y1 = e2params.size();
-
-                final int paramCountResult = Integer.compare(x1, y1);
-
-                if (paramCountResult != 0) {
-                    return paramCountResult;
-                }
-
-                return compareParameters(e1params, e2params);
-            }
-        });
 
         final List<TypeInvocation<ExecutableElement, ExecutableType>> aidl2Methods = new ArrayList<>(allMethods.size());
 
@@ -186,47 +153,89 @@ final class Session extends AptHelper implements Closeable {
         return aidl2Methods;
     }
 
-    private int compareParameters(List<? extends VariableElement> e1params, List<? extends VariableElement> e2params) {
-        Iterator<? extends VariableElement> e2paramIter = e2params.iterator();
+    private final class MethodComparator implements Comparator<AidlMethodModel> {
+        @Override
+        public int compare(AidlMethodModel t1, AidlMethodModel t2) {
+            final ExecutableElement e1 = t1.element.element;
+            final ExecutableElement e2 = t2.element.element;
 
-        for (VariableElement e1param : e1params) {
-            int comparisonResult = compareParameter(e1param, e2paramIter.next());
+            final int x = t1.idxInFile;
+            final int y = t2.idxInFile;
 
-            if (comparisonResult != 0) {
-                return comparisonResult;
+            if (x != -1 && y != -1) {
+                return Integer.compare(x, y);
             }
+
+            if (x != -1) return -1;
+            if (y != -1) return +1;
+
+            // neither of methods are present in top-level class, sort alphanumerically
+            final String nam1 = e1.getSimpleName().toString();
+            final String nam2 = e2.getSimpleName().toString();
+
+            final int nameResult = nam1.compareTo(nam2);
+
+            if (nameResult != 0) {
+                return nameResult;
+            }
+
+            final List<? extends VariableElement> e1params = e1.getParameters();
+            final List<? extends VariableElement> e2params = e2.getParameters();
+
+            final int x1 = e1params.size();
+            final int y1 = e2params.size();
+
+            final int paramCountResult = Integer.compare(x1, y1);
+
+            if (paramCountResult != 0) {
+                return paramCountResult;
+            }
+
+            return compareParameters(e1params, e2params);
         }
 
-        return 0;
-    }
+        private int compareParameters(List<? extends VariableElement> e1params, List<? extends VariableElement> e2params) {
+            Iterator<? extends VariableElement> e2paramIter = e2params.iterator();
 
-    private int compareParameter(VariableElement v1, VariableElement v2) {
-        TypeMirror fullType1 = v1.asType();
-        TypeMirror fullType2 = v2.asType();
+            for (VariableElement e1param : e1params) {
+                int comparisonResult = compareParameter(e1param, e2paramIter.next());
 
-        if (types.isSameType(fullType1, fullType2)) {
+                if (comparisonResult != 0) {
+                    return comparisonResult;
+                }
+            }
+
             return 0;
         }
 
-        final TypeKind kind1 = fullType1.getKind();
-        final TypeKind kind2 = fullType2.getKind();
+        private int compareParameter(VariableElement v1, VariableElement v2) {
+            TypeMirror fullType1 = v1.asType();
+            TypeMirror fullType2 = v2.asType();
 
-        if (!kind1.isPrimitive() && !kind2.isPrimitive()) {
-            final TypeMirror erasure1 = types.erasure(fullType1);
-            final TypeMirror erasure2 = types.erasure(fullType2);
-
-            final int erased = erasure1.toString().compareTo(erasure2.toString());
-
-            if (erased != 0) {
-                return erased;
+            if (fullType1.equals(fullType2)) {
+                return 0;
             }
-        }
 
-        if (kind1 != kind2) {
-            return kind1.compareTo(kind2);
-        }
+            final TypeKind kind1 = fullType1.getKind();
+            final TypeKind kind2 = fullType2.getKind();
 
-        return fullType1.toString().compareTo(fullType2.toString());
+            if (!kind1.isPrimitive() && !kind2.isPrimitive()) {
+                final TypeMirror erasure1 = types.erasure(fullType1);
+                final TypeMirror erasure2 = types.erasure(fullType2);
+
+                final int erased = erasure1.toString().compareTo(erasure2.toString());
+
+                if (erased != 0) {
+                    return erased;
+                }
+            }
+
+            if (kind1 != kind2) {
+                return kind1.compareTo(kind2);
+            }
+
+            return fullType1.toString().compareTo(fullType2.toString());
+        }
     }
 
     @Override

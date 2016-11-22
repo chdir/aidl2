@@ -93,20 +93,20 @@ class Logger implements Closeable {
 
     public void log(FaultyAnnotationValue... issues) {
         for (FaultyAnnotationValue issue : issues) {
-            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement(), issue.getAnnotation(), issue.getValue());
+            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage() + "\n\n", issue.getElement(), issue.getAnnotation(), issue.getValue());
         }
     }
 
     public void log(FaultyAnnotation... issues) {
         for (FaultyAnnotation issue : issues) {
-            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage(), issue.getElement(), issue.getAnnotation());
+            messager.printMessage(issue.getKind(), makeTag(issue.getKind()) + issue.getMessage() + "\n\n", issue.getElement(), issue.getAnnotation());
         }
     }
 
     public void log(FaultyElement... issues) {
         for (FaultyElement issue : issues) {
             final String message = makeTag(issue.getKind()) + "\"" +
-                    issue.getElement().getSimpleName() + "\" — " + issue.getMessage();
+                    issue.getElement().getSimpleName() + "\" — " + issue.getMessage() + "\n\n";
 
             messager.printMessage(issue.getKind(), message, issue.getElement());
         }
@@ -226,6 +226,8 @@ class Logger implements Closeable {
             if (issue.getKind() == Diagnostic.Kind.ERROR && issue instanceof Throwable) {
                 log((Throwable) issue);
             }
+
+            logToFile('\n');
         }
 
         private void log(FaultyAnnotation issue) {
@@ -240,6 +242,8 @@ class Logger implements Closeable {
             if (issue.getKind() == Diagnostic.Kind.ERROR && issue instanceof Throwable) {
                 log((Throwable) issue);
             }
+
+            logToFile('\n');
         }
 
         private void log(FaultyElement issue) {
@@ -251,6 +255,8 @@ class Logger implements Closeable {
             if (issue.getKind() == Diagnostic.Kind.ERROR && issue instanceof Throwable) {
                 log((Throwable) issue);
             }
+
+            logToFile('\n');
         }
 
         @Override

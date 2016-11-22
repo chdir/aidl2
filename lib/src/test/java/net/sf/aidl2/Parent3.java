@@ -6,6 +6,7 @@ import android.os.RemoteException;
 
 @AIDL
 public interface Parent3 extends IInterface {
+    @Call(143)
     Parcelable someMethod3(@SuppressWarnings("unchecked") Object[] test) throws RemoteException;
 
     <T> Parcelable someMethod4(@SuppressWarnings("unchecked") T[] test) throws RemoteException;

@@ -1,5 +1,6 @@
 package net.sf.aidl2.internal;
 
+import net.sf.aidl2.Call;
 import net.sf.aidl2.OneWay;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.util.Util;
@@ -21,6 +22,10 @@ public final class AidlMethodModel {
 
     final boolean oneWay;
 
+    final int idxInFile;
+
+    int transactionId;
+
     @NotNull
     final TypeInvocation<ExecutableElement, ExecutableType> element;
 
@@ -30,11 +35,15 @@ public final class AidlMethodModel {
     private AidlMethodModel(
             @NotNull TypeInvocation<ExecutableElement, ExecutableType> element,
             @NotNull AidlParamModel[] parameters,
+            int idxInFile,
+            int transactionId,
             final int unchecked,
             final boolean oneWay,
             @NotNull final String... suppressed) {
         this.element = element;
         this.parameters = parameters;
+        this.idxInFile = idxInFile;
+        this.transactionId = transactionId;
         this.oneWay = oneWay;
         this.suppressed = suppressed;
         this.warningsSuppressedOnMethod = unchecked;
@@ -42,8 +51,19 @@ public final class AidlMethodModel {
 
     public static AidlMethodModel create(
             TypeInvocation<ExecutableElement, ExecutableType> methodEl,
+            int idxInFile,
             boolean nullableOnType,
             int suppressedOnType) {
+        int transactionId = -1;
+
+        if (idxInFile != -1) {
+            final Call methodMetadata = methodEl.element.getAnnotation(Call.class);
+
+            if (methodMetadata != null) {
+                transactionId = methodMetadata.value();
+            }
+        }
+
         final boolean isOneWay = methodEl.element.getAnnotation(OneWay.class) != null;
 
         final SuppressWarnings methodSw = methodEl.element.getAnnotation(SuppressWarnings.class);
@@ -74,8 +94,14 @@ public final class AidlMethodModel {
         return new AidlMethodModel(
                 new TypeInvocation<>(methodEl.element, methodEl.type),
                 parameterModels,
+                idxInFile,
+                transactionId,
                 suppressedOnMethod,
                 isOneWay,
                 methodTransplanted);
+    }
+
+    boolean isDeclaredInPrimaryFile() {
+        return idxInFile != -1;
     }
 }
