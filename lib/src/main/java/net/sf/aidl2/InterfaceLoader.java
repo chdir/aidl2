@@ -27,23 +27,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * generated during annotation processing. Together proxy and stub wrap a lower-level IPC channel, represented by
  * {@link Binder#transact}.
  *
- * <br/>
+ * <br>
  *
  * Proxy is a client-side implementation of IInterface, used by Service clients to perform IPC. It serializes
  * method arguments, passes them to {@link Binder#transact} method of wrapped Binder object and deserializes
  * a returned value.
  *
- * <br/>
+ * <br>
  *
  * Stub is a subclass of Binder, that overrides {@link Binder#onTransact} and dispatches interprocess calls to
  * Service-side implementation of RPC interface. It is commonly returned from {@link Service#onBind} method.
  *
- * <br/>
+ * <br>
  *
  * This class supports short-circuiting between client and Service, located in the same process — in such
  * case a value, returned from {@link #asInterface} will be a Service-side implementation itself instead of proxy.
  *
- * <br/>
+ * <br>
  *
  * Note, that Android framework purposefully makes semantics of Binder garbage-collections same for IPC and
  * local use-cases. That is — as long as you hold a reference to client Binder object, a corresponding Binder

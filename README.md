@@ -12,18 +12,18 @@
 
 ### AIDL2
 
+Traditionally *"aidl"* refers to several related but distinct concepts:
+
+* the [AIDL][1] interface definition language;
+* .aidl files (which contain AIDL);
+* the [aidl generator][2] which transforms AIDL into client/server IPC interfaces.
+
 This is a replacement for Google's aidl generator tool. Instead of parsing very limited DSL AIDL2
  uses Java annotation processing framework to generate Java implementation, based on Java
 interface code. This allows you to extend from other interfaces, annotate your interface classes,
 use generics and other features of Java language.
 
 ### AIDL2 and Android aidl tool
-
-Traditionally *"aidl"* refers to several related but distinct concepts:
-
-* the [AIDL][1] interface definition language;
-* .aidl files (which contain AIDL);
-* the [aidl generator][2] which transforms AIDL into client/server IPC interfaces.
 
 Unlike Google's code generator, which is implemented as standalone C++ executable,
 AIDL2 is an annotation processor, that is — a plugin for Java compiler. It works automatically
@@ -32,7 +32,7 @@ by adding jar file to project dependencies.
 Better integration with compiler gives aidl2 complete understanding of involved types.
 In addition to types, supported by aidl tool, AIDL2 allows use of
 
-* Generic Collections
+* Generic Collections and Maps
 * IInterface subtypes (both from AIDL2 and aidl tool)
 * Externalizable/Serializable types
 * Multi-dimensional arrays
@@ -44,8 +44,8 @@ You can learn more about project features in [project wiki](http://sf.net/p/aidl
 
 ### Current status
 
-This project is in early alpha. It is not nearly as well-tested as original aidl tool, but
-most features are there. If you decide to use it, make sure to read the generated code, to
+This project is in alpha stage. It is not nearly as well-tested as original aidl tool, but
+all features are there. If you decide to use it, make sure to read the generated code, to
 avoid any unpleasant surprises.
 
 ### Usage
@@ -56,7 +56,7 @@ Add the library to project:
 
 ```groovy
 dependencies {
-  compile 'net.sf.aidl2:compiler:0.2.0'
+  compile 'net.sf.aidl2:compiler:0.3.5'
 }
 ```
 
@@ -109,9 +109,9 @@ public void onServiceConnected(ComponentName name, IBinder serviceBinder) {
 ### Defining an interface
 
 You can specify any number of parameters, including varargs. Parameters and
-return values must be of types, supported by `android.os.Parcel`. You can use tricky
-generic types if you want, but make sure, that those can be interpreted as one of supported
-types:
+return values must be of types, supported by `android.os.Parcel` as well as extra types,
+listed above. You can use tricky generic types if you want, but make sure, that those can be
+interpreted as one of supported types:
 
 ```java
 @AIDL
