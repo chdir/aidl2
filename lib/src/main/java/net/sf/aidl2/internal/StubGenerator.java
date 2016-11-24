@@ -102,7 +102,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
         String verField = null;
         if (enableVersioning) {
-            verField = modelAllocator.newName("rpcVersionId");
+            verField = modelAllocator.newName("ipcVersionId");
 
             implClassSpec.addField(FieldSpec.builder(long.class, verField, Modifier.STATIC, Modifier.FINAL)
                     .initializer("$LL", model.rpcVersionId)
@@ -142,6 +142,8 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
             final Set<String> allSuppressed = new HashSet<>();
 
             boolean first = true;
+
+            aidlReader.versionCalc().writeUTF(model.descriptor.toString());
 
             for (AidlMethodModel method : model.methods.values()) {
                 final CharSequence methodName = method.element.element.getSimpleName();

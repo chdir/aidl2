@@ -100,6 +100,8 @@ android.applicationVariants.all { variant ->
 }
 
 dependencies {
+    compile 'org.jetbrains:annotations:13.0'
+
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
 

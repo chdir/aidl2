@@ -213,4 +213,26 @@ public class MiscTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void ipcVersionIdStability() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability.java"));
+        JavaFileObject testSource2 = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability2.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability$$AidlClientImpl.java"));
+        JavaFileObject generatedStub2 = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability2$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy2 = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability2$$AidlClientImpl.java"));
+
+        assertAbout(javaSources())
+                .that(Arrays.asList(testSource, testSource2))
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-processing",
+                })
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy, generatedStub2, generatedProxy2);
+    }
 }
