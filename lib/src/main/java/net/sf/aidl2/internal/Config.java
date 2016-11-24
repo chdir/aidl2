@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.Filer;
+import javax.lang.model.util.Elements;
 
 public final class Config {
     public static final String OPT_LOGFILE = "aidl2_log_to_file";

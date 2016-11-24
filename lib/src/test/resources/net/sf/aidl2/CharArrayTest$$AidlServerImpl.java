@@ -20,7 +20,7 @@ import java.lang.String;
 public final class CharArrayTest$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.CharArrayTest";
 
-    static final int TRANSACT_methodWithBiCharArrayReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithBiCharArrayReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final CharArrayTest delegate;
 

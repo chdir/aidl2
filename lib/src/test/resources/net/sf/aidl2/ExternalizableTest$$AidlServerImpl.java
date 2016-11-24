@@ -22,7 +22,7 @@ import java.lang.String;
 public final class ExternalizableTest$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.ExternalizableTest";
 
-    static final int TRANSACT_methodWithExternalizableParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithExternalizableParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final ExternalizableTest delegate;
 

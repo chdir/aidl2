@@ -20,7 +20,7 @@ import java.lang.String;
 public final class ParametrizedSerialArray$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.ParametrizedSerialArray";
 
-  static final int TRANSACT_methodWithParametrizedArrayParam = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_methodWithParametrizedArrayParam = IBinder.FIRST_CALL_TRANSACTION;
 
   private final ParametrizedSerialArray delegate;
 

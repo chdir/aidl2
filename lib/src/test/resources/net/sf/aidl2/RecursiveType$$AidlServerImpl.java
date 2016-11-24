@@ -20,7 +20,7 @@ import java.lang.String;
 public final class RecursiveType$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.RecursiveType";
 
-  static final int TRANSACT_wow = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_wow = IBinder.FIRST_CALL_TRANSACTION;
 
   private final RecursiveType delegate;
 

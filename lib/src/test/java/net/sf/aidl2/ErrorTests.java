@@ -204,4 +204,19 @@ public class ErrorTests {
                 .and()
                 .withNoteContaining("bailing out");
     }
+
+    @Test
+    public void ConflictingTransactionIds() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConflictingTransactionIds.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("143")
+                .in(testSource)
+                .onLine(9)
+                .and()
+                .withNoteContaining("bailing out");
+    }
 }

@@ -21,7 +21,7 @@ import java.lang.String;
 public final class SerializableArrayTest$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.SerializableArrayTest";
 
-    static final int TRANSACT_methodWithSerializableArrayParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithSerializableArrayParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final SerializableArrayTest delegate;
 

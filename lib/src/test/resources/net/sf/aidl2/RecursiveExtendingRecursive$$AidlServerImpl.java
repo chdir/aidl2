@@ -21,9 +21,9 @@ import java.lang.String;
 public final class RecursiveExtendingRecursive$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.RecursiveExtendingRecursive";
 
-  static final int TRANSACT_call = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_call = IBinder.FIRST_CALL_TRANSACTION;
 
-  static final int TRANSACT_someMethod = IBinder.FIRST_CALL_TRANSACTION + 9001;
+  static final int TRANSACT_someMethod = IBinder.FIRST_CALL_TRANSACTION + 9000;
 
   private final RecursiveExtendingRecursive delegate;
 

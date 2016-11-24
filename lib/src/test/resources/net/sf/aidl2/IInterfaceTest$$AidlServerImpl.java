@@ -20,7 +20,7 @@ import java.lang.String;
 public final class IInterfaceTest$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.IInterfaceTest";
 
-    static final int TRANSACT_methodWithCallbackParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithCallbackParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final IInterfaceTest delegate;
 

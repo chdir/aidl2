@@ -23,7 +23,7 @@ import java.util.Collection;
 public final class AbstractListSimpleTypeMismatch$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.AbstractListSimpleTypeMismatch";
 
-    static final int TRANSACT_methodWithListReturnAndCollectionParam = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithListReturnAndCollectionParam = IBinder.FIRST_CALL_TRANSACTION;
 
     private final AbstractListSimpleTypeMismatch delegate;
 

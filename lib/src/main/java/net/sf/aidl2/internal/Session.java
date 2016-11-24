@@ -212,7 +212,7 @@ final class Session extends AptHelper implements Closeable {
             TypeMirror fullType1 = v1.asType();
             TypeMirror fullType2 = v2.asType();
 
-            if (fullType1.equals(fullType2)) {
+            if (types.isSameType(fullType1, fullType2)) {
                 return 0;
             }
 
@@ -234,6 +234,7 @@ final class Session extends AptHelper implements Closeable {
                 return kind1.compareTo(kind2);
             }
 
+            // this line should not normally be reached
             return fullType1.toString().compareTo(fullType2.toString());
         }
     }

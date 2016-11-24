@@ -20,7 +20,7 @@ import java.lang.String;
 public final class InsecureAidl2$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.InsecureAidl2";
 
-    static final int TRANSACT_insecureMethod = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_insecureMethod = IBinder.FIRST_CALL_TRANSACTION;
 
     private final InsecureAidl2 delegate;
 

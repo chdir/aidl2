@@ -116,7 +116,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                     .allowUnchecked(isSuppressed(model.suppressed, Util.SUPPRESS_UNCHECKED))
                     .assumeFinal(model.assumeFinal);
 
-            for (AidlMethodModel method : model.methods) {
+            for (AidlMethodModel method : model.methods.values()) {
                 final State methodWriter = aidlWriter.clone();
 
                 if (isSuppressed(method.warningsSuppressedOnMethod, Util.SUPPRESS_UNCHECKED)) {
@@ -124,7 +124,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                 }
 
                 final MethodSpec.Builder methodSpec = override(method.element.element,
-                        useErasure ? ifTypeErased : ifType);
+                        useErasure ? ifTypeErased : ifType, method.isDeclaredInPrimaryFile());
 
                 for (AidlParamModel param : method.parameters) {
                     if (param.name != null) {

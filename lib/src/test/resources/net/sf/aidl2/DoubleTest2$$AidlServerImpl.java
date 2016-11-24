@@ -20,7 +20,7 @@ import java.lang.String;
 public final class DoubleTest2$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.DoubleTest2";
 
-  static final int TRANSACT_methodWithDoubleReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_methodWithDoubleReturn = IBinder.FIRST_CALL_TRANSACTION;
 
   private final DoubleTest2 delegate;
 

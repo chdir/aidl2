@@ -23,7 +23,7 @@ import java.util.Collection;
 public final class AbstractListTest$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.AbstractListTest";
 
-    static final int TRANSACT_methodWithCollectionReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithCollectionReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final AbstractListTest delegate;
 

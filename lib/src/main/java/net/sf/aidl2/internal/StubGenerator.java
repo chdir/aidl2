@@ -1,5 +1,6 @@
 package net.sf.aidl2.internal;
 
+import android.os.IBinder;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -19,11 +20,7 @@ import net.sf.aidl2.internal.util.Util;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.processing.Filer;
@@ -34,9 +31,12 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import static net.sf.aidl2.internal.ContractHasher.TRANSACTION_ID;
+import static net.sf.aidl2.internal.util.Util.literal;
 
 final class StubGenerator extends AptHelper implements AidlGenerator {
     private static final ClassName loaderName = ClassName.bestGuess("InterfaceLoader");
+
+    private static final ClassName binderName = ClassName.get("android.os", "IBinder");
 
     private static final String JAVADOC = "Handle incoming IPC calls by forwarding them to provided delegate.\n" +
             "\n" +
@@ -135,7 +135,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
             onTransactSpec.beginControlFlow("switch($N)", code);
 
-            for (AidlMethodModel method : model.methods) {
+            for (AidlMethodModel method : model.methods.values()) {
                 aidlReader.allocator.newName("TRANSACT_" + method.element.element.getSimpleName(), method);
             }
 
@@ -143,15 +143,19 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
 
             boolean first = true;
 
-            for (AidlMethodModel method : model.methods) {
+            for (AidlMethodModel method : model.methods.values()) {
                 final CharSequence methodName = method.element.element.getSimpleName();
 
                 final String transactIdField = aidlReader.allocator.get(method);
 
-                final int transactionId = method.transactionId;
+                final int transactionIdVal = method.transactionId - IBinder.FIRST_CALL_TRANSACTION;
+
+                final CodeBlock transactionIdBlock = transactionIdVal == 0
+                        ? literal("$T.FIRST_CALL_TRANSACTION", binderName)
+                        : literal("$T.FIRST_CALL_TRANSACTION + $L", binderName, transactionIdVal);
 
                 FieldSpec transactId = FieldSpec.builder(int.class, transactIdField, Modifier.FINAL, Modifier.STATIC)
-                        .initializer("$T.FIRST_CALL_TRANSACTION + $L", ClassName.get("android.os", "IBinder"), transactionId)
+                        .initializer(transactionIdBlock)
                         .build();
 
                 implClassSpec.addField(transactId);
@@ -167,7 +171,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                 final State methodReader = aidlReader.clone();
 
                 methodReader.versionCalc().writeInt(TRANSACTION_ID);
-                methodReader.versionCalc().writeInt(transactionId);
+                methodReader.versionCalc().writeInt(method.transactionId);
                 methodReader.versionCalc().writeBoolean(model.insecure);
                 methodReader.versionCalc().writeBoolean(method.oneWay);
 
@@ -224,7 +228,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                                 try {
                                     TypeMirror requiredReturn = writeReturnValue(paramsWrite, paramMarshaller, returnParcel.name);
 
-                                    final CodeBlock callCode = Util.literal("delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
+                                    final CodeBlock callCode = literal("delegate.$L($L)", methodName, argList(method.parameters, methodArgs));
 
                                     delegateCall.addStatement("final $T returnValue = $L",
                                             requiredReturn, emitCasts(param.type, requiredReturn, callCode));
@@ -251,7 +255,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                 onTransactSpec.addStatement("return true");
             }
 
-            if (enableVersioning) {
+            if (enableVersioning && !model.methods.containsKey(AidlUtil.VERSION_TRANSACTION)) {
                 onTransactSpec.nextControlFlow("case $T.$N:", AidlUtil.class, "VERSION_TRANSACTION");
                 onTransactSpec.addStatement("$L.enforceInterface(this.getInterfaceDescriptor())", parcel.name);
                 onTransactSpec.addCode("\n");
@@ -302,7 +306,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
             result.add(emitCasts(param.type, parameters[i].type, param.code));
         }
 
-        return Util.literal(String.join(", ", Collections.nCopies(params.size(), "$L")), result.toArray());
+        return literal(String.join(", ", Collections.nCopies(params.size(), "$L")), result.toArray());
     }
 
     private TypedExpression readInParameter(CodeBlock.Builder code, State reader, String name) throws CodegenException, IOException {
@@ -320,7 +324,7 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                     emitCasts(assignmentCode.type, resultType, assignmentCode.code));
             code.add("\n");
 
-            return new TypedExpression(Util.literal(reader.name.toString()), resultType);
+            return new TypedExpression(literal(reader.name.toString()), resultType);
         } else {
             code.add("$L", initializationBlock);
             code.add("\n");

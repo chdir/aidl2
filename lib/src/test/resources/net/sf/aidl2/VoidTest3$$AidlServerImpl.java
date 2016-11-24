@@ -21,7 +21,7 @@ import java.lang.Void;
 public final class VoidTest3$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.VoidTest3";
 
-    static final int TRANSACT_methodWithBiCharArrayReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithBiCharArrayReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final VoidTest3 delegate;
 

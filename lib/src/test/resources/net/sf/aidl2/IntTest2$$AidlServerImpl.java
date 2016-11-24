@@ -20,7 +20,7 @@ import java.lang.String;
 public final class IntTest2$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.IntTest2";
 
-    static final int TRANSACT_methodWithIntReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithIntReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final IntTest2 delegate;
 

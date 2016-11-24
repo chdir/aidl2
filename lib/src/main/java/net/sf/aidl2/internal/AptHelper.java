@@ -460,7 +460,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return result;
     }
 
-    public MethodSpec.Builder override(ExecutableElement method, DeclaredType enclosing) {
+    public MethodSpec.Builder override(ExecutableElement method, DeclaredType enclosing, boolean primary) {
         final List<? extends VariableElement> parameters = method.getParameters();
 
         final ExecutableType executableType = (ExecutableType) types.asMemberOf(enclosing, method);
@@ -480,12 +480,14 @@ public abstract class AptHelper implements ProcessingEnvironment {
             methodBuilder.addTypeVariable(TypeVariableName.get(var));
         }
 
-        for (AnnotationMirror mirror : method.getAnnotationMirrors()) {
-            if (isTypeOf(Override.class, mirror.getAnnotationType())) {
-                continue;
-            }
+        if (primary) {
+            for (AnnotationMirror mirror : method.getAnnotationMirrors()) {
+                if (isTypeOf(Override.class, mirror.getAnnotationType())) {
+                    continue;
+                }
 
-            methodBuilder.addAnnotation(AnnotationSpec.get(mirror));
+                methodBuilder.addAnnotation(AnnotationSpec.get(mirror));
+            }
         }
 
         for (int i = 0; i < parameters.size(); i++) {
@@ -498,8 +500,10 @@ public abstract class AptHelper implements ProcessingEnvironment {
             final ParameterSpec.Builder parameterBuilder = ParameterSpec.builder(type, param.getSimpleName().toString())
                     .addModifiers(modifiers.toArray(new Modifier[modifiers.size()]));
 
-            for (AnnotationMirror mirror : param.getAnnotationMirrors()) {
-                parameterBuilder.addAnnotation(AnnotationSpec.get(mirror));
+            if (primary) {
+                for (AnnotationMirror mirror : param.getAnnotationMirrors()) {
+                    parameterBuilder.addAnnotation(AnnotationSpec.get(mirror));
+                }
             }
 
             methodBuilder.addParameter(parameterBuilder.build());

@@ -21,7 +21,7 @@ import java.lang.String;
 public final class AbstractParcelableReturn$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.AbstractParcelableReturn";
 
-    static final int TRANSACT_methodReturningParcelable = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodReturningParcelable = IBinder.FIRST_CALL_TRANSACTION;
 
     private final AbstractParcelableReturn delegate;
 

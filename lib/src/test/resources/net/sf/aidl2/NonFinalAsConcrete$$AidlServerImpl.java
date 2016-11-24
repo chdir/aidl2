@@ -27,7 +27,7 @@ import java.lang.String;
 public final class NonFinalAsConcrete$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.NonFinalAsConcrete";
 
-  static final int TRANSACT_testMethod = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_testMethod = IBinder.FIRST_CALL_TRANSACTION;
 
   static final int TRANSACT_allNotNullTestMethod = IBinder.FIRST_CALL_TRANSACTION + 1;
 

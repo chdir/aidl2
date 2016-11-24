@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public final class ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.ConcreteSetTypeArgsAndTypeLoss";
 
-    static final int TRANSACT_methodWithCOWArraySetParamAndHashSetReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithCOWArraySetParamAndHashSetReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final ConcreteSetTypeArgsAndTypeLoss delegate;
 

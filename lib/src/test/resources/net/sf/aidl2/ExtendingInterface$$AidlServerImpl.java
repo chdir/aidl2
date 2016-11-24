@@ -21,7 +21,7 @@ import java.lang.String;
 public final class ExtendingInterface$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.ExtendingInterface";
 
-    static final int TRANSACT_call = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_call = IBinder.FIRST_CALL_TRANSACTION;
 
     private final ExtendingInterface delegate;
 

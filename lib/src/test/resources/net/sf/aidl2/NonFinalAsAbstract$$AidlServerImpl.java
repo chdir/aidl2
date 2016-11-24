@@ -23,7 +23,7 @@ import java.lang.String;
 public final class NonFinalAsAbstract$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.NonFinalAsAbstract";
 
-  static final int TRANSACT_testMethod = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_testMethod = IBinder.FIRST_CALL_TRANSACTION;
 
   static final int TRANSACT_exMethod = IBinder.FIRST_CALL_TRANSACTION + 1;
 

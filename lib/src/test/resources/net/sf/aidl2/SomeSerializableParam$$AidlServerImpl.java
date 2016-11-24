@@ -21,7 +21,7 @@ import java.util.Date;
 public final class SomeSerializableParam$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.SomeSerializableParam";
 
-    static final int TRANSACT_methodWithSerializableParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithSerializableParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final SomeSerializableParam delegate;
 

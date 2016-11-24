@@ -21,7 +21,7 @@ import java.lang.String;
 public final class AbstractParcelableParameter$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.AbstractParcelableParameter";
 
-    static final int TRANSACT_methodWithParcelableParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithParcelableParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final AbstractParcelableParameter delegate;
 

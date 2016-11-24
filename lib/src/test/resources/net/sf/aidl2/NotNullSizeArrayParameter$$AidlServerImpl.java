@@ -21,7 +21,7 @@ import java.lang.String;
 public final class NotNullSizeArrayParameter$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.NotNullSizeArrayParameter";
 
-    static final int TRANSACT_methodWithNotNullSizeArrayParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithNotNullSizeArrayParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final NotNullSizeArrayParameter delegate;
 

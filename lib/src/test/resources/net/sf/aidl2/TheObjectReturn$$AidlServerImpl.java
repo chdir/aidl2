@@ -22,7 +22,7 @@ import java.lang.SuppressWarnings;
 public final class TheObjectReturn$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.TheObjectReturn";
 
-    static final int TRANSACT_methodWithObjectReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithObjectReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final TheObjectReturn delegate;
 

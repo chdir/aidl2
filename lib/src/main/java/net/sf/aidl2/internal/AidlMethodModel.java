@@ -1,5 +1,6 @@
 package net.sf.aidl2.internal;
 
+import com.squareup.javapoet.CodeBlock;
 import net.sf.aidl2.Call;
 import net.sf.aidl2.OneWay;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
@@ -54,9 +55,11 @@ public final class AidlMethodModel {
             int idxInFile,
             boolean nullableOnType,
             int suppressedOnType) {
+        final boolean isFromPrimaryFile = idxInFile != -1;
+
         int transactionId = -1;
 
-        if (idxInFile != -1) {
+        if (isFromPrimaryFile) {
             final Call methodMetadata = methodEl.element.getAnnotation(Call.class);
 
             if (methodMetadata != null) {
@@ -103,5 +106,15 @@ public final class AidlMethodModel {
 
     boolean isDeclaredInPrimaryFile() {
         return idxInFile != -1;
+    }
+
+    @Override
+    public String toString() {
+        return "method[" +
+                "id:" + transactionId +
+                ";source:" + isDeclaredInPrimaryFile() + '(' + idxInFile + ')' +
+                ";t:" + element +
+                ";oneway:" + oneWay +
+                ']';
     }
 }

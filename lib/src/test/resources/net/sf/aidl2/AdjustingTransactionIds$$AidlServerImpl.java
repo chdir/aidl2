@@ -22,22 +22,20 @@ import java.lang.SuppressWarnings;
  */
 @Deprecated
 @SuppressWarnings("unchecked")
-public final class TransactionIdOrder$$AidlServerImpl extends Binder {
-  static final String DESCRIPTOR = "net.sf.aidl2.TransactionIdOrder";
+public final class AdjustingTransactionIds$$AidlServerImpl extends Binder {
+  static final String DESCRIPTOR = "net.sf.aidl2.AdjustingTransactionIds";
 
-  static final int TRANSACT_yetAnotherMethod = IBinder.FIRST_CALL_TRANSACTION;
+  static final int TRANSACT_o = IBinder.FIRST_CALL_TRANSACTION;
 
-  static final int TRANSACT_anotherMethod = IBinder.FIRST_CALL_TRANSACTION + 1;
+  static final int TRANSACT_someMethod = IBinder.FIRST_CALL_TRANSACTION + 1;
 
-  static final int TRANSACT_someMethod = IBinder.FIRST_CALL_TRANSACTION + 2;
+  static final int TRANSACT_anotherMethod = IBinder.FIRST_CALL_TRANSACTION + 2;
 
-  static final int TRANSACT_someMethod_ = IBinder.FIRST_CALL_TRANSACTION + 3;
+  static final int TRANSACT_yetAnotherMethod = IBinder.FIRST_CALL_TRANSACTION + 13;
 
-  static final int TRANSACT_someMethod__ = IBinder.FIRST_CALL_TRANSACTION + 4;
+  static final int TRANSACT_someMethod_ = IBinder.FIRST_CALL_TRANSACTION + 9000;
 
-  static final int TRANSACT_someMethod___ = IBinder.FIRST_CALL_TRANSACTION + 9000;
-
-  static final int TRANSACT_someMethod____ = IBinder.FIRST_CALL_TRANSACTION + 9001;
+  static final int TRANSACT_someMethod__ = IBinder.FIRST_CALL_TRANSACTION + 9001;
 
   static final int TRANSACT_someMethod2 = IBinder.FIRST_CALL_TRANSACTION + 9002;
 
@@ -49,24 +47,40 @@ public final class TransactionIdOrder$$AidlServerImpl extends Binder {
 
   static final int TRANSACT_yetAnotherMethod__ = IBinder.FIRST_CALL_TRANSACTION + 9006;
 
-  private final TransactionIdOrder delegate;
+  static final int TRANSACT_someMethod___ = IBinder.FIRST_CALL_TRANSACTION + 16777214;
 
-  public TransactionIdOrder$$AidlServerImpl(TransactionIdOrder delegate) {
+  static final int TRANSACT_someMethod____ = IBinder.FIRST_CALL_TRANSACTION + 1598835018;
+
+  private final AdjustingTransactionIds delegate;
+
+  public AdjustingTransactionIds$$AidlServerImpl(AdjustingTransactionIds delegate) {
     this.delegate = delegate;
 
     this.attachInterface(delegate, DESCRIPTOR);
   }
 
   @Override
+  @SuppressWarnings("aidl2")
   protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
     switch(code) {
-      case TRANSACT_yetAnotherMethod: {
+      case TRANSACT_o: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
-        final String parameter = data.readString();
-
-        delegate.yetAnotherMethod(parameter);
+        final String returnValue = delegate.o();
         reply.writeNoException();
+
+        reply.writeString(returnValue);
+
+        return true;
+      } case TRANSACT_someMethod: {
+        data.enforceInterface(this.getInterfaceDescriptor());
+
+        final byte byteParameter = (byte) data.readInt();
+
+        final Parcelable returnValue = delegate.someMethod(byteParameter);
+        reply.writeNoException();
+
+        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
 
         return true;
       } case TRANSACT_anotherMethod: {
@@ -85,38 +99,16 @@ public final class TransactionIdOrder$$AidlServerImpl extends Binder {
         }
 
         return true;
-      } case TRANSACT_someMethod: {
+      } case TRANSACT_yetAnotherMethod: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
-        final Parcelable returnValue = delegate.someMethod();
-        reply.writeNoException();
+        final String parameter = data.readString();
 
-        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
+        delegate.yetAnotherMethod(parameter);
+        reply.writeNoException();
 
         return true;
       } case TRANSACT_someMethod_: {
-        data.enforceInterface(this.getInterfaceDescriptor());
-
-        final byte byteParameter = (byte) data.readInt();
-
-        final Parcelable returnValue = delegate.someMethod(byteParameter);
-        reply.writeNoException();
-
-        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
-
-        return true;
-      } case TRANSACT_someMethod__: {
-        data.enforceInterface(this.getInterfaceDescriptor());
-
-        final int[] intArrayParam = data.createIntArray();
-
-        final Parcelable returnValue = delegate.someMethod(intArrayParam);
-        reply.writeNoException();
-
-        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
-
-        return true;
-      } case TRANSACT_someMethod___: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
         final long arg0 = data.readLong();
@@ -127,7 +119,7 @@ public final class TransactionIdOrder$$AidlServerImpl extends Binder {
         reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
 
         return true;
-      } case TRANSACT_someMethod____: {
+      } case TRANSACT_someMethod__: {
         data.enforceInterface(this.getInterfaceDescriptor());
 
         final char arg0 = (char) data.readInt();
@@ -203,6 +195,26 @@ public final class TransactionIdOrder$$AidlServerImpl extends Binder {
 
         delegate.yetAnotherMethod(arg0, arg1);
         reply.writeNoException();
+
+        return true;
+      } case TRANSACT_someMethod___: {
+        data.enforceInterface(this.getInterfaceDescriptor());
+
+        final int[] intArrayParam = data.createIntArray();
+
+        final Parcelable returnValue = delegate.someMethod(intArrayParam);
+        reply.writeNoException();
+
+        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
+
+        return true;
+      } case TRANSACT_someMethod____: {
+        data.enforceInterface(this.getInterfaceDescriptor());
+
+        final Parcelable returnValue = delegate.someMethod();
+        reply.writeNoException();
+
+        reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
 
         return true;
       }

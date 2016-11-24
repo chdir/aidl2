@@ -21,7 +21,7 @@ import net.sf.fakenames.aidl2.demo.Responder;
 public final class IInterfaceTest3$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.IInterfaceTest3";
 
-    static final int TRANSACT_methodWithOldAidlCallbackReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithOldAidlCallbackReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final IInterfaceTest3 delegate;
 

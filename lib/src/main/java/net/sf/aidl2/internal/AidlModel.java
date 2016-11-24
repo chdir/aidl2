@@ -1,12 +1,13 @@
 package net.sf.aidl2.internal;
 
+import android.os.IBinder;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.Call;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
-import net.sf.aidl2.internal.exceptions.ElementException;
+import net.sf.aidl2.internal.exceptions.AnnotationException;
 import net.sf.aidl2.internal.util.Util;
 
 import org.jetbrains.annotations.NotNull;
@@ -16,10 +17,7 @@ import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -47,7 +45,7 @@ public final class AidlModel {
     final boolean assumeFinal;
 
     @NotNull
-    final Collection<AidlMethodModel> methods;
+    final Map<Integer, AidlMethodModel> methods;
 
     final ContractHasher digest = ContractHasher.create();
 
@@ -58,7 +56,7 @@ public final class AidlModel {
                      @NotNull CharSequence clientImplName,
                      @NotNull CharSequence descriptor,
                      @NotNull TypeName interfaceName,
-                     @NotNull Collection<AidlMethodModel> methods,
+                     @NotNull Map<Integer, AidlMethodModel> methods,
                      int suppressed,
                      boolean insecure,
                      boolean assumeFinal,
@@ -76,7 +74,7 @@ public final class AidlModel {
 
     public static AidlModel create(TypeElement aidlInterface,
                                    List<TypeInvocation<ExecutableElement, ExecutableType>> allMethods,
-                                   Comparator<AidlMethodModel> methodComparator) throws ElementException {
+                                   Comparator<AidlMethodModel> methodComparator) throws AnnotationException {
         final AIDL aidl = aidlInterface.getAnnotation(AIDL.class);
 
         final SuppressWarnings typeSw = aidlInterface.getAnnotation(SuppressWarnings.class);
@@ -104,29 +102,27 @@ public final class AidlModel {
                 final AidlMethodModel existing = assignedIds.put(aidlMethod.transactionId, aidlMethod);
 
                 if (existing != null) {
-                    throw new ElementException("Duplicate transaction id", existing.element.element);
+                    AnnotationMirror a = Util.getAnnotation(methodEl.element, Call.class);
+
+                    throw new AnnotationException("Duplicate transaction id: " + aidlMethod.transactionId, existing.element.element, a);
                 }
             } else {
                 methods.add(aidlMethod);
             }
         }
 
-        Collection<AidlMethodModel> sortedMethods;
+        Map<Integer, AidlMethodModel> sortedMethods;
 
         if (methods.size() != 0) {
             methods.sort(methodComparator);
 
             if (assignedIds.isEmpty()) {
-                assignIds(methods);
-
-                sortedMethods = methods;
+                sortedMethods = assignIds(methods);
             } else {
-                assignIds(methods, assignedIds);
-
-                sortedMethods = assignedIds.values();
+                sortedMethods = assignIds(methods, assignedIds);
             }
         } else {
-            sortedMethods = assignedIds.values();
+            sortedMethods = assignedIds;
         }
 
         CharSequence descriptor = aidl.value();
@@ -151,8 +147,10 @@ public final class AidlModel {
                 typeTransplanted);
     }
 
-    private static void assignIds(ArrayList<AidlMethodModel> methods) {
-        int nextAvailableId = -1; int i;
+    private static Map<Integer, AidlMethodModel> assignIds(ArrayList<AidlMethodModel> methods) {
+        final Map<Integer, AidlMethodModel> result = new LinkedHashMap<>();
+
+        int nextAvailableId = IBinder.FIRST_CALL_TRANSACTION - 1; int i;
 
         for (i = 0; i < methods.size(); ++i) {
             AidlMethodModel nextModel = methods.get(i);
@@ -162,17 +160,25 @@ public final class AidlModel {
             }
 
             nextModel.transactionId = ++nextAvailableId;
+
+            result.put(nextAvailableId, nextModel);
         }
 
         nextAvailableId = 9000;
 
         for (; i < methods.size(); ++i) {
-            methods.get(i).transactionId = ++nextAvailableId;
+            AidlMethodModel nextModel = methods.get(i);
+
+            nextModel.transactionId = ++nextAvailableId;
+
+            result.put(nextAvailableId, nextModel);
         }
+
+        return result;
     }
 
-    private static void assignIds(ArrayList<AidlMethodModel> methods, NavigableMap<Integer, AidlMethodModel> assignedIds) {
-        int availableKey = -1; int nextReservedKey;
+    private static Map<Integer, AidlMethodModel> assignIds(ArrayList<AidlMethodModel> methods, NavigableMap<Integer, AidlMethodModel> assignedIds) {
+        int availableKey = IBinder.FIRST_CALL_TRANSACTION - 1; int nextReservedKey;
 
         Integer nextReserved = assignedIds.higherKey(availableKey);
         nextReservedKey = nextReserved != null ? nextReserved : -1;
@@ -191,9 +197,9 @@ public final class AidlModel {
                 nextReservedKey = nextReserved != null ? nextReserved : -1;
             }
 
-            nextModel.transactionId = ++availableKey;
+            nextModel.transactionId = availableKey;
 
-            assignedIds.put(nextModel.transactionId, nextModel);
+            assignedIds.put(availableKey, nextModel);
         }
 
         availableKey = 9000;
@@ -209,10 +215,12 @@ public final class AidlModel {
                 nextReservedKey = nextReserved != null ? nextReserved : -1;
             }
 
-            nextModel.transactionId = ++availableKey;
+            nextModel.transactionId = availableKey;
 
             assignedIds.put(nextModel.transactionId, nextModel);
         }
+
+        return assignedIds;
     }
 
     public void finishGeneration() throws IOException {

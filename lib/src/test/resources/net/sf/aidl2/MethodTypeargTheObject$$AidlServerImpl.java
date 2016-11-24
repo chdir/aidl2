@@ -22,7 +22,7 @@ import java.lang.SuppressWarnings;
 public final class MethodTypeargTheObject$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.MethodTypeargTheObject";
 
-    static final int TRANSACT_methodWithObjectParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithObjectParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final MethodTypeargTheObject delegate;
 

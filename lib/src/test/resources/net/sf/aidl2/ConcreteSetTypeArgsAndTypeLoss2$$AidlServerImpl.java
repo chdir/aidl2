@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public final class ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.ConcreteSetTypeArgsAndTypeLoss2";
 
-    static final int TRANSACT_methodWithCSKLSetParamAndTreeSetArray = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithCSKLSetParamAndTreeSetArray = IBinder.FIRST_CALL_TRANSACTION;
 
     private final ConcreteSetTypeArgsAndTypeLoss2 delegate;
 

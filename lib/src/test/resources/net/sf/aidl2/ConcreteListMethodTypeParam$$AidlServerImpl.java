@@ -25,7 +25,7 @@ import java.util.Vector;
 public final class ConcreteListMethodTypeParam$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.ConcreteListMethodTypeParam";
 
-    static final int TRANSACT_methodWithVectorParamAndStackReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithVectorParamAndStackReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final ConcreteListMethodTypeParam delegate;
 

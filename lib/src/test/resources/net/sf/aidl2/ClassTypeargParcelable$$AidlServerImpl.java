@@ -21,7 +21,7 @@ import java.lang.String;
 public final class ClassTypeargParcelable$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.MethodTypeargParcelable";
 
-    static final int TRANSACT_methodWithParcelableReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithParcelableReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final ClassTypeargParcelable delegate;
 

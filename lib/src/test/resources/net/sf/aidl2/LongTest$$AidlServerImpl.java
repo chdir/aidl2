@@ -21,7 +21,7 @@ import java.lang.String;
 public final class LongTest$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.LongTest";
 
-    static final int TRANSACT_methodWithLongParameter = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithLongParameter = IBinder.FIRST_CALL_TRANSACTION;
 
     private final LongTest delegate;
 

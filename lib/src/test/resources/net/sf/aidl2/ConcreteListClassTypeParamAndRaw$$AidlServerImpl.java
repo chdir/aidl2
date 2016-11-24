@@ -25,7 +25,7 @@ import java.util.LinkedList;
 public final class ConcreteListClassTypeParamAndRaw$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.ConcreteListClassTypeParamAndRaw";
 
-    static final int TRANSACT_methodWithLinkedListParamAndArrayListReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithLinkedListParamAndArrayListReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final ConcreteListClassTypeParamAndRaw delegate;
 

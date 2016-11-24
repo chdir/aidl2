@@ -25,7 +25,7 @@ import java.util.Map;
 public final class SimpleMap$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.SimpleMap";
 
-  static final int TRANSACT_abstractMapMethod = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_abstractMapMethod = IBinder.FIRST_CALL_TRANSACTION;
 
   static final int TRANSACT_concreteMapMethod = IBinder.FIRST_CALL_TRANSACTION + 1;
 

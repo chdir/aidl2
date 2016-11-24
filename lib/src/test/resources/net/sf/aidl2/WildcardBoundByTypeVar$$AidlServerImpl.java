@@ -21,7 +21,7 @@ import java.lang.String;
 public final class WildcardBoundByTypeVar$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.WildcardBoundByTypeVar";
 
-  static final int TRANSACT_wow = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_wow = IBinder.FIRST_CALL_TRANSACTION;
 
   private final WildcardBoundByTypeVar delegate;
 

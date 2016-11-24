@@ -20,7 +20,7 @@ import java.lang.String;
 public final class VoidTest$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.VoidTest";
 
-    static final int TRANSACT_methodWithVoidReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithVoidReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final VoidTest delegate;
 

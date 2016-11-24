@@ -21,7 +21,7 @@ import java.lang.String;
 public final class NullabilityInheritance$$AidlServerImpl extends Binder {
   static final String DESCRIPTOR = "net.sf.aidl2.NullabilityInheritance";
 
-  static final int TRANSACT_testMethod1 = IBinder.FIRST_CALL_TRANSACTION + 0;
+  static final int TRANSACT_testMethod1 = IBinder.FIRST_CALL_TRANSACTION;
 
   static final int TRANSACT_testMethod2 = IBinder.FIRST_CALL_TRANSACTION + 1;
 

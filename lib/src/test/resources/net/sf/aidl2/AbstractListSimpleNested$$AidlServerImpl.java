@@ -24,7 +24,7 @@ import java.util.Collection;
 public final class AbstractListSimpleNested$$AidlServerImpl extends Binder {
     static final String DESCRIPTOR = "net.sf.aidl2.AbstractListSimpleNested";
 
-    static final int TRANSACT_methodWithAbstractListReturn = IBinder.FIRST_CALL_TRANSACTION + 0;
+    static final int TRANSACT_methodWithAbstractListReturn = IBinder.FIRST_CALL_TRANSACTION;
 
     private final AbstractListSimpleNested delegate;
 
