@@ -28,7 +28,11 @@ final class Session extends AptHelper implements Closeable {
     // see https://github.com/chdir/aidl2/wiki/Limits
     private static final int METHOD_COUNT_CAP = 9000;
 
-    private Set<Name> pendingElements = new HashSet<>();
+    private final Set<Name> pendingElements = new HashSet<>();
+
+    private final AidlValidator typeValidator = new AidlValidator(getBaseEnvironment());
+    private final AidlGenerator stubGen = new StubGenerator(getBaseEnvironment());
+    private final AidlGenerator proxyGen = new ProxyGenerator(getBaseEnvironment());
 
     public Session(AidlProcessor.Environment environment) {
         super(environment);
@@ -36,17 +40,21 @@ final class Session extends AptHelper implements Closeable {
 
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment)
             throws ElementException, AnnotationException, AnnotationValueException, IOException {
-        if (set.isEmpty()) {
-            getBaseEnvironment().getMessager().printMessage(NOTE, "Called with empty root element set");
-        }
-
         final HashSet<Element> workingSet = new HashSet<>();
 
-        workingSet.addAll(roundEnvironment.getElementsAnnotatedWith(AIDL.class));
+        // process supported annotations on new types
+        if (!set.isEmpty()) {
+            final Set<? extends Element> types = roundEnvironment.getElementsAnnotatedWith(AIDL.class);
 
+            if (!types.isEmpty()) {
+                workingSet.addAll(types);
+            }
+        }
+
+        // retry processing of previously seen annotations, abandoned due to missing types
         if (!pendingElements.isEmpty()) {
             for (Name pending : pendingElements) {
-                Element pendingInterface = elements.getTypeElement(pending);
+                TypeElement pendingInterface = elements.getTypeElement(pending);
 
                 if (pendingInterface == null) {
                     throw new IllegalStateException("Failed to locate by name previously seen " + pending);
@@ -64,8 +72,6 @@ final class Session extends AptHelper implements Closeable {
                 .log("Started new session at " + new Date(System.currentTimeMillis()));
 
         final List<AidlModel> producedModels = new ArrayList<>(workingSet.size());
-
-        final AidlValidator typeValidator = new AidlValidator(getBaseEnvironment());
 
         for (Element annotated : workingSet) {
             TypeElement iInterface = (TypeElement) annotated;
@@ -97,13 +103,9 @@ final class Session extends AptHelper implements Closeable {
                         "Looks like there are compilation errors in the @AIDL-annotated interface, please fix that.", erroneousElement);
             } else {
                 pendingElements.add(qualified);
-
-                return false;
             }
         }
 
-        final AidlGenerator stubGen = new StubGenerator(getBaseEnvironment());
-        final AidlGenerator proxyGen = new ProxyGenerator(getBaseEnvironment());
         final List<JavaFile> generatedFiles = new ArrayList<>(2);
 
         for (AidlModel model : producedModels) {
@@ -118,7 +120,7 @@ final class Session extends AptHelper implements Closeable {
             generatedFiles.clear();
         }
 
-        return true;
+        return pendingElements.isEmpty();
     }
 
     private List<TypeInvocation<ExecutableElement, ExecutableType>> gatherAidl2Methods(DeclaredType element) throws ElementException {

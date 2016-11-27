@@ -25,7 +25,7 @@ public class MapTests {
     }
 
     @Test
-    public void abstractListsSimple() throws Exception {
+    public void mapSimple() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("SimpleMap.java"));
 
         JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("SimpleMap$$AidlServerImpl.java"));
@@ -33,6 +33,25 @@ public class MapTests {
 
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
+    public void mapComplex() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MapAndNestedTypeArgs.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("MapAndNestedTypeArgs$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("MapAndNestedTypeArgs$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Aaidl2_use_versioning=false",
+                        "-Xlint:-rawtypes"
+                })
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
                 .and()

@@ -305,7 +305,7 @@ public final class Writer extends AptHelper {
                 ? (b, obj, unused) -> b.addStatement("$L.writeStrongBinder($L == null ? null : $L.asBinder())", parcelName, obj, obj)
                 : (b, obj, unused) -> b.addStatement("$L.writeStrongBinder($L.asBinder())", parcelName, obj);
 
-        return Strategy.createNullSafe(strategy, type);
+        return Strategy.createNullSafe(strategy, captureAll(type));
     }
 
     private Strategy getExternalizableStrategy(TypeMirror t) {

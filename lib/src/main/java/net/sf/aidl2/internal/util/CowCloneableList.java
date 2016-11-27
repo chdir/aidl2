@@ -127,6 +127,27 @@ public final class CowCloneableList<T> extends AbstractList<T> implements Closea
     }
 
     @Override
+    public void clear() {
+        setSize(0);
+    }
+
+    /**
+     * Set size to specific value (the excess elements at the end of the list are discarded).
+     * This method can only reduce size of list. Example: calling {@code setSize(0)} has the same effect
+     * as {@link #clear}.
+     */
+    public void setSize(int newSize) {
+        if (newSize > size) {
+            throw new IllegalArgumentException("Argument of size() is bigger than current size" +
+                    " (passed: " + newSize + ", current: " + size + ')');
+        }
+
+        Arrays.fill(contents, newSize, contents.length, null);
+
+        size = newSize;
+    }
+
+    @Override
     @SuppressWarnings("all")
     public CowCloneableList<T> clone() {
         return new CowCloneableList<T>(this);

@@ -432,32 +432,35 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 // component type is already refined
                 return foundParent;
             case DECLARED:
-                if (isRecursive(foundParent)) {
-                    // abort search to avoid endless recursion
-                    return types.erasure(foundParent);
-                }
-
                 final DeclaredType asDeclared = (DeclaredType) foundParent;
 
-                return types.getDeclaredType((TypeElement) asDeclared.asElement(), substituteAllArgs(asDeclared));
+                return substituteAllArgs(asDeclared);
             default:
                 // WTF??
                 return foundParent;
         }
     }
 
-    private TypeMirror[] substituteAllArgs(DeclaredType foundParent) {
+    private DeclaredType substituteAllArgs(DeclaredType foundParent) {
         final List<? extends TypeMirror> typeArgs = foundParent.getTypeArguments();
+
+        if (!typeArgs.isEmpty()) {
+            if (isRecursive(foundParent)) {
+                return (DeclaredType) types.erasure(foundParent);
+            }
+        }
 
         final TypeMirror[] result = new TypeMirror[typeArgs.size()];
 
         for (int i = 0; i < typeArgs.size(); ++i) {
-            final TypeMirror refined = NESTED_BOUND_REFINER.visit(typeArgs.get(i), null);
+            final TypeMirror arg = typeArgs.get(i);
+
+            final TypeMirror refined = NESTED_BOUND_REFINER.visit(arg, null);
 
             result[i] = refined == null ? types.getWildcardType(null, null) : refined;
         }
 
-        return result;
+        return types.getDeclaredType((TypeElement) foundParent.asElement(), result);
     }
 
     public MethodSpec.Builder override(ExecutableElement method, DeclaredType enclosing, boolean primary) {
@@ -1154,10 +1157,16 @@ public abstract class AptHelper implements ProcessingEnvironment {
             return type;
         }
 
+        if (isRecursive(type)) {
+            return types.erasure(type);
+        }
+
         final TypeMirror[] refinedArguments = new TypeMirror[args.size()];
 
         for (int i = 0; i < args.size(); i++) {
-            refinedArguments[i] = substituteForTypeArg(args.get(i));
+            TypeMirror arg = args.get(i);
+
+            refinedArguments[i] = substituteForTypeArg(arg);
         }
 
         return types.getDeclaredType((TypeElement) type.asElement(), refinedArguments);
@@ -1245,6 +1254,8 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
     }
 
+    private ThreadLocal<CowCloneableList<Element>> cowListCache = new ThreadLocal<>();
+
     /**
      * A recursive type is a type, that contains a self-references in it's type signature (and usually
      * requires a self-referencing type to be implemented). Example:
@@ -1256,10 +1267,28 @@ public abstract class AptHelper implements ProcessingEnvironment {
      * }<pre/>
      *
      * Such types tend to cause stack overflow in some AIDL2 methods, so it is often safer to reject them
-     * from outset push the responsibility for dealing with them onto {@link Types#erasure} and {@link Types#capture}
+     * from outset push the responsibility for dealing with them onto {@link Types#erasure} and {@link Types#capture}.
      */
-    public boolean isRecursive(TypeMirror suspect) {
-        return isRecursive(suspect, new CowCloneableList<>());
+    public boolean isRecursive(DeclaredType suspect) {
+        try (CowCloneableList<Element> list = getCached().clone()) {
+            boolean result = isRecursive(suspect, list);
+
+            list.clear();
+
+            return result;
+        }
+    }
+
+    private CowCloneableList<Element> getCached() {
+        CowCloneableList<Element> list = cowListCache.get();
+
+        if (list == null) {
+            list = new CowCloneableList<>();
+
+            cowListCache.set(list);
+        }
+
+        return list;
     }
 
     private boolean isRecursive(TypeMirror suspect, CowCloneableList<Element> encounteredTypeArgs) {
@@ -1282,12 +1311,16 @@ public abstract class AptHelper implements ProcessingEnvironment {
             // way into their type signatures
             final Collection<? extends TypeMirror> supertypes = getSupertypes(suspect);
 
-            for (TypeMirror parent : supertypes) {
-                if (isProperDeclared(parent) && !types.isSameType(suspect, parent)) {
-                    try (CowCloneableList<Element> forDescent = encounteredTypeArgs.clone()) {
+            try (CowCloneableList<Element> forDescent = encounteredTypeArgs.clone()) {
+                for (TypeMirror parent : supertypes) {
+                    if (isProperDeclared(parent) && !types.isSameType(suspect, parent)) {
+                        int old = forDescent.size();
+
                         if (isRecursive(parent, forDescent)) {
                             return true;
                         }
+
+                        if (old != forDescent.size()) forDescent.setSize(old);
                     }
                 }
             }
@@ -1302,11 +1335,15 @@ public abstract class AptHelper implements ProcessingEnvironment {
         if (typeArgs.size() == 1) {
             return isRecursive(typeArgs.get(0), encounteredTypeArgs);
         } else {
-            for (TypeMirror typeArg : typeArgs) {
-                try (CowCloneableList<Element> forDescent = encounteredTypeArgs.clone()) {
+            try (CowCloneableList<Element> forDescent = encounteredTypeArgs.clone()) {
+                for (TypeMirror typeArg : typeArgs) {
+                    int old = forDescent.size();
+
                     if (isRecursive(typeArg, forDescent)) {
                         return true;
                     }
+
+                    if (old != forDescent.size()) forDescent.setSize(old);
                 }
             }
         }
@@ -1315,22 +1352,23 @@ public abstract class AptHelper implements ProcessingEnvironment {
     }
 
     private DeclaredType captureAllArgs(DeclaredType type) {
-        if (isRecursive(type)) {
-            // abort search to avoid endless recursion
-            return (DeclaredType) types.erasure(type);
-        }
-
         final List<? extends TypeMirror> args = type.getTypeArguments();
 
         if (args.isEmpty()) {
             return type;
         }
 
+        if (isRecursive(type)) {
+            return (DeclaredType) types.erasure(type);
+        }
+
         final TypeMirror[] argumentCaptures = new TypeMirror[args.size()];
 
         for (int i = 0; i < args.size(); i++) {
+            TypeMirror arg = args.get(i);
+
             // clone the encountered types list to
-            argumentCaptures[i] = captureInner(args.get(i));
+            argumentCaptures[i] = captureInner(arg);
         }
 
         return types.getDeclaredType((TypeElement) type.asElement(), argumentCaptures);

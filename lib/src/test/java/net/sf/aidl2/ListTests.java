@@ -104,4 +104,24 @@ public class ListTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void listMisc() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ListAndNestedTypeArgs.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ListAndNestedTypeArgs$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ListAndNestedTypeArgs$$AidlClientImpl.java"));
+
+        // two javac warnings because of using raw delegate
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Xlint:-rawtypes",
+                        "-Aaidl2_use_versioning=false",
+                })
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
 }
