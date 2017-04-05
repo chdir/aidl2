@@ -90,6 +90,16 @@ public class MiscTests {
     }
 
     @Test
+    public void allowDeclaringRuntimeExceptionsInMethodSignature() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("RuntimeExceptionAllowed.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions("-A" + Config.OPT_LOGFILE + "=" + logFile.getFile())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings();
+    }
+
+    @Test
     public void compileComplex() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AllTogether.java"));
 
