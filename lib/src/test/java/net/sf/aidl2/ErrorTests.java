@@ -43,6 +43,21 @@ public class ErrorTests {
     }
 
     @Test
+    public void failsWhenOneWayMethodIsNotVoid() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("OneWayMustBeVoid.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("void")
+                .in(testSource)
+                .onLine(7)
+                .and()
+                .withNoteContaining("bailing out");
+    }
+
+    @Test
     public void failsWhenAidlDoesNotImplementIInterface() {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NotIInterfaceFailure.java"));
 
