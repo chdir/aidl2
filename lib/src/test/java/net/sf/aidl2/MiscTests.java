@@ -225,6 +225,25 @@ public class MiscTests {
     }
 
     @Test
+    public void warnings() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MoreSuppressingWarnings.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("MoreSuppressingWarnings$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("MoreSuppressingWarnings$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(new String[] {
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Aaidl2_use_versioning=false",
+                        "-Xlint:-rawtypes"
+                })
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
     public void ipcVersionIdStability() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability.java"));
         JavaFileObject testSource2 = JavaFileObjects.forResource(getClass().getResource("IpcVersionStability2.java"));
