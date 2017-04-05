@@ -17,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Type;
 import java.util.*;
 
 import javax.lang.model.element.ExecutableElement;
@@ -507,13 +508,11 @@ public final class Writer extends AptHelper {
         }, types.getArrayType(resultType));
     }
 
-    private TypeMirror getReadableKeyType(TypeMirror mapType) {
-        final DeclaredType baseMapType = getBaseDeclared(mapType, theMap);
-
-        final TypeInvocation<ExecutableElement, ExecutableType> specificEntrySetMethod =
-                mapEntrySet.refine(types, baseMapType);
-
-        final TypeMirror entryType = getReadableElementType(specificEntrySetMethod.type.getReturnType());
+    private TypeMirror getReadableKeyType(TypeMirror entryType) {
+        if (types.isSameType(entryType, theObject)) {
+            // erasure happened
+            return types.getWildcardType(null, null);
+        }
 
         // allow upper-bound wildcards to be used
         // not using captureAll() on purpose since any nested types with meaningful type args
@@ -528,13 +527,11 @@ public final class Writer extends AptHelper {
         return getKeyMethod.type.getReturnType();
     }
 
-    private TypeMirror getReadableValueType(TypeMirror mapType) {
-        final DeclaredType baseMapType = getBaseDeclared(mapType, theMap);
-
-        final TypeInvocation<ExecutableElement, ExecutableType> specificEntrySetMethod =
-                mapEntrySet.refine(types, baseMapType);
-
-        final TypeMirror entryType = getReadableElementType(specificEntrySetMethod.type.getReturnType());
+    private TypeMirror getReadableValueType(TypeMirror entryType) {
+        if (types.isSameType(entryType, theObject)) {
+            // erasure happened
+            return types.getWildcardType(null, null);
+        }
 
         // allow upper-bound wildcards to be used
         // not using captureAll() on purpose since any nested types with meaningful type args
@@ -547,6 +544,15 @@ public final class Writer extends AptHelper {
                 lookupMethod(theEntry, "getValue", "Object").refine(types, baseEntryType);
 
         return getKeyMethod.type.getReturnType();
+    }
+
+    private TypeMirror getEntrySetEntryType(TypeMirror mapType) {
+        final DeclaredType baseMapType = getBaseDeclared(mapType, theMap);
+
+        final TypeInvocation<ExecutableElement, ExecutableType> specificEntrySetMethod =
+                mapEntrySet.refine(types, baseMapType);
+
+        return getReadableElementType(specificEntrySetMethod.type.getReturnType());
     }
 
     private TypeMirror getReadableElementType(TypeMirror type) {
@@ -574,9 +580,11 @@ public final class Writer extends AptHelper {
         // (e.g. Collections) are going to be handled by recursive application of this method
         //final TypeMirror noWildcards = AptHelper.capture(types, type);
 
-        final TypeMirror keyType = getReadableKeyType(type);
+        final TypeMirror entrySetEntryType = getEntrySetEntryType(type);
 
-        final TypeMirror valueType = getReadableValueType(type);
+        final TypeMirror keyType = getReadableKeyType(entrySetEntryType);
+
+        final TypeMirror valueType = getReadableValueType(entrySetEntryType);
 
         final Strategy keyStrategy = getStrategy(keyType);
 
@@ -628,8 +636,9 @@ public final class Writer extends AptHelper {
             block.nextControlFlow("else");
             block.addStatement("$N.writeInt($L.size())", parcelName, name1);
 
-            final TypeMirror actualKeyType = getReadableKeyType(actualType);
-            final TypeMirror actualValueType = getReadableValueType(actualType);
+            final TypeMirror actualEntryType = getEntrySetEntryType(actualType);
+            final TypeMirror actualKeyType = getReadableKeyType(actualEntryType);
+            final TypeMirror actualValueType = getReadableValueType(actualEntryType);
 
             final TypeMirror keyTypeToUse;
             final TypeMirror valueTypeToUse;
@@ -646,8 +655,14 @@ public final class Writer extends AptHelper {
                 valueTypeToUse = types.getWildcardType(requestedValueType, null);
             }
 
-            block.beginControlFlow("for ($T<$T, $T> $N: $L.entrySet())", Map.Entry.class, keyTypeToUse, valueTypeToUse,
-                    entry, name1);
+            final DeclaredType entryTypeToUse = types.getDeclaredType(entryElement, keyTypeToUse, valueTypeToUse);
+
+            if (types.isAssignable(actualEntryType, entryTypeToUse)) {
+                block.beginControlFlow("for ($T $N: $L.entrySet())", entryTypeToUse, entry, name1);
+            } else {
+                block.beginControlFlow("for ($T $N : $T.<$T<$T<$T, $T>>>unsafeCast($L.entrySet()))",
+                        entryTypeToUse, entry, AidlUtil.class, Set.class, Map.Entry.class, requestedKeyType, requestedValueType, name1);
+            }
 
             final boolean nullable = Util.isNullable(requestedKeyType, this.nullable);
 

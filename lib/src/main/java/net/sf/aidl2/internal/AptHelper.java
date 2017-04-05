@@ -63,6 +63,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
     protected final TypeElement collectionElement;
     protected final TypeElement mapElement;
+    protected final TypeElement entryElement;
 
     protected final TypeInvocation<ExecutableElement, ExecutableType> onTransact;
     protected final TypeInvocation<ExecutableElement, ExecutableType> asBinder;
@@ -94,7 +95,8 @@ public abstract class AptHelper implements ProcessingEnvironment {
         mapElement = elements.getTypeElement(Map.class.getName());
         theMap = types.getDeclaredType(mapElement);
 
-        theEntry = types.getDeclaredType(elements.getTypeElement(Map.Entry.class.getCanonicalName()));
+        entryElement = elements.getTypeElement(Map.Entry.class.getCanonicalName());
+        theEntry = types.getDeclaredType(entryElement);
 
         onTransact = lookupMethod(theBinder, "onTransact", boolean.class, int.class, "Parcel", "Parcel", int.class);
         asBinder = lookupMethod(theIInterface, "asBinder", "IBinder");
