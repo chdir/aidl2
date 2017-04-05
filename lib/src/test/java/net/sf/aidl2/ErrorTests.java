@@ -37,7 +37,7 @@ public class ErrorTests {
                 .withErrorCount(1)
                 .withErrorContaining("IOException")
                 .in(testSource)
-                .onLine(9)
+                .onLine(10)
                 .and()
                 .withNoteContaining("bailing out");
     }

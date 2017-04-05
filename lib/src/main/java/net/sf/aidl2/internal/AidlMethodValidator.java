@@ -81,18 +81,23 @@ final class AidlMethodValidator extends AptHelper {
 
         final List<? extends TypeMirror> thrown = method.type.getThrownTypes();
 
+        boolean throwsRemoteException = false;
+
         for (TypeMirror throwable : thrown) {
             if (isChecked(throwable)) {
                 if (types.isSameType(remoteException, throwable)) {
-                    return;
+                    throwsRemoteException = true;
+                    continue;
                 }
 
                 throw new ElementException("@AIDL method declares unsupported Exception type: " + throwable
-                         + ". Only android.os.RemoteException and non-checked Throwable subtypes are allowed.", method.element);
+                        + ". Only android.os.RemoteException and non-checked Throwable subtypes are allowed.", method.element);
             }
         }
 
-        throw new ElementException("@AIDL methods must declare android.os.RemoteException", method.element);
+        if (!throwsRemoteException) {
+            throw new ElementException("@AIDL methods must declare android.os.RemoteException", method.element);
+        }
     }
 
     private static IdVisitor ID_VISITOR;
