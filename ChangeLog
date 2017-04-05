@@ -10,3 +10,12 @@
 * Improved quality of generated code, less casts  etc.
 * Added (actually fixed) nullability annotations support
 * Numerous small bugfixes
+
+## Version 0.4.0
+
+* Improved quality of generated code (less unchecked and unsafe casts)
+* Better codegen for arrays with generic component
+* Preserve method order to improve API stability
+* Added naive versioning
+* Allow use of custom transaction IDs
+* Support for recursive types
