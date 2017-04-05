@@ -1,6 +1,5 @@
 package net.sf.aidl2.internal;
 
-import android.os.Parcelable;
 import com.squareup.javapoet.*;
 
 import net.sf.aidl2.AidlUtil;
@@ -124,9 +123,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 }
             }
 
-            boolean leftIsRaw = isRaw(left);
+            boolean leftIsRaw = !hasTypeArgs(left);
 
-            boolean rightIsRaw = isRaw(right);
+            boolean rightIsRaw = !hasTypeArgs(right);
 
             // move raw types towards end of list
             if (leftIsRaw) {
@@ -666,6 +665,11 @@ public abstract class AptHelper implements ProcessingEnvironment {
     }
 
     protected DeclaredType getBaseDeclared(TypeMirror type, DeclaredType desirableParent) {
+        // if the type is raw, we have to erase the target parent
+        if (isRaw(type)) {
+            desirableParent = (DeclaredType) types.erasure(desirableParent);
+        }
+
         final ArrayList<DeclaredType> parents = new ArrayList<>(1);
 
         final CollectionTypeRefiner refiner = new CollectionTypeRefiner(parents, desirableParent);
@@ -687,8 +691,25 @@ public abstract class AptHelper implements ProcessingEnvironment {
         return !types.isSubtype(throwable, theRuntimeException) && types.isSubtype(throwable, theException);
     }
 
+    /**
+     * @return true if the argument has type args (and erasure removes them)
+     */
+    public boolean hasTypeArgs(TypeMirror type) {
+        return !types.isSameType(types.erasure(type), type);
+    }
+
+    /**
+     * @return true only if the specified type is a "raw type" (a type-erased version of parametrized type)
+     */
     public boolean isRaw(TypeMirror type) {
-        return types.isSameType(types.erasure(type), type);
+        if (!isProperDeclared(type)) {
+            return false;
+        }
+
+        final DeclaredType d = (DeclaredType) type;
+
+        return d.getTypeArguments().isEmpty() &&
+                !((TypeElement) d.asElement()).getTypeParameters().isEmpty();
     }
 
     protected DeclaredType lookup(Class<?> clazz) {
@@ -1078,7 +1099,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
         if (isProperDeclared(erased)) {
             final DeclaredType notErasedParent = getBaseDeclared(elementType, (DeclaredType) erased);
 
-            if (!isRaw(notErasedParent)) {
+            if (hasTypeArgs(notErasedParent)) {
                 final TypeElement element = (TypeElement) notErasedParent.asElement();
 
                 final int argCount = element.getTypeParameters().size();
