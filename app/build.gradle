@@ -4,8 +4,6 @@ import org.gradle.internal.jvm.Jvm
 evaluationDependsOn(':lib')
 
 apply plugin: 'com.android.application'
-apply plugin: 'me.tatarka.retrolambda'
-apply plugin: 'com.neenbedankt.android-apt'
 
 repositories {
     maven {
@@ -15,19 +13,24 @@ repositories {
 
 android {
     compileSdkVersion 'android-24'
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '27.0.3'
 
     defaultConfig {
-        applicationId "net.sf.fakenames.aidl2.demo"
+        applicationId 'net.sf.fakenames.aidl2.demo'
         minSdkVersion 18
         targetSdkVersion 23
         versionCode 1
-        versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        versionName '1.0'
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
 
         javaCompileOptions {
             annotationProcessorOptions {
                 includeCompileClasspath = true
+
+                arguments = [
+                    aidl2_log_to_file: 'true',
+                    aidl2_verbose: 'true',
+                ]
             }
         }
     }
@@ -45,14 +48,7 @@ android {
 
 gradle.projectsEvaluated {
     tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:rawtypes"
-    }
-}
-
-apt {
-    arguments {
-        aidl2_log_to_file true
-        aidl2_verbose true
+        options.compilerArgs << '-Xlint:rawtypes'
     }
 }
 
@@ -66,7 +62,7 @@ tasks.withType(Test) {
         exceptionFormat TestExceptionFormat.FULL
 
         debug {
-            events "started", "passed", "skipped", "failed", "standardOut", "standardError"
+            events 'started', 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
             exceptionFormat TestExceptionFormat.FULL
         }
 
@@ -100,25 +96,23 @@ android.applicationVariants.all { variant ->
 }
 
 dependencies {
-    compile 'org.jetbrains:annotations:13.0'
-
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
+    implementation 'org.jetbrains:annotations:13.0'
 
     if (project.properties.uploadInitiated || !project.hasProperty('theTimeHasCometh')) {
-        compile project(':lib')
+        implementation project(':lib')
     } else {
-        compile ('net.sf.aidl2:compiler:0.+') { changing = true }
+        implementation ('net.sf.aidl2:compiler:0.+') { changing = true }
     }
 
-    androidTestCompile 'junit:junit:4.12'
-    androidTestCompile 'com.android.support.test:runner:0.5'
-    androidTestCompile 'com.android.support.test:rules:0.5'
-    androidTestCompile 'com.google.truth:truth:0.28'
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:0.5'
+    androidTestImplementation 'com.android.support.test:rules:0.5'
+    androidTestImplementation 'com.google.truth:truth:0.28'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.google.testing.compile:compile-testing:0.9'
-    testCompile 'com.google.truth:truth:0.28'
-    testCompile files(Jvm.current().getRuntimeJar())
-    testCompile files(Jvm.current().getToolsJar())
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'com.google.testing.compile:compile-testing:0.9'
+    testImplementation 'com.google.truth:truth:0.28'
+
+    testImplementation files("${System.properties.'java.home'}/lib/rt.jar")
+    testImplementation files(Jvm.current().getToolsJar())
 }

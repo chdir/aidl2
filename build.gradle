@@ -1,39 +1,37 @@
 task wrapper (type:Wrapper) {
-    gradleVersion = '2.14.1'
-    distributionUrl = 'https://services.gradle.org/distributions/gradle-2.14.1-all.zip'
+    gradleVersion = '4.6'
+    distributionUrl = 'https://services.gradle.org/distributions/gradle-4.6-all.zip'
 }
 
 buildscript {
     repositories {
         jcenter()
-
-        maven { url 'http://repo.spring.io/plugins-release' }
+        google()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0'
-        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+        classpath 'com.android.tools.build:gradle:3.1.1'
         classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.5.0-x'
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
-        classpath 'net.sf.proguard:proguard-gradle:5.2.1'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+        classpath 'net.sf.proguard:proguard-gradle:5.3.3'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
+        classpath 'me.tatarka:gradle-retrolambda:3.7.0'
     }
 
     configurations.classpath {
         resolutionStrategy {
             failOnVersionConflict()
 
-            force 'org.ow2.asm:asm:5.0.4'
-            force 'org.ow2.asm:asm-commons:5.0.4'
             force 'com.android.tools:annotations:25.2.0'
-            force 'com.google.guava:guava:18.0'
+            force 'com.google.guava:guava:21.0'
+            force 'com.google.errorprone:error_prone_annotations:2.1.2'
             force 'org.apache.httpcomponents:httpclient:4.2.1'
             force 'org.apache.httpcomponents:httpcore:4.1'
             force 'commons-lang:commons-lang:2.4'
             force 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.2'
             force 'org.codehaus.plexus:plexus-utils:2.0.6'
-            force 'org.apache.ant:ant:1.9.4'
         }
     }
 }
@@ -58,6 +56,7 @@ allprojects {
 
             force 'com.google.guava:guava:18.0'
             force 'junit:junit:4.12'
+            force 'org.codehaus.plexus:plexus-utils:1.5.15'
         }
 
         resolutionStrategy.cacheChangingModulesFor 15, 'seconds'

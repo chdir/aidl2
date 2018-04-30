@@ -6,7 +6,6 @@ import static org.gradle.api.tasks.testing.logging.TestLogEvent.*;
 
 apply plugin: 'java'
 apply plugin: 'jacoco'
-apply plugin: 'propdeps'
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'com.github.kt3k.coveralls'
@@ -65,7 +64,7 @@ task apiJar(type: Jar) {
 
     includeEmptyDirs = false
 
-    from project.sourceSets.main.output
+    from project.sourceSets.main.output.classesDir
 }
 
 task sourcesJar(type: Jar) {
@@ -111,7 +110,6 @@ retrolambda {
     exclude 'Test', 'TestReport', 'test', 'testCompile'
     javaVersion JavaVersion.VERSION_1_6
     jdk System.getenv('JAVA_HOME')
-    oldJdk System.getenv('JAVA7_HOME')
 }
 
 test.testLogging { TestLoggingContainer it ->
@@ -139,19 +137,22 @@ jacocoTestReport {
 }
 
 if (project.hasProperty('deploymentConfig')) {
-    apply from: file("$rootProject.projectDir/deployment.gradle")
+    apply from: file("$rootProject.projectDir/deployment.gradle")А
 }
 
 dependencies {
-    compile 'com.squareup:javapoet:1.5.1'
-    compile 'org.jetbrains:annotations:13.0'
+    implementation 'com.squareup:javapoet:1.5.1'
+    implementation 'org.jetbrains:annotations:13.0'
 
     compileOnly 'com.google.android:android:4.1.1.4'
-    compileOnly 'com.google.auto.service:auto-service:1.0-rc2'
+    compileOnly 'com.google.auto.service:auto-service:1.0-rc3'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.google.testing.compile:compile-testing:0.9'
-    testCompile 'com.google.truth:truth:0.28'
-    testCompile 'org.robolectric:android-all:6.0.0_r1-robolectric-0'
-    testCompile files(Jvm.current().getToolsJar())
+    annotationProcessor 'com.google.auto.service:auto-service:1.0-rc3'
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'com.google.testing.compile:compile-testing:0.9'
+    testImplementation 'com.google.truth:truth:0.28'
+    testImplementation 'org.robolectric:android-all:6.0.0_r1-robolectric-0'
+
+    testImplementation files(Jvm.current().getToolsJar())
 }
