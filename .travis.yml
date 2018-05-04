@@ -27,6 +27,7 @@ before_script:
 
 script:
   - jdk_switcher use openjdk7
+  - jdk_switcher use openjdk9
   - jdk_switcher use oraclejdk8
   - set -e;
     if [ "$TRAVIS_BRANCH" == "staging" ]; then

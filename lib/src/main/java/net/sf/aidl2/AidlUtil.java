@@ -2,6 +2,7 @@ package net.sf.aidl2;
 
 import android.os.IBinder;
 import android.os.Parcel;
+import android.os.RemoteException;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 
 public class AidlUtil {
     public static final int VERSION_TRANSACTION = IBinder.LAST_CALL_TRANSACTION;
@@ -97,6 +99,35 @@ public class AidlUtil {
             } catch (IOException ignored) {
                 // ok
             }
+        }
+    }
+
+    /**
+     * Internal utility method for aiding code generation.
+     */
+    public static void verify(IBinder rpc, String interfaceName, long localRpcVersion) throws RemoteException {
+        final long interfaceRpcVer;
+
+        Parcel req = Parcel.obtain();
+        Parcel resp = Parcel.obtain();
+        try {
+            req.writeInterfaceToken(interfaceName);
+            req.writeLong(localRpcVersion);
+
+            if (!rpc.transact(AidlUtil.VERSION_TRANSACTION, req, resp, 0)) {
+                throw new VersionMismatch("Failed to get interface version from remote process");
+            }
+
+            resp.readException();
+
+            interfaceRpcVer = resp.readLong();
+        } finally {
+            req.recycle();
+            resp.recycle();
+        }
+
+        if (interfaceRpcVer != localRpcVersion) {
+            throw new VersionMismatch("RPC interface version mismatch: local is " + localRpcVersion + " remote is " + interfaceRpcVer);
         }
     }
 }
