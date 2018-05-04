@@ -6,20 +6,11 @@ import android.os.*;
 import android.util.Log;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -60,10 +51,6 @@ public final class InterfaceLoader {
 
     private static final String TAG = "AIDL2";
 
-    private static final Linker linker = getLinker();
-
-    private static volatile boolean warned;
-
     /**
      * Export provided interface implementation for inter-process access.
      *
@@ -85,28 +72,14 @@ public final class InterfaceLoader {
             throw new IllegalArgumentException("aidlInterface == null");
         }
 
-        if (linker != null) {
-            final IBinder found = linker.newServer(server, aidlInterface);
+        IBinder tried = FallbackLocator.loadServerViaFallback(aidlInterface, server);
 
-            if (found != null) {
-                return found;
-            }
-        } else {
-            if (!warned) {
-                Log.e(TAG, "Failed to find the linker class, make sure that your build system set up is correct");
-
-                warned = true;
+        if (tried != null) {
+            if (useVerboseLogging) {
+                Log.v(TAG, "Successfully located " + tried.getClass() + " via resource metadata");
             }
 
-            IBinder tried = FallbackLocator.loadServerViaFallback(aidlInterface, server);
-
-            if (tried != null) {
-                if (useVerboseLogging) {
-                    Log.v(TAG, "Successfully located " + tried.getClass() + " via resource metadata");
-                }
-
-                return tried;
-            }
+            return tried;
         }
 
         makeMotions(aidlInterface);
@@ -143,28 +116,14 @@ public final class InterfaceLoader {
             return (Z) localInterface;
         }
 
-        if (linker != null) {
-            Z found = linker.newClient(binder, aidlInterface);
+        Z tried = (Z) FallbackLocator.loadClientViaFallback(aidlInterface, interfaceName, binder);
 
-            if (found != null) {
-                return found;
-            }
-        } else {
-            if (!warned) {
-                Log.e(TAG, "Failed to find the linker class, make sure that your build system set up is correct");
-
-                warned = true;
+        if (tried != null) {
+            if (useVerboseLogging) {
+                Log.v(TAG, "Successfully located " + tried.getClass() + " via resource metadata");
             }
 
-            Z tried = (Z) FallbackLocator.loadClientViaFallback(aidlInterface, interfaceName, binder);
-
-            if (tried != null) {
-                if (useVerboseLogging) {
-                    Log.v(TAG, "Successfully located " + tried.getClass() + " via resource metadata");
-                }
-
-                return tried;
-            }
+            return tried;
         }
 
         makeMotions(aidlInterface);
@@ -187,121 +146,41 @@ public final class InterfaceLoader {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static Linker getLinker() {
-        try {
-            Class<? extends Linker> linkerClass = (Class<? extends Linker>)
-                    Class.forName("net.sf.aidl2.LinkerImpl");
-
-            return linkerClass.newInstance();
-        } catch (Exception e) {
-            if (useVerboseLogging) {
-                Log.i(TAG, "Failed to load linker", e);
-            }
-
-            return null;
-        }
-    }
-
-    private static class FallbackLocator {
-        private static final Set<String> pkgSet = new HashSet<>();
-
-        private static final Map implMap = new HashMap<>();
-
-        private static final Map<String, Constructor<?>> classes = new ConcurrentHashMap<>();
+    public static final class FallbackLocator {
+        private static final Map<String, Constructor<?>> clients = new ConcurrentHashMap<>();
+        private static final Map<String, Constructor<?>> servers = new ConcurrentHashMap<>();
 
         @SuppressWarnings("unchecked")
         private static @NotNull <T> Constructor<T> getConstructor(String className, Class<?> argType) throws ClassNotFoundException, NoSuchMethodException {
             final Class<? extends IBinder> simplyFound = (Class<? extends IBinder>) Class.forName(className);
 
-            return (Constructor<T>) simplyFound.getConstructor(argType);
+            Constructor<T> result = (Constructor<T>) simplyFound.getConstructor(argType);
+
+            result.setAccessible(true);
+
+            return result;
         }
 
-        @SuppressWarnings("unchecked")
-        private static @Nullable String getClassImplName(Class<?> clazz, String implType) {
-            final String packageName = clazz.getPackage().getName();
-
-            final String className = clazz.getName();
-
-            final ClassLoader loader = FallbackLocator.class.getClassLoader();
-
-            synchronized (FallbackLocator.class) {
-                if (!pkgSet.contains(packageName)) {
-                    final String metadataPath = packageName.replace('.', '/') + "/aidl2.properties";
-
-                    try {
-                        final Enumeration<URL> res = loader.getResources(metadataPath);
-
-                        if (!res.hasMoreElements()) {
-                            Log.e(TAG, "Unable to find " + metadataPath + " in resources using " + loader);
-
-                            return null;
-                        }
-
-                        final Properties properties = new Properties();
-
-                        while (res.hasMoreElements()) {
-                            try (InputStream stream = res.nextElement().openStream()) {
-                                properties.load(stream);
-                            }
-                        }
-
-                        implMap.putAll(properties);
-                    } catch (IOException e) {
-                        Log.e(TAG, "IO error during reading resource file " + metadataPath + " with " + loader, e);
-
-                        return null;
-                    }
-
-                    pkgSet.add(packageName);
-                }
-            }
-
-            final Object found = implMap.get(className + implType);
-
-            if (found != null) {
-                return found.toString();
-            }
-
-            throw new IllegalStateException("Metadata file found, but does not have entry for " + clazz);
-        }
-
-        public static IInterface loadClientViaFallback(Class<? extends IInterface> clazz, String interfaceName, IBinder client) {
+        static IInterface loadClientViaFallback(Class<? extends IInterface> clazz, String interfaceName, IBinder client) {
             final String name = clazz.getName();
 
             final String implType = "$$AidlClientImpl";
 
-            String serverImplClassName = name + implType;
-
-            Constructor constructor = classes.get(serverImplClassName);
+            Constructor constructor = clients.get(name);
 
             try {
                 if (constructor == null) {
-                    try {
-                        constructor = getConstructor(serverImplClassName, IBinder.class);
-                    } catch (ClassNotFoundException ignored) {
-                        final String renamedImpl = getClassImplName(clazz, implType);
+                    String serverImplClassName = name + implType;
 
-                        if (renamedImpl == null) {
-                            Log.e(TAG, "Failed to find IInterface implementation for " + clazz);
+                    constructor = getConstructor(serverImplClassName, IBinder.class);
 
-                            return null;
-                        }
-
-                        serverImplClassName = renamedImpl;
-
-                        constructor = getConstructor(serverImplClassName, IBinder.class);
-                    }
-
-                    classes.put(serverImplClassName, constructor);
+                    clients.put(name, constructor);
                 }
-
-                checkVersion(client, interfaceName, constructor.getDeclaringClass());
 
                 return (IInterface) constructor.newInstance(client);
             } catch (NoSuchMethodException ignored) {
                 throw new RuntimeException(
-                        "Class \"" + serverImplClassName + "\" exists, but does not contain " +
+                        "Class \"" + name + implType + "\" exists, but does not contain " +
                                 "default constructor. Issues like this are sometimes caused by Proguard. " +
                                 "Check your build system set up");
             } catch (ClassNotFoundException e) {
@@ -315,42 +194,28 @@ public final class InterfaceLoader {
             }
         }
 
-        public static <Y extends IInterface> IBinder loadServerViaFallback(Class<Y> clazz, Y server) {
+        static <Y extends IInterface> IBinder loadServerViaFallback(Class<Y> clazz, Y server) {
             final String name = clazz.getName();
 
             final String implType = "$$AidlServerImpl";
 
-            String serverImplClassName = name + implType;
-
-            Constructor constructor = classes.get(serverImplClassName);
+            Constructor constructor = servers.get(name);
 
             try {
                 if (constructor == null) {
-                    try {
-                        constructor = getConstructor(serverImplClassName, clazz);
-                    } catch (ClassNotFoundException ignored) {
-                        final String renamedImpl = getClassImplName(clazz, implType);
+                    String serverImplClassName = name + implType;
 
-                        if (renamedImpl == null) {
-                            Log.e(TAG, "Failed to find Binder implementation for " + clazz);
+                    constructor = getConstructor(serverImplClassName, clazz);
 
-                            return null;
-                        }
-
-                        serverImplClassName = renamedImpl;
-
-                        constructor = getConstructor(serverImplClassName, clazz);
-                    }
-
-                    classes.put(serverImplClassName, constructor);
+                    servers.put(name, constructor);
                 }
 
                 return (IBinder) constructor.newInstance(server);
             } catch (NoSuchMethodException ignored) {
                 throw new RuntimeException(
-                        "Class \"" + serverImplClassName + "\" exists, but does not contain " +
-                        "default constructor. Issues like this are sometimes caused by Proguard. " +
-                        "Check your build system set up");
+                        "Class \"" + name + implType + "\" exists, but does not contain " +
+                                "default constructor. Issues like this are sometimes caused by Proguard. " +
+                                "Check your build system set up");
             } catch (ClassNotFoundException e) {
                 Log.e(TAG, "Failed to load Binder implementation for " + clazz, e);
 
@@ -359,40 +224,6 @@ public final class InterfaceLoader {
                 throw e;
             } catch (Exception e) {
                 throw new RuntimeException(e);
-            }
-        }
-
-        private static void checkVersion(IBinder rpc, String interfaceName, Class<?> proxy) throws IllegalAccessException, RemoteException {
-            Field[] fields = proxy.getDeclaredFields();
-
-            for (Field field : fields) {
-                if (field.getType() == long.class) {
-                    field.setAccessible(true);
-
-                    final long localRpcVersion;
-                    final long interfaceRpcVer;
-
-                    localRpcVersion = field.getLong(null);
-
-                    Parcel req = Parcel.obtain();
-                    Parcel resp = Parcel.obtain();
-                    try {
-                        req.writeString(interfaceName);
-
-                        if (!rpc.transact(AidlUtil.VERSION_TRANSACTION, req, resp, 0)) {
-                            throw new VersionMismatch("Failed to get interface version from remote process");
-                        }
-
-                        interfaceRpcVer = resp.readLong();
-                    } finally {
-                        req.recycle();
-                        resp.recycle();
-                    }
-
-                    if (interfaceRpcVer != localRpcVersion) {
-                        throw new VersionMismatch("RPC interface version mismatch: local is " + localRpcVersion + " remote is " + interfaceRpcVer);
-                    }
-                }
             }
         }
     }

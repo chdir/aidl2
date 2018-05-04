@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLoggingContainer
 import org.gradle.internal.jvm.Jvm
 
-import static org.gradle.api.tasks.testing.logging.TestLogEvent.*;
+import static org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 apply plugin: 'java'
 apply plugin: 'jacoco'
@@ -141,8 +141,8 @@ if (project.hasProperty('deploymentConfig')) {
 }
 
 dependencies {
-    implementation 'com.squareup:javapoet:1.5.1'
-    implementation 'org.jetbrains:annotations:13.0'
+    compile 'com.squareup:javapoet:1.5.1'
+    compile 'org.jetbrains:annotations:13.0'
 
     compileOnly 'com.google.android:android:4.1.1.4'
     compileOnly 'com.google.auto.service:auto-service:1.0-rc3'

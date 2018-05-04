@@ -96,6 +96,10 @@ android.applicationVariants.all { variant ->
 }
 
 dependencies {
+    testImplementation 'junit:junit:4.12'
+
+    androidTestImplementation 'junit:junit:4.12'
+
     implementation 'org.jetbrains:annotations:13.0'
 
     if (project.properties.uploadInitiated || !project.hasProperty('theTimeHasCometh')) {
@@ -104,14 +108,13 @@ dependencies {
         implementation ('net.sf.aidl2:compiler:0.+') { changing = true }
     }
 
-    androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:0.5'
     androidTestImplementation 'com.android.support.test:rules:0.5'
     androidTestImplementation 'com.google.truth:truth:0.28'
 
-    testImplementation 'junit:junit:4.12'
     testImplementation 'com.google.testing.compile:compile-testing:0.9'
     testImplementation 'com.google.truth:truth:0.28'
+    testImplementation 'org.robolectric:robolectric:3.8'
 
     testImplementation files("${System.properties.'java.home'}/lib/rt.jar")
     testImplementation files(Jvm.current().getToolsJar())

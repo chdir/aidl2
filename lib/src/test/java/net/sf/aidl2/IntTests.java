@@ -9,8 +9,6 @@ import net.sf.aidl2.tests.LogFileRule;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
-
 import javax.tools.JavaFileObject;
 
 import static com.google.common.truth.Truth.assertAbout;

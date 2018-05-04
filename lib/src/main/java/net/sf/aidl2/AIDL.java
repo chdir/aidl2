@@ -57,7 +57,7 @@ public @interface AIDL {
     /**
      * Marking the annotated interface as not security-sensitive allows generation of simpler,
      * more efficient code in situations, when complete security of Binder communications
-     * can be assured.
+     * has been assured.
      *
      * You may set this to true, when following conditions are met:
      *
