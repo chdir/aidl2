@@ -19,7 +19,7 @@ import net.sf.fakenames.aidl2.demo.Responder;
 public final class IInterfaceTest3$$AidlClientImpl implements IInterfaceTest3 {
     private final IBinder delegate;
 
-    public IInterfaceTest3$$AidlClientImpl(IBinder delegate) {
+    public IInterfaceTest3$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

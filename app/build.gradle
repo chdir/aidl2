@@ -13,7 +13,7 @@ repositories {
 
 android {
     compileSdkVersion 'android-24'
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '29.0.2'
 
     defaultConfig {
         applicationId 'net.sf.fakenames.aidl2.demo'
@@ -108,8 +108,8 @@ dependencies {
         implementation ('net.sf.aidl2:compiler:0.+') { changing = true }
     }
 
-    androidTestImplementation 'com.android.support.test:runner:0.5'
-    androidTestImplementation 'com.android.support.test:rules:0.5'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
     androidTestImplementation 'com.google.truth:truth:0.28'
 
     testImplementation 'com.google.testing.compile:compile-testing:0.9'
