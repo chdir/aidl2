@@ -24,7 +24,7 @@ import java.lang.SuppressWarnings;
 public final class AdjustingTransactionIds$$AidlClientImpl implements AdjustingTransactionIds {
   private final IBinder delegate;
 
-  public AdjustingTransactionIds$$AidlClientImpl(IBinder delegate) {
+  public AdjustingTransactionIds$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

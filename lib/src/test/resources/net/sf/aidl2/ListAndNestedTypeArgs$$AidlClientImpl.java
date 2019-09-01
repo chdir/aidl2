@@ -20,7 +20,7 @@ import java.util.concurrent.Callable;
 public final class ListAndNestedTypeArgs$$AidlClientImpl implements ListAndNestedTypeArgs {
   private final IBinder delegate;
 
-  public ListAndNestedTypeArgs$$AidlClientImpl(IBinder delegate) {
+  public ListAndNestedTypeArgs$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

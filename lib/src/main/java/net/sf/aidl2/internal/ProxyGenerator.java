@@ -10,6 +10,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 
+import net.sf.aidl2.AidlUtil;
 import net.sf.aidl2.InterfaceLoader;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.codegen.TypedExpression;
@@ -83,17 +84,25 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
             implClassSpec.addSuperinterface(TypeName.get(ifType));
         }
 
+        final boolean enableVersioning = getBaseEnvironment().getConfig().isVersioningEnabled();
+
+        MethodSpec.Builder constructor = MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(iBinder, "delegate")
+                .addStatement("this.$L = $L", "delegate", "delegate")
+                .addException(ClassName.bestGuess("android.os.RemoteException"));
+
+        if (enableVersioning) {
+            constructor.addStatement("$T.verify($L, $T.DESCRIPTOR, $T.ipcVersionId)", AidlUtil.class, "delegate", serverClass, serverClass);
+        }
+
         implClassSpec
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addOriginatingElement(originatingInterface)
                 .addJavadoc(JAVADOC, InterfaceLoader.class)
                 .addAnnotation(Deprecated.class)
                 .addField(iBinder, "delegate", Modifier.PRIVATE, Modifier.FINAL)
-                .addMethod(MethodSpec.constructorBuilder()
-                        .addModifiers(Modifier.PUBLIC)
-                        .addParameter(iBinder, "delegate")
-                        .addStatement("this.$L = $L", "delegate", "delegate")
-                        .build());
+                .addMethod(constructor.build());
 
         if (!useErasure) {
             final List<? extends TypeParameterElement> typeArgs = originatingInterface.getTypeParameters();

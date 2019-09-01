@@ -19,7 +19,7 @@ import java.lang.String;
 public final class MethodAndParamNameIsolation2$$AidlClientImpl implements MethodAndParamNameIsolation2 {
     private final IBinder delegate;
 
-    public MethodAndParamNameIsolation2$$AidlClientImpl(IBinder delegate) {
+    public MethodAndParamNameIsolation2$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

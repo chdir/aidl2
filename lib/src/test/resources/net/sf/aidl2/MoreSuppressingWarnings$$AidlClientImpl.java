@@ -25,7 +25,7 @@ import java.util.Set;
 public final class MoreSuppressingWarnings$$AidlClientImpl implements MoreSuppressingWarnings {
   private final IBinder delegate;
 
-  public MoreSuppressingWarnings$$AidlClientImpl(IBinder delegate) {
+  public MoreSuppressingWarnings$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

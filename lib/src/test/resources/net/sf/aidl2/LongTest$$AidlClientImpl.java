@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class LongTest$$AidlClientImpl implements LongTest {
     private final IBinder delegate;
 
-    public LongTest$$AidlClientImpl(IBinder delegate) {
+    public LongTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

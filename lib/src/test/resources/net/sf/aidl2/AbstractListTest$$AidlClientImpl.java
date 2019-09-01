@@ -22,7 +22,7 @@ import java.util.Collection;
 public final class AbstractListTest$$AidlClientImpl implements AbstractListTest {
     private final IBinder delegate;
 
-    public AbstractListTest$$AidlClientImpl(IBinder delegate) {
+    public AbstractListTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

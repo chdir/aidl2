@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class TheSerializableParam$$AidlClientImpl implements TheSerializableParam {
     private final IBinder delegate;
 
-    public TheSerializableParam$$AidlClientImpl(IBinder delegate) {
+    public TheSerializableParam$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

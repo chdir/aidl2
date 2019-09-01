@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class BooleanArrayTest$$AidlClientImpl<B extends Boolean> implements BooleanArrayTest<B> {
     private final IBinder delegate;
 
-    public BooleanArrayTest$$AidlClientImpl(IBinder delegate) {
+    public BooleanArrayTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

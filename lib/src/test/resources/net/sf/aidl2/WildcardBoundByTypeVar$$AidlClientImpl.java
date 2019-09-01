@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class WildcardBoundByTypeVar$$AidlClientImpl implements WildcardBoundByTypeVar {
   private final IBinder delegate;
 
-  public WildcardBoundByTypeVar$$AidlClientImpl(IBinder delegate) {
+  public WildcardBoundByTypeVar$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

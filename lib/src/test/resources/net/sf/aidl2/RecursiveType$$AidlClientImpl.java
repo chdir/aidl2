@@ -18,7 +18,7 @@ import java.lang.Override;
 public final class RecursiveType$$AidlClientImpl implements RecursiveType {
   private final IBinder delegate;
 
-  public RecursiveType$$AidlClientImpl(IBinder delegate) {
+  public RecursiveType$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

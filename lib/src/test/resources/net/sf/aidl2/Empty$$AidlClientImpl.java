@@ -2,6 +2,8 @@
 package net.sf.aidl2;
 
 import android.os.IBinder;
+import android.os.RemoteException;
+
 import java.lang.Deprecated;
 import java.lang.Override;
 
@@ -16,7 +18,7 @@ import java.lang.Override;
 public final class Empty$$AidlClientImpl implements Empty {
     private final IBinder delegate;
 
-    public Empty$$AidlClientImpl(IBinder delegate) {
+    public Empty$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

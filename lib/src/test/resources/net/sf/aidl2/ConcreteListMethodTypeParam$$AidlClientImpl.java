@@ -23,7 +23,7 @@ import java.util.Vector;
 public final class ConcreteListMethodTypeParam$$AidlClientImpl implements ConcreteListMethodTypeParam {
     private final IBinder delegate;
 
-    public ConcreteListMethodTypeParam$$AidlClientImpl(IBinder delegate) {
+    public ConcreteListMethodTypeParam$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

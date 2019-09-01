@@ -23,7 +23,7 @@ import java.util.List;
 public final class AbstractListSimpleNested$$AidlClientImpl implements AbstractListSimpleNested {
     private final IBinder delegate;
 
-    public AbstractListSimpleNested$$AidlClientImpl(IBinder delegate) {
+    public AbstractListSimpleNested$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

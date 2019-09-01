@@ -18,7 +18,7 @@ import java.lang.Override;
 public final class CustomDescriptor$$AidlClientImpl implements CustomDescriptor {
     private final IBinder delegate;
 
-    public CustomDescriptor$$AidlClientImpl(IBinder delegate) {
+    public CustomDescriptor$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

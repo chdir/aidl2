@@ -18,7 +18,7 @@ import java.lang.Override;
 public final class DoubleTest2$$AidlClientImpl implements DoubleTest2 {
   private final IBinder delegate;
 
-  public DoubleTest2$$AidlClientImpl(IBinder delegate) {
+  public DoubleTest2$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

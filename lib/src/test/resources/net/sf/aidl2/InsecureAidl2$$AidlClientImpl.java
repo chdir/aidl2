@@ -18,7 +18,7 @@ import java.lang.Override;
 public final class InsecureAidl2$$AidlClientImpl implements InsecureAidl2 {
     private final IBinder delegate;
 
-    public InsecureAidl2$$AidlClientImpl(IBinder delegate) {
+    public InsecureAidl2$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

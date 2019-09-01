@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class RecursiveExtendingRecursive$$AidlClientImpl implements RecursiveExtendingRecursive {
   private final IBinder delegate;
 
-  public RecursiveExtendingRecursive$$AidlClientImpl(IBinder delegate) {
+  public RecursiveExtendingRecursive$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

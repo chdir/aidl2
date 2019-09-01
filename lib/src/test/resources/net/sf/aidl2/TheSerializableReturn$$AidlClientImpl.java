@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class TheSerializableReturn$$AidlClientImpl implements TheSerializableReturn {
     private final IBinder delegate;
 
-    public TheSerializableReturn$$AidlClientImpl(IBinder delegate) {
+    public TheSerializableReturn$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

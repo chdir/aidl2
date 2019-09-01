@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 public final class NonFinalAsConcrete$$AidlClientImpl implements NonFinalAsConcrete {
   private final IBinder delegate;
 
-  public NonFinalAsConcrete$$AidlClientImpl(IBinder delegate) {
+  public NonFinalAsConcrete$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

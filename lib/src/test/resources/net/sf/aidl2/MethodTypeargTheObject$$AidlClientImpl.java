@@ -19,7 +19,7 @@ import java.lang.SuppressWarnings;
 public final class MethodTypeargTheObject$$AidlClientImpl implements MethodTypeargTheObject {
     private final IBinder delegate;
 
-    public MethodTypeargTheObject$$AidlClientImpl(IBinder delegate) {
+    public MethodTypeargTheObject$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

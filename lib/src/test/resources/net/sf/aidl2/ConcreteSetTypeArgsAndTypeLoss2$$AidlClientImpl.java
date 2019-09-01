@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public final class ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl<H extends TreeSet<String>> implements ConcreteSetTypeArgsAndTypeLoss2<H> {
     private final IBinder delegate;
 
-    public ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl(IBinder delegate) {
+    public ConcreteSetTypeArgsAndTypeLoss2$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

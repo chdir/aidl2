@@ -19,7 +19,7 @@ import java.lang.String;
 public final class ParametrizedSerialArray$$AidlClientImpl implements ParametrizedSerialArray {
   private final IBinder delegate;
 
-  public ParametrizedSerialArray$$AidlClientImpl(IBinder delegate) {
+  public ParametrizedSerialArray$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

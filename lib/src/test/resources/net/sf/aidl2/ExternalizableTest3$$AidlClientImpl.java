@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class ExternalizableTest3$$AidlClientImpl implements ExternalizableTest3 {
     private final IBinder delegate;
 
-    public ExternalizableTest3$$AidlClientImpl(IBinder delegate) {
+    public ExternalizableTest3$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

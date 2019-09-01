@@ -24,7 +24,7 @@ import java.util.LinkedList;
 public final class ConcreteListClassTypeParamAndRaw$$AidlClientImpl<X extends LinkedList<Object>> implements ConcreteListClassTypeParamAndRaw<X> {
     private final IBinder delegate;
 
-    public ConcreteListClassTypeParamAndRaw$$AidlClientImpl(IBinder delegate) {
+    public ConcreteListClassTypeParamAndRaw$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

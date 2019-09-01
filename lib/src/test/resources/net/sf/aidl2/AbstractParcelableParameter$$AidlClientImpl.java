@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class AbstractParcelableParameter$$AidlClientImpl implements AbstractParcelableParameter {
     private final IBinder delegate;
 
-    public AbstractParcelableParameter$$AidlClientImpl(IBinder delegate) {
+    public AbstractParcelableParameter$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

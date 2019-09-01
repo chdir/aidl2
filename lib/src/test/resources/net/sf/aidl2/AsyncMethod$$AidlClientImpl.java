@@ -18,7 +18,7 @@ import java.lang.Override;
 public final class AsyncMethod$$AidlClientImpl implements AsyncMethod {
     private final IBinder delegate;
 
-    public AsyncMethod$$AidlClientImpl(IBinder delegate) {
+    public AsyncMethod$$AidlClientImpl(IBinder delegate)  throws RemoteException {
         this.delegate = delegate;
     }
 

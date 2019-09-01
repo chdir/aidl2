@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class ClassTypeargParcelable$$AidlClientImpl<T extends Parcelable> implements ClassTypeargParcelable<T> {
     private final IBinder delegate;
 
-    public ClassTypeargParcelable$$AidlClientImpl(IBinder delegate) {
+    public ClassTypeargParcelable$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

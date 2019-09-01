@@ -25,7 +25,7 @@ import java.util.Map;
 public final class SimpleMap$$AidlClientImpl implements SimpleMap {
   private final IBinder delegate;
 
-  public SimpleMap$$AidlClientImpl(IBinder delegate) {
+  public SimpleMap$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

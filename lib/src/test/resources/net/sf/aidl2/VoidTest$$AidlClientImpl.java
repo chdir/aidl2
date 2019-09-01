@@ -19,7 +19,7 @@ import java.lang.Void;
 public final class VoidTest$$AidlClientImpl implements VoidTest {
     private final IBinder delegate;
 
-    public VoidTest$$AidlClientImpl(IBinder delegate) {
+    public VoidTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

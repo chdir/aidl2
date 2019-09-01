@@ -23,7 +23,7 @@ import java.util.List;
 public final class AbstractListSimpleTypeMismatch$$AidlClientImpl implements AbstractListSimpleTypeMismatch {
     private final IBinder delegate;
 
-    public AbstractListSimpleTypeMismatch$$AidlClientImpl(IBinder delegate) {
+    public AbstractListSimpleTypeMismatch$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

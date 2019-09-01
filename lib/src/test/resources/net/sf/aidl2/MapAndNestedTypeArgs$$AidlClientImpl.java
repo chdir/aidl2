@@ -23,7 +23,7 @@ import java.util.Map;
 public final class MapAndNestedTypeArgs$$AidlClientImpl implements MapAndNestedTypeArgs {
   private final IBinder delegate;
 
-  public MapAndNestedTypeArgs$$AidlClientImpl(IBinder delegate) {
+  public MapAndNestedTypeArgs$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

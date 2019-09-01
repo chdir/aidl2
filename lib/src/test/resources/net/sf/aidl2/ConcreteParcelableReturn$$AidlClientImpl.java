@@ -18,7 +18,7 @@ import java.lang.Override;
 public final class ConcreteParcelableReturn$$AidlClientImpl implements ConcreteParcelableReturn {
     private final IBinder delegate;
 
-    public ConcreteParcelableReturn$$AidlClientImpl(IBinder delegate) {
+    public ConcreteParcelableReturn$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

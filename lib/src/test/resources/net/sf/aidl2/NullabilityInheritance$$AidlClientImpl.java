@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 public final class NullabilityInheritance$$AidlClientImpl implements NullabilityInheritance {
   private final IBinder delegate;
 
-  public NullabilityInheritance$$AidlClientImpl(IBinder delegate) {
+  public NullabilityInheritance$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

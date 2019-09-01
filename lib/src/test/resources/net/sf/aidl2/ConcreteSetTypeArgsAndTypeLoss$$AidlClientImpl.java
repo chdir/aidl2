@@ -24,7 +24,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public final class ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl<X extends Callable & Externalizable> implements ConcreteSetTypeArgsAndTypeLoss<X> {
     private final IBinder delegate;
 
-    public ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl(IBinder delegate) {
+    public ConcreteSetTypeArgsAndTypeLoss$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

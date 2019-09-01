@@ -20,7 +20,7 @@ import java.util.Map;
 public final class CustomMapTest$$AidlClientImpl implements CustomMapTest {
   private final IBinder delegate;
 
-  public CustomMapTest$$AidlClientImpl(IBinder delegate) {
+  public CustomMapTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

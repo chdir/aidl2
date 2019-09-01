@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class SerializableArrayTest$$AidlClientImpl implements SerializableArrayTest {
     private final IBinder delegate;
 
-    public SerializableArrayTest$$AidlClientImpl(IBinder delegate) {
+    public SerializableArrayTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

@@ -18,7 +18,7 @@ import java.lang.Override;
 public final class ConcreteParcelableParameter$$AidlClientImpl implements ConcreteParcelableParameter {
     private final IBinder delegate;
 
-    public ConcreteParcelableParameter$$AidlClientImpl(IBinder delegate) {
+    public ConcreteParcelableParameter$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class BundleTest$$AidlClientImpl implements BundleTest {
     private final IBinder delegate;
 
-    public BundleTest$$AidlClientImpl(IBinder delegate) {
+    public BundleTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

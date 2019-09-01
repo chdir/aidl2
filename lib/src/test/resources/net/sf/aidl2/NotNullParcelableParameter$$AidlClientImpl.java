@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 public final class NotNullParcelableParameter$$AidlClientImpl implements NotNullParcelableParameter {
     private final IBinder delegate;
 
-    public NotNullParcelableParameter$$AidlClientImpl(IBinder delegate) {
+    public NotNullParcelableParameter$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

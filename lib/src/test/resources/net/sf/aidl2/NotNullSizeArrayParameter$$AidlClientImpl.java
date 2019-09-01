@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 public final class NotNullSizeArrayParameter$$AidlClientImpl implements NotNullSizeArrayParameter {
     private final IBinder delegate;
 
-    public NotNullSizeArrayParameter$$AidlClientImpl(IBinder delegate) {
+    public NotNullSizeArrayParameter$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

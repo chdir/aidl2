@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class NonFinalAsAbstract$$AidlClientImpl implements NonFinalAsAbstract {
   private final IBinder delegate;
 
-  public NonFinalAsAbstract$$AidlClientImpl(IBinder delegate) {
+  public NonFinalAsAbstract$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

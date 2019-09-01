@@ -20,7 +20,7 @@ import java.lang.Runnable;
 public final class MethodTypeargParcelable$$AidlClientImpl implements MethodTypeargParcelable {
     private final IBinder delegate;
 
-    public MethodTypeargParcelable$$AidlClientImpl(IBinder delegate) {
+    public MethodTypeargParcelable$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

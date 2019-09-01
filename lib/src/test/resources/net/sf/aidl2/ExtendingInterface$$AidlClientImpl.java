@@ -20,7 +20,7 @@ import java.util.Date;
 public final class ExtendingInterface$$AidlClientImpl implements ExtendingInterface {
     private final IBinder delegate;
 
-    public ExtendingInterface$$AidlClientImpl(IBinder delegate) {
+    public ExtendingInterface$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

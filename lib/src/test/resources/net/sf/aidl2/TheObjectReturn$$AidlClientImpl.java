@@ -20,7 +20,7 @@ import java.lang.SuppressWarnings;
 public final class TheObjectReturn$$AidlClientImpl implements TheObjectReturn {
     private final IBinder delegate;
 
-    public TheObjectReturn$$AidlClientImpl(IBinder delegate) {
+    public TheObjectReturn$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

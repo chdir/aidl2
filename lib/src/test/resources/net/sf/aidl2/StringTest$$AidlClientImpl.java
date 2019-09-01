@@ -19,7 +19,7 @@ import java.lang.String;
 public final class StringTest$$AidlClientImpl implements StringTest {
   private final IBinder delegate;
 
-  public StringTest$$AidlClientImpl(IBinder delegate) {
+  public StringTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 

@@ -29,8 +29,9 @@ import org.jetbrains.annotations.NotNull;
 public final class IpcVersionStability2$$AidlClientImpl implements IpcVersionStability2 {
   private final IBinder delegate;
 
-  public IpcVersionStability2$$AidlClientImpl(IBinder delegate) {
+  public IpcVersionStability2$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
+    AidlUtil.verify(delegate, IpcVersionStability2$$AidlServerImpl.DESCRIPTOR, IpcVersionStability2$$AidlServerImpl.ipcVersionId);
   }
 
   @Override

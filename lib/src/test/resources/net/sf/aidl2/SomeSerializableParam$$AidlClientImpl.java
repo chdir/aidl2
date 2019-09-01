@@ -19,7 +19,7 @@ import java.util.Date;
 public final class SomeSerializableParam$$AidlClientImpl implements SomeSerializableParam {
     private final IBinder delegate;
 
-    public SomeSerializableParam$$AidlClientImpl(IBinder delegate) {
+    public SomeSerializableParam$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

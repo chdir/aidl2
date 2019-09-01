@@ -19,7 +19,7 @@ import java.lang.Override;
 public final class SizeArrayTest$$AidlClientImpl implements SizeArrayTest {
     private final IBinder delegate;
 
-    public SizeArrayTest$$AidlClientImpl(IBinder delegate) {
+    public SizeArrayTest$$AidlClientImpl(IBinder delegate) throws RemoteException {
         this.delegate = delegate;
     }
 

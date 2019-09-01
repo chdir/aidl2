@@ -24,7 +24,7 @@ import java.lang.SuppressWarnings;
 public final class TransactionIdOrder$$AidlClientImpl implements TransactionIdOrder {
   private final IBinder delegate;
 
-  public TransactionIdOrder$$AidlClientImpl(IBinder delegate) {
+  public TransactionIdOrder$$AidlClientImpl(IBinder delegate) throws RemoteException {
     this.delegate = delegate;
   }
 
