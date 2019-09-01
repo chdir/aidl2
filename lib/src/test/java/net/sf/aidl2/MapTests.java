@@ -7,6 +7,8 @@ import net.sf.aidl2.tests.LogFileRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.Map;
+
 import javax.tools.JavaFileObject;
 
 import static com.google.common.truth.Truth.assertAbout;
@@ -22,6 +24,32 @@ public class MapTests {
                 "-Aaidl2_use_versioning=false",
                 "-Xlint:all"
         };
+    }
+
+    @Test
+    public void mapBadKey() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MapBadKeyType.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorContaining("Map has unsupported key or value")
+                .in(testSource)
+                .onLine(10);
+    }
+
+    @Test
+    public void mapBadValue() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MapBadValueType.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorContaining("Map has unsupported key or value")
+                .in(testSource)
+                .onLine(10);
     }
 
     @Test

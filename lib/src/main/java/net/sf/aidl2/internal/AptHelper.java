@@ -233,7 +233,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 "\t• android.os.Parcelable, java.io.Serializable, java.io.Externalizable\n" +
                 "\t• android.os.IInterface subclass (annotated with @AIDL or produced by aidl tool)\n" +
                 "\t• One of types, natively supported by Parcel, or one of primitive type wrappers\n" +
-                "\t• Map, List, Set and their concrete subclasses with public default constructors";
+                "\t• Map, List, Set or their concrete subclasses with public default constructors";
     }
 
     @SuppressWarnings("SimplifiableIfStatement")

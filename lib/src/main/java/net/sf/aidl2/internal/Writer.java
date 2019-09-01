@@ -591,7 +591,9 @@ public final class Writer extends AptHelper {
         final Strategy valueStrategy = getStrategy(valueType);
 
         if (keyStrategy == null || valueStrategy == null) {
-            return null;
+            final String errMsg = "Map has unsupported key or value: " + keyType + "/" + valueType + ".\n" + getHelpText();
+
+            throw new CodegenException(errMsg);
         }
 
         if (isSerialStrategy(keyStrategy) && isSerialStrategy(valueStrategy)) {

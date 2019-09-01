@@ -657,7 +657,7 @@ public final class Reader extends AptHelper {
         }
 
         if (keyStrategy == null || valueStrategy == null) {
-            final String errMsg = "Unsupported map key/value combination: " + keyType + "/" + valueType + ".\n" + getHelpText();
+            final String errMsg = "Map has unsupported key or value: " + keyType + "/" + valueType + ".\n" + getHelpText();
 
             throw new CodegenException(errMsg);
         }
