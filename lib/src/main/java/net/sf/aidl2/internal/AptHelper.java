@@ -719,7 +719,12 @@ public abstract class AptHelper implements ProcessingEnvironment {
     }
 
     protected DeclaredType lookup(CharSequence name) {
-        return types.getDeclaredType(elements.getTypeElement(name));
+        TypeElement typeElement = elements.getTypeElement(name);
+        if (typeElement == null) {
+            return null;
+        }
+
+        return types.getDeclaredType(typeElement);
     }
 
     public TypeElement lookupGeneric(String s) {

@@ -458,9 +458,9 @@ public final class Reader extends AptHelper {
 
     @SuppressWarnings("ThrowFromFinallyBlock")
     private Strategy getBuiltinStrategy(TypeMirror type) throws CodegenException {
-        if (types.isAssignable(type, sizeF)) {
+        if (sizeF != null && types.isAssignable(type, sizeF)) {
             return newStrategy($ -> literal("$L.readSizeF()", parcelName), sizeF);
-        } else if (types.isAssignable(type, sizeType)) {
+        } else if (sizeType != null && types.isAssignable(type, sizeType)) {
             return newStrategy($ -> literal("$L.readSize()", parcelName), sizeType);
         }
         // supported via native methods, always nullable

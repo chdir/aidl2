@@ -385,9 +385,9 @@ public final class Writer extends AptHelper {
     }
 
     private Strategy getBuiltinStrategy(TypeMirror type) throws CodegenException {
-        if (types.isAssignable(type, sizeF)) {
+        if (sizeF != null && types.isAssignable(type, sizeF)) {
             return Strategy.create((block, name, unused) -> block.addStatement("$L.writeSizeF($L)", parcelName, name), sizeF);
-        } else if (types.isAssignable(type, sizeType)) {
+        } else if (sizeType != null && types.isAssignable(type, sizeType)) {
             return Strategy.create((block, name, unused) -> block.addStatement("$L.writeSize($L)", parcelName, name), sizeType);
         }
         // supported via native methods, always nullable
