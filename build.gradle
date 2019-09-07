@@ -27,8 +27,8 @@ buildscript {
             force 'com.android.tools:annotations:25.2.0'
             force 'com.google.guava:guava:21.0'
             force 'com.google.errorprone:error_prone_annotations:2.1.2'
-            force 'org.apache.httpcomponents:httpclient:4.2.1'
-            force 'org.apache.httpcomponents:httpcore:4.1'
+            force 'org.apache.httpcomponents:httpclient:4.2.5'
+            force 'org.apache.httpcomponents:httpcore:4.2.5'
             force 'commons-lang:commons-lang:2.4'
             force 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.2'
             force 'org.codehaus.plexus:plexus-utils:2.0.6'
@@ -55,7 +55,7 @@ allprojects {
         resolutionStrategy {
             failOnVersionConflict()
 
-            force 'org.apache.httpcomponents:httpcore:4.2.1'
+            force 'org.apache.httpcomponents:httpcore:4.2.5'
             force 'com.google.guava:guava:21.0'
             force 'junit:junit:4.12'
             force 'org.codehaus.plexus:plexus-utils:1.5.15'
