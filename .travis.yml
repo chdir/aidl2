@@ -5,7 +5,7 @@ jdk:
 android:
   components:
     - tools
-    - build-tools-27.0.3
+    - build-tools-29.0.2
     - android-24
     - extra
     - addon
@@ -26,8 +26,6 @@ before_script:
     fi
 
 script:
-  - jdk_switcher use openjdk7
-  - jdk_switcher use openjdk9
   - jdk_switcher use oraclejdk8
   - set -e;
     if [ "$TRAVIS_BRANCH" == "staging" ]; then

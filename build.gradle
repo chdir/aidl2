@@ -48,6 +48,7 @@ allprojects {
 
     repositories {
         jcenter()
+        google()
     }
 
     configurations.all {
