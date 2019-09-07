@@ -46,7 +46,6 @@ public final class Writer extends AptHelper {
     private final NameAllocator allocator;
 
     private final DeclaredType parcelable;
-    private final DeclaredType externalizable;
 
     private final TypeMirror string;
     private final TypeMirror charSequence;
@@ -57,8 +56,6 @@ public final class Writer extends AptHelper {
     private final TypeMirror bundle;
     private final TypeMirror persistable;
     private final TypeMirror sparseBoolArray;
-
-    private final TypeMirror serializable;
 
     private final Object flags;
 
@@ -89,9 +86,6 @@ public final class Writer extends AptHelper {
 
         string = lookup(String.class);
         charSequence = lookup(CharSequence.class);
-
-        this.serializable = lookup(Serializable.class);
-        this.externalizable = lookup(Externalizable.class);
 
         this.theIterator = lookup(Iterator.class);
 
@@ -596,9 +590,11 @@ public final class Writer extends AptHelper {
             throw new CodegenException(errMsg);
         }
 
-        if (isSerialStrategy(keyStrategy) && isSerialStrategy(valueStrategy)) {
+        if (isSerialStrategy(keyStrategy) || isSerialStrategy(valueStrategy)) {
             if (types.isAssignable(type, serializable)) {
-                return getSerializableStrategy();
+                if (canSerialize(keyType) && canSerialize(valueType)) {
+                    return getSerializableStrategy();
+                }
             }
         }
 

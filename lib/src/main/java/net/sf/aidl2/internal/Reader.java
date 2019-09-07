@@ -47,7 +47,6 @@ public final class Reader extends AptHelper {
     private final boolean assumeFinal;
 
     private final DeclaredType parcelable;
-    private final DeclaredType externalizable;
 
     private final TypeMirror sizeF;
     private final TypeMirror sizeType;
@@ -57,7 +56,6 @@ public final class Reader extends AptHelper {
     private final TypeMirror sparseBoolArray;
 
     private final TypeMirror string;
-    private final TypeMirror serializable;
     private final TypeMirror charSequence;
 
     private final TypeMirror intType;
@@ -96,9 +94,7 @@ public final class Reader extends AptHelper {
         this.sparseBoolArray = lookup("android.util.SparseBooleanArray");
 
         this.string = lookup(String.class);
-        this.serializable = lookup(Serializable.class);
         this.charSequence = lookup(CharSequence.class);
-        this.externalizable = lookup(Externalizable.class);
 
         final TypeElement creatorType = lookupGeneric("android.os.Parcelable.Creator");
         final TypeMirror bound = types.getWildcardType(null, parcelable);
@@ -634,25 +630,23 @@ public final class Reader extends AptHelper {
         Strategy valueStrategy = getStrategy(valueType);
 
         if (types.isAssignable(mapType, serializable)) {
-            if (!allowUnchecked && (keyStrategy == null || valueStrategy == null)) {
+            if (isSerialStrategy(keyStrategy) || isSerialStrategy(valueStrategy)) {
+                if (canSerialize(keyType) && canSerialize(valueType)) {
+                    return getSerializableStrategy(mapType);
+                }
+            }
+
+            if ((keyStrategy == null || valueStrategy == null)) {
+                if (allowUnchecked) {
+                    return getSerializableStrategy(mapType);
+                }
+
                 final TypeMirror concreteParent = types.erasure(findConcreteParent(mapType, theCollection));
 
                 throw new CodegenException(
-                        "Unable to find serialization strategy for Map type " + mapType + ".\n"
-                        + concreteParent + " is serializable, but either key or value is not. If you want"
-                        + " Java serialization to be used anyway, add @SuppressWarnings(\"unchecked\") to the method.");
-            }
-
-            if (keyStrategy == null) {
-                keyStrategy = getStrategy(theObject);
-            }
-
-            if (valueStrategy == null) {
-                valueStrategy = getStrategy(theObject);
-            }
-
-            if (isSerialStrategy(keyStrategy) && isSerialStrategy(valueStrategy)) {
-                return getSerializableStrategy(mapType);
+                        "Unable to find serialization strategy for Map type " + mapType + ".\n" +
+                        concreteParent + " is serializable, but either key or value is not. If you want" +
+                        " Java serialization to be used anyway, add @SuppressWarnings(\"unchecked\") to the method.");
             }
         }
 

@@ -1,5 +1,7 @@
 package net.sf.aidl2.internal;
 
+import android.annotation.Nullable;
+
 import com.squareup.javapoet.*;
 
 import net.sf.aidl2.AidlUtil;
@@ -8,6 +10,8 @@ import net.sf.aidl2.internal.util.CowCloneableList;
 import net.sf.aidl2.internal.util.JavaVersion;
 import net.sf.aidl2.internal.util.Util;
 
+import java.io.Externalizable;
+import java.io.Serializable;
 import java.util.*;
 
 import javax.annotation.processing.Filer;
@@ -49,6 +53,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
     protected final DeclaredType theIInterface;
     protected final DeclaredType theCreator;
 
+    protected final DeclaredType externalizable;
+    protected final DeclaredType serializable;
+
     protected final TypeMirror listBound;
     protected final TypeMirror setBound;
     protected final TypeMirror mapBound;
@@ -81,6 +88,9 @@ public abstract class AptHelper implements ProcessingEnvironment {
         theThrowable = lookup(Throwable.class);
         theException = lookup(Exception.class);
         theRuntimeException = lookup(RuntimeException.class);
+
+        serializable = lookup(Serializable.class);
+        externalizable = lookup(Externalizable.class);
 
         this.hashSet = lookup(HashSet.class);
         this.arrayList = lookup(ArrayList.class);
@@ -142,6 +152,11 @@ public abstract class AptHelper implements ProcessingEnvironment {
 
             return 0;
         };
+    }
+
+    protected final boolean canSerialize(TypeMirror typeMirror) {
+        return types.isAssignable(typeMirror, serializable)
+                || (typeMirror.getKind() == TypeKind.ARRAY && canSerialize(((ArrayType) typeMirror).getComponentType()));
     }
 
     public boolean isSubsignature(TypeInvocation<?, ExecutableType> m1, TypeInvocation<?, ExecutableType> m2) {

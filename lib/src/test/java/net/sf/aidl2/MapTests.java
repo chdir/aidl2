@@ -53,6 +53,21 @@ public class MapTests {
     }
 
     @Test
+    public void mapSerializable() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("MapSerializable.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("MapSerializable$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("MapSerializable$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
     public void mapSimple() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("SimpleMap.java"));
 
