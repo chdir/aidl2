@@ -282,7 +282,7 @@ public abstract class AptHelper implements ProcessingEnvironment {
             }
 
             if (Target.getKind() == TypeKind.TYPEVAR) {
-                Target = ((TypeVariable) Source).getUpperBound();
+                Target = ((TypeVariable) Target).getUpperBound();
             }
         }
 
