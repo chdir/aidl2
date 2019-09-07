@@ -28,9 +28,9 @@ public final class ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl extends Binde
 
     static final int TRANSACT_methodWithCSKLSetParamAndTreeSetArray = IBinder.FIRST_CALL_TRANSACTION;
 
-    private final ConcreteSetTypeArgsAndTypeLoss2 delegate;
+    private final ConcreteSetTypeArgsAndTypeLoss2<?> delegate;
 
-    public ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl(ConcreteSetTypeArgsAndTypeLoss2 delegate) {
+    public ConcreteSetTypeArgsAndTypeLoss2$$AidlServerImpl(ConcreteSetTypeArgsAndTypeLoss2<?> delegate) {
         this.delegate = delegate;
 
         this.attachInterface(delegate, DESCRIPTOR);

@@ -25,9 +25,9 @@ public final class ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl extends Binder
 
     static final int TRANSACT_methodWithCOWArraySetParamAndHashSetReturn = IBinder.FIRST_CALL_TRANSACTION;
 
-    private final ConcreteSetTypeArgsAndTypeLoss delegate;
+    private final ConcreteSetTypeArgsAndTypeLoss<?> delegate;
 
-    public ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl(ConcreteSetTypeArgsAndTypeLoss delegate) {
+    public ConcreteSetTypeArgsAndTypeLoss$$AidlServerImpl(ConcreteSetTypeArgsAndTypeLoss<?> delegate) {
         this.delegate = delegate;
 
         this.attachInterface(delegate, DESCRIPTOR);

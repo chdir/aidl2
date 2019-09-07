@@ -170,6 +170,10 @@ public abstract class AptHelper implements ProcessingEnvironment {
     }
 
     public CodeBlock emitCasts(TypeMirror t, TypeMirror t2, CodeBlock input) {
+        return emitCasts(t, t2, input, null);
+    }
+
+    public CodeBlock emitCasts(TypeMirror t, TypeMirror t2, CodeBlock input, Element container) {
         // It is hard and sometimes not even possible to tell if intersection cast is needed,
         // much less to handle those casts. This should do for Java versions >= 8 and avoid
         // redundant casts when no intersection types are involved
@@ -199,10 +203,33 @@ public abstract class AptHelper implements ProcessingEnvironment {
                 return literal("($T) $L", erased, input);
             }
 
+            if (t2.getKind() == TypeKind.TYPEVAR) {
+                // we can cast to type variable if it is denotable in current scope
+                TypeVariable tv = (TypeVariable) t2;
+                Element element = tv.asElement();
+
+                if (container != null && isChildOf(element, container)) {
+                    return literal("($T) $L", t2, input);
+                }
+            }
+
             // emit cast via the helper method
             // TODO: warn user
             return literal("$T.unsafeCast($L)", AidlUtil.class, input);
         }
+    }
+
+    public boolean isChildOf(Element element, Element parent) {
+        do {
+            if (element.equals(parent)) {
+                return true;
+            }
+
+            element = element.getEnclosingElement();
+        }
+        while (element != null && element.getKind() != ElementKind.PACKAGE);
+
+        return false;
     }
 
     public CodeBlock emitFullCast(TypeMirror t, TypeMirror t2, CodeBlock input) {
@@ -1121,20 +1148,26 @@ public abstract class AptHelper implements ProcessingEnvironment {
         if (isProperDeclared(erased)) {
             final DeclaredType notErasedParent = getBaseDeclared(elementType, (DeclaredType) erased);
 
-            if (hasTypeArgs(notErasedParent)) {
-                final TypeElement element = (TypeElement) notErasedParent.asElement();
-
-                final int argCount = element.getTypeParameters().size();
-
-                TypeMirror[] wildcards = new TypeMirror[argCount];
-
-                Arrays.fill(wildcards, types.getWildcardType(null, null));
-
-                return types.getDeclaredType(element, wildcards);
-            }
+            return typeArgsToWildcards(notErasedParent);
         }
 
         return erased;
+    }
+
+    public TypeMirror typeArgsToWildcards(DeclaredType typeMirror) {
+        if (hasTypeArgs(typeMirror)) {
+            final TypeElement element = (TypeElement) typeMirror.asElement();
+
+            final int argCount = element.getTypeParameters().size();
+
+            TypeMirror[] wildcards = new TypeMirror[argCount];
+
+            Arrays.fill(wildcards, types.getWildcardType(null, null));
+
+            return types.getDeclaredType(element, wildcards);
+        }
+
+        return typeMirror;
     }
 
     /**

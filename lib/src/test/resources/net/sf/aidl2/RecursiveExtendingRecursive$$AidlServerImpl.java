@@ -25,9 +25,9 @@ public final class RecursiveExtendingRecursive$$AidlServerImpl extends Binder {
 
   static final int TRANSACT_someMethod = IBinder.FIRST_CALL_TRANSACTION + 9000;
 
-  private final RecursiveExtendingRecursive delegate;
+  private final RecursiveExtendingRecursive<?> delegate;
 
-  public RecursiveExtendingRecursive$$AidlServerImpl(RecursiveExtendingRecursive delegate) {
+  public RecursiveExtendingRecursive$$AidlServerImpl(RecursiveExtendingRecursive<?> delegate) {
     this.delegate = delegate;
 
     this.attachInterface(delegate, DESCRIPTOR);

@@ -120,7 +120,7 @@ public class ArrayTests {
                         "-Aaidl2_use_versioning=false",
                 })
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
@@ -135,7 +135,7 @@ public class ArrayTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }

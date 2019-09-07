@@ -18,14 +18,14 @@ import java.lang.String;
  * @deprecated — do not use this class directly in your Java code (see above)
  */
 @Deprecated
-public final class ClassTypeargParcelable$$AidlServerImpl extends Binder {
-    static final String DESCRIPTOR = "net.sf.aidl2.MethodTypeargParcelable";
+public final class ConcreteParcelableReturnTypevar$$AidlServerImpl extends Binder {
+    static final String DESCRIPTOR = "net.sf.aidl2.ConcreteParcelableReturnTypevar";
 
-    static final int TRANSACT_methodWithParcelableReturn = IBinder.FIRST_CALL_TRANSACTION;
+    static final int TRANSACT_methodReturningParcelable = IBinder.FIRST_CALL_TRANSACTION;
 
-    private final ClassTypeargParcelable<?> delegate;
+    private final ConcreteParcelableReturnTypevar<?> delegate;
 
-    public ClassTypeargParcelable$$AidlServerImpl(ClassTypeargParcelable<?> delegate) {
+    public ConcreteParcelableReturnTypevar$$AidlServerImpl(ConcreteParcelableReturnTypevar<?> delegate) {
         this.delegate = delegate;
 
         this.attachInterface(delegate, DESCRIPTOR);
@@ -34,12 +34,18 @@ public final class ClassTypeargParcelable$$AidlServerImpl extends Binder {
     @Override
     protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
         switch(code) {
-            case TRANSACT_methodWithParcelableReturn: {
+            case TRANSACT_methodReturningParcelable: {
                 data.enforceInterface(this.getInterfaceDescriptor());
 
-                final Parcelable returnValue = delegate.methodWithParcelableReturn();
+                final Parcelable returnValue = delegate.methodReturningParcelable();
                 reply.writeNoException();
-                reply.writeParcelable(returnValue, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
+
+                if (returnValue == null) {
+                    reply.writeByte((byte) -1);
+                } else {
+                    reply.writeByte((byte) 0);
+                    returnValue.writeToParcel(reply, Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
+                }
 
                 return true;
             }

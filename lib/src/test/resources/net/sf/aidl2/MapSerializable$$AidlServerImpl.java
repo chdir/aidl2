@@ -25,9 +25,9 @@ public final class MapSerializable$$AidlServerImpl extends Binder {
 
     static final int TRANSACT_maps = IBinder.FIRST_CALL_TRANSACTION;
 
-    private final MapSerializable delegate;
+    private final MapSerializable<?> delegate;
 
-    public MapSerializable$$AidlServerImpl(MapSerializable delegate) {
+    public MapSerializable$$AidlServerImpl(MapSerializable<?> delegate) {
         this.delegate = delegate;
 
         this.attachInterface(delegate, DESCRIPTOR);

@@ -62,7 +62,7 @@ public class MapTests {
         assertAbout(javaSource()).that(testSource)
                 .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
-                .compilesWithoutError()
+                .compilesWithoutWarnings()
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }

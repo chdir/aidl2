@@ -60,7 +60,7 @@ public final class ListAndNestedTypeArgs$$AidlClientImpl implements ListAndNeste
           returnValueCollection.add(iReturnValue);
         }
       }
-      return AidlUtil.unsafeCast(returnValueCollection);
+      return (U) returnValueCollection;
     } finally {
       data.recycle();
       reply.recycle();

@@ -27,9 +27,9 @@ public final class ConcreteListClassTypeParamAndRaw$$AidlServerImpl extends Bind
 
     static final int TRANSACT_methodWithLinkedListParamAndArrayListReturn = IBinder.FIRST_CALL_TRANSACTION;
 
-    private final ConcreteListClassTypeParamAndRaw delegate;
+    private final ConcreteListClassTypeParamAndRaw<?> delegate;
 
-    public ConcreteListClassTypeParamAndRaw$$AidlServerImpl(ConcreteListClassTypeParamAndRaw delegate) {
+    public ConcreteListClassTypeParamAndRaw$$AidlServerImpl(ConcreteListClassTypeParamAndRaw<?> delegate) {
         this.delegate = delegate;
 
         this.attachInterface(delegate, DESCRIPTOR);

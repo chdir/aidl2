@@ -72,6 +72,21 @@ public class ParcelableTests {
     }
 
     @Test
+    public void concreteParcelableReturnTypevar() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableReturnTypevar.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableReturnTypevar$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableReturnTypevar$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
     public void concreteParcelableParameter() throws Exception {
         JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConcreteParcelableParameter.java"));
 

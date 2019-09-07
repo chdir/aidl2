@@ -23,9 +23,9 @@ public final class BooleanArrayTest$$AidlServerImpl extends Binder {
 
     static final int TRANSACT_methodWithBiCharArrayReturn = IBinder.FIRST_CALL_TRANSACTION;
 
-    private final BooleanArrayTest delegate;
+    private final BooleanArrayTest<?> delegate;
 
-    public BooleanArrayTest$$AidlServerImpl(BooleanArrayTest delegate) {
+    public BooleanArrayTest$$AidlServerImpl(BooleanArrayTest<?> delegate) {
         this.delegate = delegate;
 
         this.attachInterface(delegate, DESCRIPTOR);

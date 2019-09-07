@@ -188,7 +188,7 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                     if (param.outParameter) {
                         if (param.isReturn() && param.type.getKind() != TypeKind.VOID) {
                             try {
-                                readReturnValue(returnReading, paramMarshaller, reply);
+                                readReturnValue(returnReading, paramMarshaller, reply, types.asElement(ifType));
                             } catch (CodegenException cde) {
                                 throw new ElementException(cde, method.element.element);
                             }
@@ -250,10 +250,10 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
         }
     }
 
-    private void readReturnValue(CodeBlock.Builder code, State reader, String name) throws CodegenException, IOException {
+    private void readReturnValue(CodeBlock.Builder code, State reader, String name, Element container) throws CodegenException, IOException {
         final TypedExpression assignmentCode = reader.buildReader(name)
                 .read(code, reader.type);
 
-        code.addStatement("return $L", emitCasts(assignmentCode.type, reader.type, assignmentCode.code));
+        code.addStatement("return $L", emitCasts(assignmentCode.type, reader.type, assignmentCode.code, container));
     }
 }

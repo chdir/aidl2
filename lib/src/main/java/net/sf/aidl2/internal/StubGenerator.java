@@ -27,6 +27,7 @@ import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
@@ -109,14 +110,16 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
                     .build());
         }
 
+        TypeName stubbed = TypeName.get(typeArgsToWildcards((DeclaredType) originatingInterface.asType()));
+
         implClassSpec
                 .addField(descriptor.toBuilder()
                         .initializer("$S", model.descriptor)
                         .build())
-                .addField(interfaceType, "delegate", Modifier.PRIVATE, Modifier.FINAL)
+                .addField(stubbed, "delegate", Modifier.PRIVATE, Modifier.FINAL)
                 .addMethod(MethodSpec.constructorBuilder()
                         .addModifiers(Modifier.PUBLIC)
-                        .addParameter(interfaceType, "delegate")
+                        .addParameter(stubbed, "delegate")
                         .addStatement("this.delegate = delegate")
                         .addCode("\n")
                         .addStatement("this.attachInterface(delegate, DESCRIPTOR)")
