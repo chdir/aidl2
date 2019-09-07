@@ -55,6 +55,7 @@ allprojects {
         resolutionStrategy {
             failOnVersionConflict()
 
+            force 'org.apache.httpcomponents:httpcore:4.2.1'
             force 'com.google.guava:guava:21.0'
             force 'junit:junit:4.12'
             force 'org.codehaus.plexus:plexus-utils:1.5.15'
