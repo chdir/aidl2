@@ -55,4 +55,23 @@ public class IInterfaceTests {
                 .and()
                 .generatesSources(generatedStub, generatedProxy);
     }
+
+    @Test
+    public void aidl2IInterfaceParameterNonNull() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest3.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest3$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("IInterfaceTest3$$AidlClientImpl.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(
+                        "-A" + Config.OPT_LOGFILE + "=" + logFile.getFile(),
+                        "-Aaidl2_use_versioning=false",
+                        "-Xlint:-processing"
+                )
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
 }
