@@ -22,7 +22,7 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
-public final class AidlModel {
+final class AidlModel {
     @NotNull
     final Annotation[] migrated;
 

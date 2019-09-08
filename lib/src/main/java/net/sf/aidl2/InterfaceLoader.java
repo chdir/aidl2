@@ -41,6 +41,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * instance in remote process will NOT be garbage-collected.
  */
 public final class InterfaceLoader {
+    private InterfaceLoader() {}
+
     private static final String PROP_VERBOSE = "net.sf.aidl2.verbose";
 
     private static final boolean useVerboseLogging;
@@ -146,7 +148,7 @@ public final class InterfaceLoader {
         }
     }
 
-    public static final class FallbackLocator {
+    private static final class FallbackLocator {
         private static final Map<String, Constructor<?>> clients = new ConcurrentHashMap<>();
         private static final Map<String, Constructor<?>> servers = new ConcurrentHashMap<>();
 

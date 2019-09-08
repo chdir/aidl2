@@ -15,9 +15,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 
-public class AidlUtil {
+public final class AidlUtil {
+    private AidlUtil() {}
+
     public static final int VERSION_TRANSACTION = IBinder.LAST_CALL_TRANSACTION;
 
     /**

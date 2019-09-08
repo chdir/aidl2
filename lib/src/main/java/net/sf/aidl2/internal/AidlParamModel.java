@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeMirror;
 
-public final class AidlParamModel {
+final class AidlParamModel {
     @Nullable
     final CharSequence name;
 

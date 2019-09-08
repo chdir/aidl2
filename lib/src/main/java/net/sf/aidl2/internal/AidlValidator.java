@@ -13,7 +13,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 
-public final class AidlValidator extends AptHelper {
+final class AidlValidator extends AptHelper {
     private final DeclaredType iInterface;
 
     public AidlValidator(AidlProcessor.Environment environment) {

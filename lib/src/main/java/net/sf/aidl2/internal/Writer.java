@@ -1,8 +1,5 @@
 package net.sf.aidl2.internal;
 
-import android.graphics.RectF;
-import android.os.Parcel;
-import android.os.Parcelable;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.NameAllocator;
@@ -14,10 +11,7 @@ import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.util.Util;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Externalizable;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.lang.reflect.Type;
 import java.util.*;
 
 import javax.lang.model.element.ExecutableElement;
@@ -33,7 +27,7 @@ import javax.lang.model.type.TypeMirror;
 
 import static net.sf.aidl2.internal.util.Util.hasPublicDefaultConstructor;
 
-public final class Writer extends AptHelper {
+final class Writer extends AptHelper {
     private final ClassName textUtils = ClassName.get("android.text", "TextUtils");
 
     private final CharSequence parcelName;

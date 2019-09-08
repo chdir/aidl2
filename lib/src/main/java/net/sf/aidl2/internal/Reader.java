@@ -38,7 +38,7 @@ import javax.tools.Diagnostic;
 import static net.sf.aidl2.internal.ContractHasher.*;
 import static net.sf.aidl2.internal.util.Util.*;
 
-public final class Reader extends AptHelper {
+final class Reader extends AptHelper {
     private final ClassName textUtils = ClassName.get("android.text", "TextUtils");
 
     private final boolean allowUnchecked;

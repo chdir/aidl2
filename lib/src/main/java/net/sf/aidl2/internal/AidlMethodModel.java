@@ -15,7 +15,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 
-public final class AidlMethodModel {
+final class AidlMethodModel {
     @NotNull
     final AidlParamModel[] parameters;
 

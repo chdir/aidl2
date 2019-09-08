@@ -129,7 +129,7 @@ public final class AidlProcessor extends AbstractProcessor {
         return session;
     }
 
-    public static class Environment implements ProcessingEnvironment, Closeable {
+    public static final class Environment implements ProcessingEnvironment, Closeable {
         private final ProcessingEnvironment environment;
 
         private Logger logger;
