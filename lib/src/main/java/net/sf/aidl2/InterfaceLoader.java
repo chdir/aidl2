@@ -8,7 +8,6 @@ import android.util.Log;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,26 +17,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * generated during annotation processing. Together proxy and stub wrap a lower-level IPC channel, represented by
  * {@link Binder#transact}.
  *
- * <br>
+ * <p>
  *
  * Proxy is a client-side implementation of IInterface, used by Service clients to perform IPC. It serializes
- * method arguments, passes them to {@link Binder#transact} method of wrapped Binder object and deserializes
- * a returned value.
+ * method arguments, passes them to {@code transact()} method of wrapped Binder object
+ * and deserializes a returned value.
  *
- * <br>
+ * <p>
  *
- * Stub is a subclass of Binder, that overrides {@link Binder#onTransact} and dispatches interprocess calls to
- * Service-side implementation of RPC interface. It is commonly returned from {@link Service#onBind} method.
+ * Stub is a subclass of Binder, that overrides {@code onTransact()} and dispatches
+ * interprocess calls to Service-side implementation of RPC interface. It is commonly returned from
+ * {@code onBind()} method of {@link Service}.
  *
- * <br>
+ * <p>
  *
- * This class supports short-circuiting between client and Service, located in the same process — in such
- * case a value, returned from {@link #asInterface} will be a Service-side implementation itself instead of proxy.
+ * This class supports short-circuiting between client and Service, located in the same process - in such
+ * case a value, returned from {@link #asInterface asInterface()} will be a Service-side implementation itself instead of proxy.
  *
- * <br>
+ * <p>
  *
  * Note, that Android framework purposefully makes semantics of Binder garbage-collections same for IPC and
- * local use-cases. That is — as long as you hold a reference to client Binder object, a corresponding Binder
+ * local use-cases. That is - as long as you hold a reference to client Binder object, a corresponding Binder
  * instance in remote process will NOT be garbage-collected.
  */
 public final class InterfaceLoader {
@@ -92,7 +92,7 @@ public final class InterfaceLoader {
     /**
      * Wrap provided binder for type-safe access.
      *
-     * @param binder IPC primitive, such as passed to {@link ServiceConnection#onServiceConnected}
+     * @param binder IPC primitive, such as passed to {@link ServiceConnection#onServiceConnected onServiceConnected()}
      * @param aidlInterface interface being requested, must have undergone compile-time annotation processing with AIDL2
      * @param <Z> the class of interface, being requested
      *
