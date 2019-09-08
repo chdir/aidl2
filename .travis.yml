@@ -1,6 +1,6 @@
 language: android
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 android:
   components:
@@ -20,8 +20,8 @@ cache:
 before_script:
   - set -e;
     if [ "$TRAVIS_BRANCH" == "staging" ]; then
-      echo yes | android update sdk --no-ui --all --filter sys-img-armeabi-v7a-android-18;
-      echo no | android create avd --force --name test --target android-18 --abi armeabi-v7a;
+      echo yes | android update sdk --no-ui --all --filter sys-img-armeabi-v7a-android-24;
+      echo no | android create avd --force --name test --target android-24 --abi armeabi-v7a;
       exec emulator -avd test -no-skin -no-audio -no-window &
     fi
 
