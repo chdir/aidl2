@@ -8,6 +8,8 @@
 -adaptresourcefilecontents
 -useuniqueclassmembernames
 -keepparameternames
+-dontskipnonpubliclibraryclasses
+-dontskipnonpubliclibraryclassmembers
 
 -keep public class net.sf.aidl2.* {
     !private <methods>;

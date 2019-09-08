@@ -22,8 +22,7 @@ import com.github.jengelman.gradle.plugins.shadow.transformers.*
 import proguard.gradle.*
 
 shadowJar {
-    exclude 'net/sf/aidl2/AIDL.class'
-    exclude 'net/sf/aidl2/OneWay.class'
+    exclude 'net/sf/aidl2/*.class'
 
     transform(DontIncludeResourceTransformer) { it.resource = 'META-INF/maven/com.squareup/javapoet/pom.xml' }
     transform(DontIncludeResourceTransformer) { it.resource = 'META-INF/maven/com.squareup/javapoet/pom.properties' }
@@ -36,16 +35,39 @@ shadowJar {
 tasks.javadoc.configure {
     exclude '**/internal/**'
     exclude '**/Linker*'
+    exclude '**/AidlUtil*'
+
+    classpath += configurations.compileOnly
+    classpath += project.files("$System.env.ANDROID_HOME/platforms/android-21/android.jar")
 
     options.noTimestamp
+    options.encoding = 'UTF-8'
+    options.noQualifiers 'all'
     options.windowTitle 'AIDL2 API documentation'
-    options.linksOffline('http://d.android.com/reference/', "$System.env.ANDROID_HOME/docs/reference")
-    options.header '' +
-            '<script>' +
-            'for(var i in document.links) {' +
-            ' var l = document.links[i]; if (l.href.indexOf("http") === 0) l.target = "_blank";' +
-            '}' +
-            '</script>'
+
+    options.addBooleanOption("-allow-script-in-comments", true)
+
+
+    options.links += [
+            'https://docs.oracle.com/javase/8/docs/api/',
+    ]
+
+    options.linksOffline('https://d.android.com/reference/', "$System.env.ANDROID_HOME/docs/reference")
+
+    options.header """
+<script>
+var checkDomain = function(url) {
+  if ( url.indexOf('//') === 0 ) { url = location.protocol + url; }
+  return url.toLowerCase().replace(/([a-z])?:\\/\\//,'\$1').split('/')[0];
+};
+var isExternal = function(url) {
+  return ( ( url.indexOf(':') > -1 || url.indexOf('//') > -1 ) && checkDomain(location.href) !== checkDomain(url) );
+};
+for(var i in document.links) {
+  var l = document.links[i]; if (l.href != null && isExternal(l.href)) l.target = "_blank";
+}
+</script>
+"""
 }
 
 if (project.properties.uploadInitiate || !project.hasProperty('theTimeHasCometh')) {
@@ -57,8 +79,7 @@ if (project.properties.uploadInitiate || !project.hasProperty('theTimeHasCometh'
 task apiJar(type: Jar) {
     dependsOn tasks.compileJava
 
-    include 'net/sf/aidl2/AIDL.class'
-    include 'net/sf/aidl2/OneWay.class'
+    include 'net/sf/aidl2/*.class'
 
     baseName = 'api'
 
@@ -142,13 +163,14 @@ if (project.hasProperty('deploymentConfig')) {
 
 dependencies {
     compile 'com.squareup:javapoet:1.5.1'
-    compile 'org.jetbrains:annotations:13.0'
 
+    compileOnly 'org.jetbrains:annotations:13.0'
     compileOnly 'org.robolectric:android-all:5.0.2_r3-robolectric-r0'
     compileOnly 'com.google.auto.service:auto-service:1.0-rc3'
 
     annotationProcessor 'com.google.auto.service:auto-service:1.0-rc3'
 
+    testImplementation 'org.jetbrains:annotations:13.0'
     testImplementation 'junit:junit:4.12'
     testImplementation 'com.google.testing.compile:compile-testing:0.9'
     testImplementation 'com.google.truth:truth:0.28'
