@@ -56,7 +56,9 @@ Add the library to project:
 
 ```groovy
 dependencies {
-  compile 'net.sf.aidl2:compiler:0.4.0'
+  compile 'net.sf.aidl2:api:0.4.1'
+
+  annotationProcessor 'net.sf.aidl2:compiler:0.4.1'
 }
 ```
 
