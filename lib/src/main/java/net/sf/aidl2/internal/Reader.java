@@ -67,6 +67,8 @@ final class Reader extends AptHelper {
     private final CharSequence selfName;
     private final NameAllocator allocator;
 
+    private final DataKind strategy;
+
     private final TypeInvocation<ExecutableElement, ExecutableType> collectionAdd;
     private final TypeInvocation<ExecutableElement, ExecutableType> mapPut;
 
@@ -83,6 +85,7 @@ final class Reader extends AptHelper {
         this.external = state.external;
         this.allocator = state.allocator;
         this.assumeFinal = state.assumeFinal;
+        this.strategy = state.strategy;
         this.versionCalc = state.versionCalc();
 
         this.sizeType = lookup("android.util.Size");
@@ -111,7 +114,7 @@ final class Reader extends AptHelper {
      * Read a single return value from parcel.
      */
     public TypedExpression read(CodeBlock.Builder block, TypeMirror type) throws CodegenException, IOException {
-        final Strategy strategy = getStrategy(type);
+        final Strategy strategy = getOuterStrategy(type);
 
         if (strategy != null) {
             final CodeBlock assignment;
@@ -128,6 +131,14 @@ final class Reader extends AptHelper {
         }
 
         throw new CodegenException("Unsupported type: " + type + ".\n" + getHelpText());
+    }
+
+    private @Nullable Strategy getOuterStrategy(TypeMirror type) throws CodegenException {
+        if (this.strategy != DataKind.AUTO) {
+            return getFixedStrategy(type);
+        }
+
+        return getStrategy(type);
     }
 
     private Strategy getNullableStrategy(TypeMirror type, Strategy inner) {
@@ -171,6 +182,34 @@ final class Reader extends AptHelper {
             versionCalc.write(NULL_CHECK);
 
             inner.writeState(versionCalc);
+        }
+    }
+
+    private Strategy getFixedStrategy(TypeMirror type) throws CodegenException {
+        switch (this.strategy) {
+            case BINDER:
+                return getIInterfaceStrategy(type);
+            case SERIALIZABLE:
+                return getSerializableStrategy(type);
+            case EXTERNALIZABLE:
+                return getExternalizableStrategy((DeclaredType) type);
+            case PARCELABLE:
+                return getParcelableStrategy((DeclaredType) type);
+            case MAP:
+                return getMapStrategy(type, true);
+            case SEQUENCE:
+                if (type.getKind() == TypeKind.ARRAY) {
+                    final TypeMirror component = ((ArrayType) type).getComponentType();
+                    final Strategy strategy = getStrategy(component);
+
+                    if (strategy != null) {
+                        return getSpecialArrayStrategy(strategy, component);
+                    }
+                } else {
+                    return getCollectionStrategy(type, true);
+                }
+            default:
+                throw new CodegenException("This marshalling strategy can't be explicitly requested: " + strategy);
         }
     }
 
@@ -611,6 +650,10 @@ final class Reader extends AptHelper {
     }
 
     private Strategy getMapStrategy(TypeMirror mapType) throws CodegenException {
+        return getMapStrategy(mapType, false);
+    }
+
+    private Strategy getMapStrategy(TypeMirror mapType, boolean forceMap) throws CodegenException {
         // allow upper-bound wildcards to be used
         // not using captureAll() on purpose since any nested types with meaningful type args
         // (e.g. Collections) are going to be handled by recursive application of this method
@@ -629,7 +672,7 @@ final class Reader extends AptHelper {
 
         Strategy valueStrategy = getStrategy(valueType);
 
-        if (types.isAssignable(mapType, serializable)) {
+        if (!forceMap && types.isAssignable(mapType, serializable)) {
             if (isSerialStrategy(keyStrategy) || isSerialStrategy(valueStrategy)) {
                 if (canSerialize(keyType) && canSerialize(valueType)) {
                     return getSerializableStrategy(mapType);
@@ -700,6 +743,10 @@ final class Reader extends AptHelper {
     }
 
     private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
+        return getCollectionStrategy(type, false);
+    }
+
+    private Strategy getCollectionStrategy(TypeMirror type, boolean forceCollection) throws CodegenException {
         // allow upper-bound wildcards to be used
         // not using captureAll() on purpose since any nested types with meaningful type args
         // (e.g. Collections) are going to be handled by recursive application of this method
@@ -721,7 +768,7 @@ final class Reader extends AptHelper {
             return null;
         }
 
-        if (types.isAssignable(type, serializable)) {
+        if (!forceCollection && types.isAssignable(type, serializable)) {
             if (elementStrategy == null) {
                 if (allowUnchecked) {
                     elementStrategy = getStrategy(theObject);

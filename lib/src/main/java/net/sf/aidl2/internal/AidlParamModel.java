@@ -1,12 +1,20 @@
 package net.sf.aidl2.internal;
 
+import net.sf.aidl2.As;
+import net.sf.aidl2.DataKind;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.util.Util;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 final class AidlParamModel {
@@ -15,6 +23,9 @@ final class AidlParamModel {
 
     @NotNull
     final TypeMirror type;
+
+    @NotNull
+    final DataKind strategy;
 
     final int suppressed;
 
@@ -28,6 +39,7 @@ final class AidlParamModel {
 
     private AidlParamModel(@Nullable CharSequence name,
                    @NotNull TypeMirror type,
+                   @NotNull DataKind strategy,
                    int suppressed,
                    boolean nullable,
                    boolean inParameter,
@@ -35,6 +47,7 @@ final class AidlParamModel {
                    boolean varargParameter) {
         this.name = name;
         this.type = type;
+        this.strategy = strategy;
         this.suppressed = suppressed;
         this.nullable = nullable;
         this.inParameter = inParameter;
@@ -53,6 +66,10 @@ final class AidlParamModel {
         final boolean nullableParam;
 
         final CharSequence name;
+
+        final AnnotationMirror argAnnotation = Util.getAnnotation(paramInstance.element, As.class);
+
+        final DataKind strategy = getStrategy(argAnnotation);
 
         final ElementKind kind = paramInstance.element.getKind();
 
@@ -87,10 +104,32 @@ final class AidlParamModel {
         return new AidlParamModel(
                 name,
                 paramInstance.type,
+                strategy,
                 suppressedOnParam,
                 nullableParam,
                 isInParameter,
                 hasInOut,
                 varArgParam);
+    }
+
+    private static DataKind getStrategy(AnnotationMirror arg) {
+        if (arg == null) {
+            return DataKind.AUTO;
+        }
+
+        Map<? extends ExecutableElement, ? extends AnnotationValue> v = arg.getElementValues();
+
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : v.entrySet()) {
+            ExecutableElement ex = e.getKey();
+
+            String name = ex.getSimpleName().toString();
+
+            switch (name) {
+                case "value":
+                    return e.getValue().accept(new ArgKindVisitor(), null);
+            }
+        }
+
+        return DataKind.AUTO;
     }
 }

@@ -6,9 +6,12 @@ import com.squareup.javapoet.NameAllocator;
 
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
+import net.sf.aidl2.DataKind;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.exceptions.CodegenException;
 import net.sf.aidl2.internal.util.Util;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
@@ -51,6 +54,8 @@ final class Writer extends AptHelper {
     private final TypeMirror persistable;
     private final TypeMirror sparseBoolArray;
 
+    private final DataKind strategy;
+
     private final Object flags;
 
     private final DeclaredType theIterator;
@@ -65,6 +70,7 @@ final class Writer extends AptHelper {
         this.assumeFinal = state.assumeFinal;
         this.name = state.name;
         this.allocator = state.allocator;
+        this.strategy = state.strategy;
 
         this.parcelName = outParcelName;
 
@@ -94,7 +100,7 @@ final class Writer extends AptHelper {
     }
 
     public void write(CodeBlock.Builder paramWriting, TypeMirror type) throws CodegenException {
-        Strategy strategy = getStrategy(type);
+        Strategy strategy = getOuterStrategy(type);
 
         if (strategy != null) {
             if (nullable && strategy.needNullHandling) {
@@ -110,8 +116,16 @@ final class Writer extends AptHelper {
         throw new CodegenException("Unsupported parameter type: " + type + ".\n" + getHelpText());
     }
 
+    private @Nullable Strategy getOuterStrategy(TypeMirror type) throws CodegenException {
+        if (this.strategy != DataKind.AUTO) {
+            return getFixedStrategy(type);
+        }
+
+        return getStrategy(type);
+    }
+
     public TypeMirror writeReturnValue(CodeBlock.Builder retValWriting, TypeMirror type) throws CodegenException {
-        Strategy strategy = getStrategy(type);
+        Strategy strategy = getOuterStrategy(type);
 
         if (strategy != null) {
             final TypeMirror forSerializationCode = makeDenotable(strategy.requiredType);
@@ -132,7 +146,35 @@ final class Writer extends AptHelper {
         throw new CodegenException("Unsupported return value type: " + type + ".\n" + getHelpText());
     }
 
-    private Strategy getStrategy(TypeMirror type) throws CodegenException {
+    private Strategy getFixedStrategy(TypeMirror type) throws CodegenException {
+        switch (this.strategy) {
+            case BINDER:
+                return getIInterfaceStrategy(type);
+            case SERIALIZABLE:
+                return getSerializableStrategy();
+            case EXTERNALIZABLE:
+                return getExternalizableStrategy(type);
+            case PARCELABLE:
+                return getParcelableStrategy(type);
+            case MAP:
+                return getMapStrategy(type, true);
+            case SEQUENCE:
+                if (type.getKind() == TypeKind.ARRAY) {
+                    final TypeMirror component = ((ArrayType) type).getComponentType();
+                    final Strategy strategy = getStrategy(component);
+
+                    if (strategy != null) {
+                        return getSpecialArrayStrategy(strategy, component);
+                    }
+                } else {
+                    return getCollectionStrategy(type, true);
+                }
+            default:
+                throw new CodegenException("This marshalling strategy can't be explicitly requested: " + strategy);
+        }
+    }
+
+    private @Nullable Strategy getStrategy(TypeMirror type) throws CodegenException {
         switch (type.getKind()) {
             case BOOLEAN:
             case INT:
@@ -563,6 +605,10 @@ final class Writer extends AptHelper {
     }
 
     private Strategy getMapStrategy(TypeMirror type) throws CodegenException {
+        return getMapStrategy(type, false);
+    }
+
+    private Strategy getMapStrategy(TypeMirror type, boolean forceMap) throws CodegenException {
         // allow upper-bound wildcards to be used
         // not using captureAll() on purpose since any nested types with meaningful type args
         // (e.g. Collections) are going to be handled by recursive application of this method
@@ -584,7 +630,7 @@ final class Writer extends AptHelper {
             throw new CodegenException(errMsg);
         }
 
-        if (isSerialStrategy(keyStrategy) || isSerialStrategy(valueStrategy)) {
+        if (!forceMap && (isSerialStrategy(keyStrategy) || isSerialStrategy(valueStrategy))) {
             if (types.isAssignable(type, serializable)) {
                 if (canSerialize(keyType) && canSerialize(valueType)) {
                     return getSerializableStrategy();
@@ -683,6 +729,10 @@ final class Writer extends AptHelper {
     }
 
     private Strategy getCollectionStrategy(TypeMirror type) throws CodegenException {
+        return getCollectionStrategy(type, false);
+    }
+
+    private Strategy getCollectionStrategy(TypeMirror type, boolean forceCollection) throws CodegenException {
         final TypeMirror elementType = getReadableElementType(type);
 
         final Strategy elementStrategy = getStrategy(elementType);
@@ -696,7 +746,7 @@ final class Writer extends AptHelper {
             return null;
         }
 
-        if (isSerialStrategy(elementStrategy)) {
+        if (!forceCollection && isSerialStrategy(elementStrategy)) {
             if (types.isAssignable(type, serializable)) {
                 return getSerializableStrategy();
             }

@@ -2,6 +2,7 @@ package net.sf.aidl2.internal;
 
 import com.google.auto.service.AutoService;
 
+import net.sf.aidl2.As;
 import net.sf.aidl2.Call;
 import net.sf.aidl2.OneWay;
 import net.sf.aidl2.internal.exceptions.AnnotationException;
@@ -53,6 +54,7 @@ public final class AidlProcessor extends AbstractProcessor {
         annotations.add(AIDL.class.getName());
         annotations.add(OneWay.class.getName());
         annotations.add(Call.class.getName());
+        annotations.add(As.class.getName());
         return annotations;
     }
 
