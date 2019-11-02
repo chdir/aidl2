@@ -2,7 +2,7 @@ def packageDesc = 'AIDL tool replacement, implemented as Java annotation process
 def packageSite = 'https://github.com/chdir/aidl2'
 def mainLic = 'GPL-2.0+CE'
 def libVcs = 'https://github.com/chdir/aidl2'
-def aidl2ver = '0.3.5'
+def aidl2ver = '0.4.1'
 
 def props = new Properties()
 
@@ -75,7 +75,7 @@ if (props) {
             name = 'aidl2'
             desc = packageDesc
             websiteUrl = packageSite
-            issueTrackerUrl = 'https://github.com/Alexander--/aidl2/issues'
+            issueTrackerUrl = 'https://github.com/chdir/aidl2/issues'
             vcsUrl = libVcs
             licenses = [mainLic]
             labels = ['android', 'aidl', 'apt']
