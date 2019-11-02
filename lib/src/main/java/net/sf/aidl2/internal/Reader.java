@@ -6,7 +6,7 @@ import com.squareup.javapoet.NameAllocator;
 
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
-import net.sf.aidl2.ArgumentKind;
+import net.sf.aidl2.DataKind;
 import net.sf.aidl2.InterfaceLoader;
 import net.sf.aidl2.internal.codegen.Blocks;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
@@ -280,7 +280,7 @@ final class Reader extends AptHelper {
     private final Strategy VOID_STRATEGY = new Strategy(
             $ -> literal("null"),
             types.getNullType(),
-            ArgumentKind.AUTO, false)
+            DataKind.AUTO, false)
     {
         public void writeState(DataOutputStream versionCalc) throws IOException {}
     };
@@ -342,7 +342,7 @@ final class Reader extends AptHelper {
     private Strategy getOldIInterfaceStrategy(TypeElement stubClass) {
         final ReadingStrategy s = block -> literal("$T.asInterface($N.readStrongBinder())", stubClass, parcelName);
 
-        return createNullSafe(s, stubClass.getEnclosingElement().asType(), ArgumentKind.BINDER);
+        return createNullSafe(s, stubClass.getEnclosingElement().asType(), DataKind.BINDER);
     }
 
     private Strategy getInterfaceLoaderStrategy(DeclaredType type, boolean nullable) {
@@ -366,12 +366,12 @@ final class Reader extends AptHelper {
                 return literal(tmpInterface);
             };
 
-            return createNullSafe(strategy, jokeLub(captured, theIInterface), ArgumentKind.BINDER);
+            return createNullSafe(strategy, jokeLub(captured, theIInterface), DataKind.BINDER);
         } else {
             strategy = block -> literal("$T.asInterface($N.readStrongBinder(), $T.class)",
                     InterfaceLoader.class, parcelName, raw);
 
-            return createNullSafe(strategy, jokeLub(type, theIInterface), ArgumentKind.BINDER);
+            return createNullSafe(strategy, jokeLub(type, theIInterface), DataKind.BINDER);
         }
     }
 
@@ -422,7 +422,7 @@ final class Reader extends AptHelper {
             block.endControlFlow();
 
             return literal(xtrnlzbl);
-        }, jokeLub(capturedType, externalizable), ArgumentKind.EXTERNALIZABLE);
+        }, jokeLub(capturedType, externalizable), DataKind.EXTERNALIZABLE);
     }
 
     private Strategy getArrayStrategy(ArrayType arrayType) throws CodegenException {
@@ -567,7 +567,7 @@ final class Reader extends AptHelper {
         private final Strategy strategy;
 
         private SpecialArray(TypeMirror componentType, Strategy componentStrategy) {
-            super(null, types.getArrayType(componentType), ArgumentKind.SEQUENCE, false);
+            super(null, types.getArrayType(componentType), DataKind.SEQUENCE, false);
 
             this.component = componentType;
             this.strategy = componentStrategy;
@@ -920,7 +920,7 @@ final class Reader extends AptHelper {
         private SimpleMap(TypeMirror type, TypeMirror captured,
                           TypeMirror keyType, TypeMirror valueType,
                           Strategy keyStrategy, Strategy valueStrategy) {
-            super(null, type, ArgumentKind.MAP, false);
+            super(null, type, DataKind.MAP, false);
 
             this.captured = captured;
             this.keyType = keyType;
@@ -1046,7 +1046,7 @@ final class Reader extends AptHelper {
 
         private SimpleCollection(TypeMirror type, TypeMirror elementType,
                                  TypeMirror captured, Strategy elementStrategy) {
-            super(null, type, ArgumentKind.SEQUENCE, false);
+            super(null, type, DataKind.SEQUENCE, false);
 
             this.elementType = elementType;
 
@@ -1146,7 +1146,7 @@ final class Reader extends AptHelper {
         private final CodeBlock block = literal("$T.readFromObjectStream($N)", AidlUtil.class, parcelName);
 
         private SerializableStrategy(TypeMirror returnTypeRefined) {
-            super(null, returnTypeRefined, ArgumentKind.SERIALIZABLE, false);
+            super(null, returnTypeRefined, DataKind.SERIALIZABLE, false);
         }
 
         @Override
@@ -1160,7 +1160,7 @@ final class Reader extends AptHelper {
         private final CodeBlock block = literal("$L.readParcelable(getClass().getClassLoader())", parcelName);
 
         private BaseParcelableStrategy(TypeMirror returnTypeRefined) {
-            super(null, returnTypeRefined, ArgumentKind.PARCELABLE, false);
+            super(null, returnTypeRefined, DataKind.PARCELABLE, false);
         }
 
         @Override
@@ -1208,7 +1208,7 @@ final class Reader extends AptHelper {
         private final TypeKind kind;
 
         private PrimitiveArrayStrategy(ReadingStrategy delegate, TypeMirror type) {
-            super(delegate, type, ArgumentKind.AUTO, false);
+            super(delegate, type, DataKind.AUTO, false);
 
             this.kind = type.getKind();
         }
@@ -1246,11 +1246,11 @@ final class Reader extends AptHelper {
     private class Strategy implements ReadingStrategy {
         private final ReadingStrategy delegate;
         private final boolean needNullHandling;
-        private final ArgumentKind kind;
+        private final DataKind kind;
 
         final TypeMirror returnType;
 
-        private Strategy(ReadingStrategy delegate, TypeMirror returnTypeRefined, ArgumentKind kind, boolean needNullHandling) {
+        private Strategy(ReadingStrategy delegate, TypeMirror returnTypeRefined, DataKind kind, boolean needNullHandling) {
             this.delegate = delegate;
             this.needNullHandling = needNullHandling;
             this.kind = kind;
@@ -1269,11 +1269,11 @@ final class Reader extends AptHelper {
         }
     }
 
-    public Strategy createNullSafe(ReadingStrategy delegate, TypeMirror returnType, ArgumentKind kind) {
+    public Strategy createNullSafe(ReadingStrategy delegate, TypeMirror returnType, DataKind kind) {
         return new Strategy(delegate, returnType, kind, false);
     }
 
-    public Strategy newStrategy(ReadingStrategy delegate, TypeMirror returnType, ArgumentKind kind) {
+    public Strategy newStrategy(ReadingStrategy delegate, TypeMirror returnType, DataKind kind) {
         return new Strategy(delegate, returnType, kind, true);
     }
 
@@ -1286,7 +1286,7 @@ final class Reader extends AptHelper {
     }
 
     private Strategy genericAuto(ReadingStrategy delegate, TypeMirror returnType, boolean nullSafe) {
-        return new Strategy(delegate, returnType, ArgumentKind.AUTO, nullSafe) {
+        return new Strategy(delegate, returnType, DataKind.AUTO, nullSafe) {
             @Override
             public void writeState(DataOutputStream versionCalc) throws IOException {
                 super.writeState(versionCalc);

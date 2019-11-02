@@ -24,13 +24,13 @@ final class ContractHasher extends DataOutputStream {
     // the following integer is transaction id, followed by bunch of other metadata
     public static final int TRANSACTION_ID = -1;
 
-    // the following input encodes an argument (either NULL_CHECK or integer ordinal in ArgumentKind will follow)
+    // the following input encodes an argument (either NULL_CHECK or integer ordinal in DataKind will follow)
     public static final int INPUT_ARGUMENT = -2;
 
-    // the following input encodes a return value (either NULL_CHECK or integer ordinal in ArgumentKind will follow)
+    // the following input encodes a return value (either NULL_CHECK or integer ordinal in DataKind will follow)
     public static final int RET_VAL= -3;
 
-    // the following integer is ordinal in ArgumentKind
+    // the following integer is ordinal in DataKind
     public static final int NULL_CHECK = -4;
 
     // the following integer is ordinal in TypeKind

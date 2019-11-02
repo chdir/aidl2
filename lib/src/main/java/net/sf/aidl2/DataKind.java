@@ -11,11 +11,13 @@ import java.io.ObjectInputStream;
 /**
  * Describes various strategies, used by AIDL2 to serialize data to Parcel.
  */
-public enum ArgumentKind {
+public enum DataKind {
     /**
      * Automatically determine approach to serialization by testing for subtyping.
-     * The default order of checks: primitive array, array of other supported components,
-     * Parcelable, IInterface, Externalizable, Map, Collection, Serializable.
+     * The default order of checks: primitive array, Serializable array,
+     * array of other supported components, Parcelable, IInterface, Externalizable,
+     * Serializable Map of Serializable types, other Map,
+     * Serializable Collection of Serializable types, other Collection, Serializable.
      *
      * Incompatible element/component/key types in type signatures will result in failed checks.
      * Arrays of serializable types will be read/written via serializable path as long
