@@ -126,6 +126,8 @@ final class ProxyGenerator extends AptHelper implements AidlGenerator {
                     .assumeFinal(model.assumeFinal);
 
             for (AidlMethodModel method : model.methods.values()) {
+                registerConverters(implClassSpec, method.parameters, aidlWriter.allocator);
+
                 final State methodWriter = aidlWriter.clone();
 
                 if (isSuppressed(method.warningsSuppressedOnMethod, Util.SUPPRESS_UNCHECKED)) {

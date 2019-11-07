@@ -6,6 +6,7 @@ import com.squareup.javapoet.NameAllocator;
 
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
+import net.sf.aidl2.Converter;
 import net.sf.aidl2.DataKind;
 import net.sf.aidl2.internal.codegen.TypeInvocation;
 import net.sf.aidl2.internal.exceptions.CodegenException;
@@ -29,6 +30,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import static net.sf.aidl2.internal.util.Util.hasPublicDefaultConstructor;
+import static net.sf.aidl2.internal.util.Util.literal;
 
 final class Writer extends AptHelper {
     private final ClassName textUtils = ClassName.get("android.text", "TextUtils");
@@ -43,6 +45,7 @@ final class Writer extends AptHelper {
     private final NameAllocator allocator;
 
     private final DeclaredType parcelable;
+    private final DeclaredType theConverter;
 
     private final TypeMirror string;
     private final TypeMirror charSequence;
@@ -55,6 +58,7 @@ final class Writer extends AptHelper {
     private final TypeMirror sparseBoolArray;
 
     private final DataKind strategy;
+    private final DeclaredType converter;
 
     private final Object flags;
 
@@ -62,6 +66,7 @@ final class Writer extends AptHelper {
 
     private final TypeInvocation<ExecutableElement, ExecutableType> collectionIterator;
     private final TypeInvocation<ExecutableElement, ExecutableType> mapEntrySet;
+    private final TypeInvocation<ExecutableElement, ExecutableType> converterWrite;
 
     public Writer(AidlProcessor.Environment environment, State state, CharSequence outParcelName) {
         super(environment);
@@ -71,6 +76,7 @@ final class Writer extends AptHelper {
         this.name = state.name;
         this.allocator = state.allocator;
         this.strategy = state.strategy;
+        this.converter = state.converter;
 
         this.parcelName = outParcelName;
 
@@ -88,9 +94,11 @@ final class Writer extends AptHelper {
         charSequence = lookup(CharSequence.class);
 
         this.theIterator = lookup(Iterator.class);
+        this.theConverter = lookup(Converter.class);
 
         collectionIterator = lookupMethod(theCollection, "iterator", "Iterator");
         mapEntrySet = lookupMethod(theMap, "entrySet", Set.class);
+        converterWrite = lookupMethod(theConverter, "write", void.class, "Object", "Parcel");
 
         if (state.returnValue) {
             flags = Util.literal("$T.PARCELABLE_WRITE_RETURN_VALUE", parcelable);
@@ -117,6 +125,10 @@ final class Writer extends AptHelper {
     }
 
     private @Nullable Strategy getOuterStrategy(TypeMirror type) throws CodegenException {
+        if (this.converter != null) {
+            return getConverterStrategy(type);
+        }
+
         if (this.strategy != DataKind.AUTO) {
             return getFixedStrategy(type);
         }
@@ -864,6 +876,35 @@ final class Writer extends AptHelper {
 
     private void writeExternalizable(CodeBlock.Builder block, Object name, TypeMirror ignored) {
         block.addStatement("$T.writeToObjectStream($N, $L)", AidlUtil.class, parcelName, name);
+    }
+
+    private Strategy getConverterStrategy(TypeMirror type) {
+        TypeMirror typeThatCanBeWritten;
+
+        TypeInvocation<?, ? extends ExecutableType> resolvedReturnType = converterWrite.refine(types, converter);
+
+        TypeMirror written = resolvedReturnType.type.getParameterTypes().get(0);
+
+        if (!isEffectivelyObject(written)) {
+            typeThatCanBeWritten = written;
+        } else {
+            // the implementation of Converter is parametrized or has some other weird quirk
+            // try to guess a type and hope that type inference will do the rest of work for us
+
+            if (type.getKind().isPrimitive()) {
+                typeThatCanBeWritten = types.boxedClass((PrimitiveType) type).asType();
+            } else {
+                typeThatCanBeWritten = findDeclaredParent(type, theObject);
+            }
+        }
+
+        return Strategy.createNullSafe((block, name, receivedType) -> {
+            final String converterArg = allocator.get(converter);
+
+            CodeBlock writtenValue = emitCasts(receivedType, typeThatCanBeWritten, literal("$L", name));
+
+            block.addStatement("$N.write($L, $N)", converterArg, writtenValue, parcelName);
+        }, type);
     }
 
     private static class Strategy implements WritingStrategy {

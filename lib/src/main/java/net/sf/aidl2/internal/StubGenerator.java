@@ -149,6 +149,8 @@ final class StubGenerator extends AptHelper implements AidlGenerator {
             aidlReader.versionCalc().writeUTF(model.descriptor.toString());
 
             for (AidlMethodModel method : model.methods.values()) {
+                registerConverters(implClassSpec, method.parameters, aidlReader.allocator);
+
                 final CharSequence methodName = method.element.element.getSimpleName();
 
                 final String transactIdField = aidlReader.allocator.get(method);

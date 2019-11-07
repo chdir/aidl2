@@ -4,6 +4,7 @@ import com.squareup.javapoet.NameAllocator;
 
 import net.sf.aidl2.DataKind;
 
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import java.io.DataOutputStream;
 
@@ -17,6 +18,7 @@ class State implements Cloneable {
     boolean returnValue;
     boolean assumeFinal;
     DataKind strategy;
+    DeclaredType converter;
     TypeMirror type;
     CharSequence name;
     ContractHasher digest;
@@ -38,6 +40,7 @@ class State implements Cloneable {
         this.type = param.type;
         this.nullable = param.nullable;
         this.strategy = param.strategy;
+        this.converter = param.converter;
         return this;
     }
 

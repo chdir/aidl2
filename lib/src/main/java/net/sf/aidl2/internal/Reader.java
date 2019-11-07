@@ -6,6 +6,7 @@ import com.squareup.javapoet.NameAllocator;
 
 import net.sf.aidl2.AIDL;
 import net.sf.aidl2.AidlUtil;
+import net.sf.aidl2.Converter;
 import net.sf.aidl2.DataKind;
 import net.sf.aidl2.InterfaceLoader;
 import net.sf.aidl2.internal.codegen.Blocks;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.util.List;
 
 import javax.lang.model.element.ExecutableElement;
@@ -47,6 +49,7 @@ final class Reader extends AptHelper {
     private final boolean assumeFinal;
 
     private final DeclaredType parcelable;
+    private final DeclaredType theConverter;
 
     private final TypeMirror sizeF;
     private final TypeMirror sizeType;
@@ -68,9 +71,11 @@ final class Reader extends AptHelper {
     private final NameAllocator allocator;
 
     private final DataKind strategy;
+    private final DeclaredType converter;
 
     private final TypeInvocation<ExecutableElement, ExecutableType> collectionAdd;
     private final TypeInvocation<ExecutableElement, ExecutableType> mapPut;
+    private final TypeInvocation<ExecutableElement, ExecutableType> converterRead;
 
     private final DataOutputStream versionCalc;
 
@@ -86,6 +91,7 @@ final class Reader extends AptHelper {
         this.allocator = state.allocator;
         this.assumeFinal = state.assumeFinal;
         this.strategy = state.strategy;
+        this.converter = state.converter;
         this.versionCalc = state.versionCalc();
 
         this.sizeType = lookup("android.util.Size");
@@ -98,6 +104,7 @@ final class Reader extends AptHelper {
 
         this.string = lookup(String.class);
         this.charSequence = lookup(CharSequence.class);
+        this.theConverter = lookup(Converter.class);
 
         final TypeElement creatorType = lookupGeneric("android.os.Parcelable.Creator");
         final TypeMirror bound = types.getWildcardType(null, parcelable);
@@ -105,6 +112,7 @@ final class Reader extends AptHelper {
 
         collectionAdd = lookupMethod(theCollection, "add", boolean.class, "Object");
         mapPut = lookupMethod(theMap, "put", "Object", "Object", "Object");
+        converterRead = lookupMethod(theConverter, "read", "Object", "Type", "Parcel");
 
         intType = types.getPrimitiveType(TypeKind.INT);
         floatType = types.getPrimitiveType(TypeKind.FLOAT);
@@ -134,6 +142,10 @@ final class Reader extends AptHelper {
     }
 
     private @Nullable Strategy getOuterStrategy(TypeMirror type) throws CodegenException {
+        if (this.converter != null) {
+            return getConverterStrategy(type);
+        }
+
         if (this.strategy != DataKind.AUTO) {
             return getFixedStrategy(type);
         }
@@ -1283,6 +1295,70 @@ final class Reader extends AptHelper {
                 return literal("$N.readInt()", parcelName);
             default:
                 return literal("($T) $N.readInt()", type, parcelName);
+        }
+    }
+
+    private Strategy getConverterStrategy(TypeMirror type) {
+        TypeMirror typeThatWillBeRead;
+
+        TypeInvocation<?, ? extends ExecutableType> resolvedReturnType = converterRead.refine(types, converter);
+
+        TypeMirror read = resolvedReturnType.type.getReturnType();
+
+        if (!isEffectivelyObject(read)) {
+            typeThatWillBeRead = read;
+        } else {
+            // the implementation of Converter is parametrized or has some other weird quirk
+            // try to guess a type and hope that type inference will do the rest of work for us
+
+            if (type.getKind().isPrimitive()) {
+                typeThatWillBeRead = types.boxedClass((PrimitiveType) type).asType();
+            } else {
+                typeThatWillBeRead = findDeclaredParent(type, theObject);
+            }
+        }
+
+        return new ConverterStrategy(typeThatWillBeRead, type, converter);
+    }
+
+    private final class ConverterStrategy extends Strategy {
+        private final TypeMirror realType;
+        private final DeclaredType converter;
+
+        private ConverterStrategy(TypeMirror type, TypeMirror realType, DeclaredType converter) {
+            super(null, type, strategy, false);
+
+            this.realType = realType;
+            this.converter = converter;
+        }
+
+        @Override
+        public CodeBlock read(CodeBlock.Builder init) throws CodegenException {
+            final String converter = allocator.get(this.converter);
+
+            CodeBlock returnTypeLiteral = literal("$T.class", Object.class);
+
+            if (realType.getKind().isPrimitive()) {
+                returnTypeLiteral = literal(realType.toString() + ".class");
+            } else if (realType.getKind() == TypeKind.DECLARED) {
+                DeclaredType declared = (DeclaredType) realType;
+
+                if (declared.getTypeArguments().isEmpty()) {
+                    returnTypeLiteral = literal("$T.class", declared);
+                } else {
+                    returnTypeLiteral = Blocks.typeBuilder(types, declared);
+
+                    String varName = allocator.newName(selfName + "Type");
+
+                    init.addStatement("$T $N = $L", Type.class, varName, returnTypeLiteral);
+
+                    returnTypeLiteral = literal(varName);
+                }
+            }
+
+            return CodeBlock.builder()
+                    .add("$N.read($L, $N)", converter, returnTypeLiteral, parcelName)
+                    .build();
         }
     }
 

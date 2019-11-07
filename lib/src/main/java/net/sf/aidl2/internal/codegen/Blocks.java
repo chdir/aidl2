@@ -12,5 +12,9 @@ public final class Blocks {
         return new ArrayInitBlock(erased, !types.isSameType(erased, arrayComponent), countLiteral).toBlock();
     }
 
+    public static CodeBlock typeBuilder(Types types, TypeMirror type) {
+        return new TypeBuilderBlock(types, type).toBlock();
+    }
+
     private Blocks() {}
 }

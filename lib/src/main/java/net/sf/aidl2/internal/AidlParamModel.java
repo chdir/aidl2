@@ -27,6 +27,9 @@ final class AidlParamModel {
     @NotNull
     final DataKind strategy;
 
+    @Nullable
+    DeclaredType converter;
+
     final int suppressed;
 
     final boolean nullable;
@@ -40,6 +43,7 @@ final class AidlParamModel {
     private AidlParamModel(@Nullable CharSequence name,
                    @NotNull TypeMirror type,
                    @NotNull DataKind strategy,
+                   DeclaredType converter,
                    int suppressed,
                    boolean nullable,
                    boolean inParameter,
@@ -48,6 +52,7 @@ final class AidlParamModel {
         this.name = name;
         this.type = type;
         this.strategy = strategy;
+        this.converter = converter;
         this.suppressed = suppressed;
         this.nullable = nullable;
         this.inParameter = inParameter;
@@ -72,6 +77,8 @@ final class AidlParamModel {
         final DataKind strategy = getStrategy(argAnnotation);
 
         final ElementKind kind = paramInstance.element.getKind();
+
+        final DeclaredType converter = getConverter(argAnnotation);
 
         switch (kind) {
             case PARAMETER:
@@ -105,6 +112,7 @@ final class AidlParamModel {
                 name,
                 paramInstance.type,
                 strategy,
+                converter,
                 suppressedOnParam,
                 nullableParam,
                 isInParameter,
@@ -131,5 +139,26 @@ final class AidlParamModel {
         }
 
         return DataKind.AUTO;
+    }
+
+    private static DeclaredType getConverter(AnnotationMirror arg) {
+        if (arg == null) {
+            return null;
+        }
+
+        Map<? extends ExecutableElement, ? extends AnnotationValue> v = arg.getElementValues();
+
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : v.entrySet()) {
+            ExecutableElement ex = e.getKey();
+
+            String name = ex.getSimpleName().toString();
+
+            switch (name) {
+                case "converter":
+                    return (DeclaredType) e.getValue().accept(new ArgConverterVisitor(), null);
+            }
+        }
+
+        return null;
     }
 }

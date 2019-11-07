@@ -15,4 +15,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 public @interface As {
     DataKind value() default DataKind.AUTO;
+
+    Class<? extends Converter> converter() default Converter.class;
 }

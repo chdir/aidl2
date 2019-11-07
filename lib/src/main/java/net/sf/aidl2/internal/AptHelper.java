@@ -1,7 +1,5 @@
 package net.sf.aidl2.internal;
 
-import android.annotation.Nullable;
-
 import com.squareup.javapoet.*;
 
 import net.sf.aidl2.AidlUtil;
@@ -1448,6 +1446,37 @@ public abstract class AptHelper implements ProcessingEnvironment {
         }
 
         return types.getDeclaredType((TypeElement) type.asElement(), argumentCaptures);
+    }
+
+    protected void registerConverters(TypeSpec.Builder implClassSpec, AidlParamModel[] parameters, NameAllocator allocator) {
+        final Set<Element> converters = new HashSet<>();
+
+        for (AidlParamModel param : parameters) {
+            DeclaredType converter = param.converter;
+            if (converter == null) {
+                continue;
+            }
+
+            Element converterClass = converter.asElement();
+
+            StringBuilder typeName = new StringBuilder(converterClass.getSimpleName());
+
+            typeName.setCharAt(0, Character.toLowerCase(typeName.charAt(0)));
+
+            if (!converters.add(converterClass)) {
+                continue;
+            }
+
+            if (typeName.indexOf("Converter") == -1) {
+                typeName.append("Converter");
+            }
+
+            String converterName = allocator.newName(typeName.toString(), converter);
+
+            implClassSpec.addField(FieldSpec.builder(TypeName.get(converter), converterName, Modifier.PRIVATE, Modifier.FINAL)
+                    .initializer("new $T()", converter)
+                    .build());
+        }
     }
 
 

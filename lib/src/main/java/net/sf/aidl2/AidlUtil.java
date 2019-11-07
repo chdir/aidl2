@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
 
 public final class AidlUtil {
     private AidlUtil() {}
@@ -129,6 +132,57 @@ public final class AidlUtil {
 
         if (interfaceRpcVer != localRpcVersion) {
             throw new VersionMismatch("RPC interface version mismatch: local is " + localRpcVersion + " remote is " + interfaceRpcVer);
+        }
+    }
+
+    /**
+     * Internal utility method for aiding code generation.
+     */
+    public static ParameterizedType of(Class<?> raw, Type... args) {
+        return new ParametrizedImpl(raw, args);
+    }
+
+    private static final class ParametrizedImpl implements ParameterizedType {
+        private final Class<?> raw;
+
+        private final Type[] args;
+
+        private ParametrizedImpl(Class<?> raw, Type... args) {
+            this.raw = raw;
+            this.args = args;
+        }
+
+        @Override
+        public Type[] getActualTypeArguments() {
+            return args;
+        }
+
+        @Override
+        public Type getRawType() {
+            return raw;
+        }
+
+        @Override
+        public Type getOwnerType() {
+            return null;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(args) ^ raw.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof ParameterizedType)) {
+                return false;
+            }
+
+            ParameterizedType that = (ParameterizedType) o;
+
+            return that.getOwnerType() == null
+                    && getRawType().equals(that.getRawType())
+                    && Arrays.equals(getActualTypeArguments(), that.getActualTypeArguments());
         }
     }
 }
