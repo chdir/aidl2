@@ -1340,19 +1340,23 @@ final class Reader extends AptHelper {
 
             if (realType.getKind().isPrimitive()) {
                 returnTypeLiteral = literal(realType.toString() + ".class");
-            } else if (realType.getKind() == TypeKind.DECLARED) {
-                DeclaredType declared = (DeclaredType) realType;
+            } else {
+                switch (realType.getKind()) {
+                    case DECLARED:
+                        DeclaredType declared = (DeclaredType) realType;
 
-                if (declared.getTypeArguments().isEmpty()) {
-                    returnTypeLiteral = literal("$T.class", declared);
-                } else {
-                    returnTypeLiteral = Blocks.typeBuilder(types, declared);
+                        if (declared.getTypeArguments().isEmpty()) {
+                            returnTypeLiteral = literal("$T.class", declared);
+                            break;
+                        }
+                    case ARRAY:
+                        returnTypeLiteral = Blocks.typeBuilder(types, realType);
 
-                    String varName = allocator.newName(selfName + "Type");
+                        String varName = allocator.newName(selfName + "Type");
 
-                    init.addStatement("$T $N = $L", Type.class, varName, returnTypeLiteral);
+                        init.addStatement("$T $N = $L", Type.class, varName, returnTypeLiteral);
 
-                    returnTypeLiteral = literal(varName);
+                        returnTypeLiteral = literal(varName);
                 }
             }
 

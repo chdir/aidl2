@@ -65,8 +65,9 @@ final class TypeBuilderBlock {
                 while (mirror.getKind() != TypeKind.ARRAY);
 
                 return CodeBlock.builder()
-                        .add("$T$L", mirror, builder)
+                        .add("$T$L.class", mirror, builder)
                         .build();
+
             default:
                 // TODO: try to erase it?
                 return objectBlock;

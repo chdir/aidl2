@@ -9,10 +9,13 @@ import net.sf.aidl2.tests.LogFileRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import javax.tools.JavaFileObject;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class ConverterTests {
     @Rule
@@ -64,6 +67,23 @@ public class ConverterTests {
         JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConverterTest3$$AidlClientImpl.java"));
 
         assertAbout(javaSource()).that(testSource)
+                .withCompilerOptions(usualArgs())
+                .processedWith(new AidlProcessor())
+                .compilesWithoutWarnings()
+                .and()
+                .generatesSources(generatedStub, generatedProxy);
+    }
+
+    @Test
+    public void converterArrayType() throws Exception {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("ConverterTestArray.java"));
+        JavaFileObject converter = JavaFileObjects.forResource(getClass().getResource("ArrayConverter.java"));
+
+        JavaFileObject generatedStub = JavaFileObjects.forResource(getClass().getResource("ConverterTestArray$$AidlServerImpl.java"));
+        JavaFileObject generatedProxy = JavaFileObjects.forResource(getClass().getResource("ConverterTestArray$$AidlClientImpl.java"));
+
+        assertAbout(javaSources())
+                .that(Arrays.asList(testSource, converter))
                 .withCompilerOptions(usualArgs())
                 .processedWith(new AidlProcessor())
                 .compilesWithoutWarnings()
