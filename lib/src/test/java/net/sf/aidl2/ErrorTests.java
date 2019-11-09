@@ -6,10 +6,13 @@ import net.sf.aidl2.internal.AidlProcessor;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import javax.tools.JavaFileObject;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class ErrorTests {
     @Test
@@ -233,5 +236,46 @@ public class ErrorTests {
                 .onLine(9)
                 .and()
                 .withNoteContaining("bailing out");
+    }
+
+    @Test
+    public void InterfaceAsConverter() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("InterfaceConverterError.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("must be a class")
+                .in(testSource)
+                .onLine(8);
+    }
+
+    @Test
+    public void AbstractAsConverter() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AbstractConverterError.java"));
+        JavaFileObject converter = JavaFileObjects.forResource(getClass().getResource("AbstractConverter.java"));
+
+        assertAbout(javaSources()).that(Arrays.asList(testSource, converter))
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("can not be used as converter: it is abstract")
+                .in(testSource)
+                .onLine(8);
+    }
+
+    @Test
+    public void NoPublicConstructorInConverter() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("NoConstructorConverterError.java"));
+        JavaFileObject converter = JavaFileObjects.forResource(getClass().getResource("NoConstructorConverter.java"));
+
+        assertAbout(javaSources()).that(Arrays.asList(testSource, converter))
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("must have a no-arg constructor to be used as converter")
+                .in(testSource)
+                .onLine(8);
     }
 }
