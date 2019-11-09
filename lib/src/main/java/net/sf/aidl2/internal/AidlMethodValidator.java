@@ -24,6 +24,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import javax.tools.Diagnostic;
@@ -121,7 +122,11 @@ final class AidlMethodValidator extends AptHelper {
         }
     }
 
-    private void validateArgAnnotation(Element element, TypeMirror type, AnnotationMirror argAnnotation) throws AnnotationValueException {
+    private void validateArgAnnotation(Element element, TypeMirror type, AnnotationMirror argAnnotation) throws AnnotationValueException, AnnotationException {
+        if (type.getKind() == TypeKind.VOID) {
+            throw new AnnotationException("@As on methods applies to return type. This method is void", element, argAnnotation);
+        }
+
         Map<? extends ExecutableElement, ? extends AnnotationValue> values = argAnnotation.getElementValues();
 
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : values.entrySet()) {

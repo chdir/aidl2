@@ -278,4 +278,17 @@ public class ErrorTests {
                 .in(testSource)
                 .onLine(8);
     }
+
+    @Test
+    public void AsAnnotationOnVoid() {
+        JavaFileObject testSource = JavaFileObjects.forResource(getClass().getResource("AsAnnotationOnVoidError.java"));
+
+        assertAbout(javaSource()).that(testSource)
+                .processedWith(new AidlProcessor())
+                .failsToCompile()
+                .withErrorCount(1)
+                .withErrorContaining("void")
+                .in(testSource)
+                .onLine(8);
+    }
 }
