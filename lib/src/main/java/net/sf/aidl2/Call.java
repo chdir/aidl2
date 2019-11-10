@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * Supplies additional metadata about annotated AIDL2 method.
  */
 @Target(ElementType.METHOD)
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.CLASS)
 public @interface Call {
     /**
      * Transaction ID, corresponding to the annotated method.
